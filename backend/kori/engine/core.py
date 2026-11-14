@@ -58,6 +58,7 @@ class Prefs:
     savings_goal_monthly: float | None = None
     basket_overrides: dict[str, str] = field(default_factory=dict)   # category -> basket
     goal: dict | None = None                # {"name": str, "amount": float, "saved": float}
+    other_bank_linked: bool = False         # simulated PSD2 view for the demo
 
 
 class Money:
@@ -73,7 +74,13 @@ class Money:
     # ------------------------------------------------------------ basics
     @cached_property
     def balance(self) -> float:
-        return r2(self.df["balance"].iloc[-1])
+        base = float(self.df["balance"].iloc[-1])
+        # A linked view treats salary sweeps as transfers between the user's
+        # own accounts. The real account balance is unchanged; the linked
+        # picture adds the swept amount back to the household total.
+        if self.prefs.other_bank_linked and not self.sweeps.empty:
+            base += float(self.sweep_typical)
+        return r2(base)
 
     @cached_property
     def this_month(self) -> str:
@@ -123,12 +130,21 @@ class Money:
     @cached_property
     def partial_view(self) -> bool:
         """Most of the salary moves to another bank: we only see a slice of this person's money."""
-        return self.sweep_share >= 0.5
+        return self.sweep_share >= 0.5 and not self.prefs.other_bank_linked
+
+    @cached_property
+    def linked_view(self) -> dict | None:
+        if not self.prefs.other_bank_linked or self.sweeps.empty:
+            return None
+        amount = self.sweep_typical
+        return {"simulated": True, "amount_counted": amount,
+                "note": {"en": "Estimate from a simulated link to the other bank. Salary moved out is counted as your money.",
+                         "fi": "Arvio tämän demon simuloidusta toisen pankin linkistä. Siirtynyt palkka lasketaan omaksi rahaksesi."}}
 
     @cached_property
     def income_typical(self) -> float:
         """Salary that stays on this account each month."""
-        return r2(self.salary_typical - self.sweep_typical)
+        return r2(self.salary_typical if self.prefs.other_bank_linked else self.salary_typical - self.sweep_typical)
 
     @cached_property
     def late_pay_rate(self) -> float:
@@ -196,7 +212,7 @@ class Money:
         for c in CATEGORIES:
             out["cat:" + c] = df[df["category"] == c].groupby("month")["spend"].sum().reindex(months).fillna(0.0)
         out["spend"] = out[BASKET_ORDER].sum(axis=1)
-        out["income"] = out["salary"] + out["other_income"] - out["swept"]
+        out["income"] = out["salary"] + out["other_income"] - (0 if self.prefs.other_bank_linked else out["swept"])
         out["net"] = out["income"] - out["spend"] - out["invested"] + out["withdrawn"]
         out["end_balance"] = g["balance"].last().reindex(months)
         out["min_balance"] = g["balance"].min().reindex(months)
@@ -454,6 +470,7 @@ class Money:
             "cash": {"balance": self.balance, "fixed_due": fixed_due, "surprise_reserve": surprise_reserve,
                      "saving_left": savings_left, "cushion": self.cushion, "free": free_cash},
             "upcoming": upcoming, "spoken_for": spoken, "late_pay": late, "partial_view": self.partial_view,
+            "linked_view": self.linked_view,
         }
 
     def _status_words(self, status: str, per_day: float, usual_day: float, free_cash: float) -> tuple[str, str]:

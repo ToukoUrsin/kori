@@ -11,8 +11,10 @@ from dataclasses import dataclass, field
 from ..engine import insights, lessons, persona
 from ..engine.afford import afford
 from ..engine.core import Money
+from ..engine import loop
 from ..engine.query import PERIODS
-from ..taxonomy import BASKETS, CATEGORIES, KINDS, kind_label
+from ..state import prefs_of
+from ..taxonomy import BASKETS, CATEGORIES, EVERYDAY, KINDS, kind_label
 from . import cards as C
 
 CATS = list(CATEGORIES)
@@ -113,6 +115,34 @@ DECLARATIONS = [
      "description": "The few things worth telling the user today (runway to payday, a category running hot, small purchases adding up, "
                     "late-pay risk, wins). Use for 'what should I know', 'how am I doing', greetings and open-ended starts.",
      "parameters": {"type": "object", "properties": {}}},
+    {"name": "check_in",
+     "description": "The habit loop. Looks back at the last complete pay cycle (did everyday spending fit what the pay left, and what "
+                    "did it: a habit or one big purchase) and gives the one thing for this cycle: the active one with its progress, or "
+                    "one suggestion with why, what it is worth, how often it would have held, other ways to do it and one question "
+                    "to ask the user. Use for 'how did my last pay cycle / last month go', 'give me one thing to try', 'what should I "
+                    "change', 'help me do better', and 'how am I doing with it'.",
+     "parameters": {"type": "object", "properties": {
+         "part": {"type": "string", "enum": ["both", "look_back", "thing"],
+                  "description": "look_back = only how the last cycle went; thing = only the one thing (suggestion or progress). Default both."}}}},
+    {"name": "set_action",
+     "description": "Keep one thing for this pay cycle, or change the one that is active. Only after the user clearly agrees ('yes', "
+                    "'let's do that', 'try it') or names their own. accept_suggestion=true takes the suggestion as offered; pick=1 or 2 "
+                    "takes one of the other ways from check_in; or give kind, target and cap or amount for the user's own. To change "
+                    "the number of the active one ('make it 100 instead') give only cap (or amount for set_aside). A new thing replaces "
+                    "the old one: there is only ever one.",
+     "parameters": {"type": "object", "properties": {
+         "accept_suggestion": {"type": "boolean"},
+         "pick": {"type": "integer", "description": "1 or 2: one of the other ways offered by check_in"},
+         "kind": {"type": "string", "enum": list(loop.KINDS),
+                  "description": "cap_category = a limit on one everyday category until payday; pause_category = none of it until "
+                                 "payday; daily_pace = a daily number; set_aside = move an amount a month to saving"},
+         "target": {"type": "string", "enum": [c for c in CATS if CATEGORIES[c]["basket"] == EVERYDAY],
+                    "description": "the everyday category for cap_category, pause_category, or what a set_aside reserve is for"},
+         "cap": {"type": "number", "description": "euros until payday (cap_category) or euros a day (daily_pace)"},
+         "amount": {"type": "number", "description": "euros a month (set_aside)"}}}},
+    {"name": "clear_action",
+     "description": "Drop the active thing when the user asks to stop, drop or undo it. Everything goes back to how it was.",
+     "parameters": {"type": "object", "properties": {}}},
     {"name": "update_plan",
      "description": "Save something the user decided: a cushion to never go below, a monthly saving amount, a savings goal, or moving a "
                     "category to another basket (e.g. the user says their gym is a must). Only call when the user clearly asks for the change.",
@@ -138,6 +168,9 @@ STATUS = {
     "spender_profile": ("Reading your spending patterns", "Luen kulutustapojasi"),
     "safe_to_save": ("Checking what your buffer can spare", "Tarkistan, mitä puskuristasi liikenee"),
     "coach_notices": ("Looking at what changed", "Katson, mikä on muuttunut"),
+    "check_in": ("Checking your last pay cycle", "Tarkistan viimeisen palkkajaksosi"),
+    "set_action": ("Setting one thing for this cycle", "Asetan yhden asian tälle jaksolle"),
+    "clear_action": ("Dropping that thing", "Poistan asian"),
     "track_record": ("Replaying your past months", "Käyn läpi menneet kuukautesi"),
     "update_plan": ("Updating your plan", "Päivitän suunnitelmaasi"),
     "explain": ("Finding your own numbers for this", "Haen tähän omat lukusi"),
@@ -242,12 +275,37 @@ def _explain(m: Money, concept: str) -> dict:
     return {"concept": concept, **base[concept]}
 
 
+def _thing(s: dict) -> dict:
+    """A suggestion for the model: the words and the few numbers, not the tables."""
+    out = {k: s.get(k) for k in ("kind", "title", "target_label", "cap", "amount", "until_label", "days_left", "why", "reversible", "next")}
+    out["worth"] = (s.get("worth") or {}).get("text")
+    out["would_have_held"] = (s.get("replay") or {}).get("text")
+    out["question"] = ({"ask": s["question"]["text"],
+                        "answers": [{"if_user_says": x["label"], "then_the_thing_is": x["title"],
+                                     "set_with": "accept_suggestion=true" if x["pick"] == 0 else f"pick={x['pick']}"}
+                                    for x in s["question"]["answers"]]} if s.get("question") else None)
+    out["other_ways"] = [{"pick": i + 1, "title": o["title"], "why": o["why"]} for i, o in enumerate(s.get("alternatives") or [])]
+    return out
+
+
+def _thing_progress(p: dict) -> dict:
+    keep = ("title", "kind", "verdict", "line", "limit", "spent", "left", "left_per_week", "lands_at_current_pace", "pace_now",
+            "saving_monthly", "days_in", "days_left", "until_label")
+    out = {k: p[k] for k in keep if p.get(k) is not None}
+    f = p.get("follow_up_preview")
+    if f:
+        out["replay_of_last_cycle"] = {"label": f["label"], "text": f["text"], "held": f["held"]}
+    return out
+
+
 def execute(m: Money, state: dict, name: str, args: dict, allowed: set[float] | None = None) -> ToolOut:
     args = dict(args or {})
     if name == "safe_to_spend":
         return ToolOut(m.safe, [C.safe_card(m)])
     if name == "can_i_afford":
         c = C.afford_card(m, args)
+        if state.get("action") and c["data"].get("per_day"):
+            c["data"]["action_effect"] = loop.purchase_effect(m, state["action"], c["data"])
         return ToolOut(c["data"], [c])
     if name == "balance_forecast":
         c = C.forecast_card(m)
@@ -291,10 +349,68 @@ def execute(m: Money, state: dict, name: str, args: dict, allowed: set[float] | 
                 for it in d["items"] if it["counted"]]
         return ToolOut({**{k: v for k, v in d.items() if k != "items"}, "months": slim}, [c])
     if name == "coach_notices":
-        items = insights.notices(m, 4)
+        items = insights.notices(m, 4, state.get("action"))
         return ToolOut({"notices": [{k: v for k, v in x.items() if k in ("tone", "title", "body")} for x in items],
                         "safe_to_spend": {"amount": m.safe["amount"], "per_day": m.safe["per_day"], "days_to_payday": m.safe["days_to_payday"]}},
                        [C.notices_card(m)])
+    if name == "check_in":
+        part = args.get("part") or "both"
+        active = state.get("action")
+        data, cs = {}, []
+        if part != "thing":
+            data["last_cycle"] = loop.slim(loop.check_in(m))
+            cs.append(C.checkin_card(m))
+        if part != "look_back":
+            if active:
+                data["active_thing"] = _thing_progress(loop.progress(m, active))
+            else:
+                data["suggestion"] = _thing(loop.suggest(m))
+                data["how_to_offer"] = (
+                    "Offer exactly this one thing with its reason in one sentence. If there is a question, ask it and say in the same "
+                    "breath what each answer leads to, naming both things, so the user's answer is a choice between two named things. "
+                    "Their answer then counts as agreement: call set_action (accept_suggestion or pick). With no question, ask if they "
+                    "want to try it and call set_action only after a clear yes.")
+            cs.append(C.action_card(m, active))
+        return ToolOut(data, cs)
+    if name == "set_action":
+        active = state.get("action")
+        only_number = (active and not args.get("kind") and not args.get("accept_suggestion") and not args.get("pick")
+                       and (args.get("cap") is not None or args.get("amount") is not None))
+        try:
+            if only_number:
+                a = loop.change(state, m, cap=args.get("cap"), amount=args.get("amount"))
+            else:
+                if args.get("pick"):
+                    alts = loop.suggest(m).get("alternatives") or []
+                    i = int(args["pick"]) - 1
+                    if not 0 <= i < len(alts):
+                        return ToolOut({"error": f"pick must be between 1 and {len(alts)}"})
+                    o = alts[i]
+                    action = loop.build(m, o["kind"], o["target"], o["cap"], o["amount"])
+                else:
+                    action = loop.build(m, None if args.get("accept_suggestion") else args.get("kind"), args.get("target"),
+                                        args.get("cap"), args.get("amount"))
+                if action.get("kind") in (None, "none"):
+                    return ToolOut({"set": False, "why": action.get("why"), "next": action.get("next")})
+                a = loop.commit(state, m, action)
+        except (ValueError, TypeError) as e:
+            return ToolOut({"error": str(e)})
+        m2 = Money(m.customer_id, today=m.today, prefs=prefs_of(state, m.prefs.lang))      # setting aside changes safe to spend
+        p = loop.progress(m2, a)
+        out = {"set": True, "changed": bool(only_number), "thing": {k: a.get(k) for k in ("title", "kind", "target_label", "cap", "amount",
+                                                                                      "until_label", "why")},
+               "progress": _thing_progress(p),
+               "note": {"en": "It can be changed or dropped any time.", "fi": "Sitä voi muuttaa tai siitä voi luopua milloin vain."}[m.prefs.lang]}
+        if a["kind"] == "set_aside":
+            out["safe_to_spend_now"] = {k: m2.safe[k] for k in ("amount", "per_day", "days_to_payday", "status")}
+        return ToolOut(out, [C.action_card(m2, a)], [{"type": "action_set", "action": a}])
+    if name == "clear_action":
+        old = loop.drop(state)
+        if not old:
+            return ToolOut({"cleared": False, "note": "nothing was set"})
+        return ToolOut({"cleared": True, "dropped": old.get("title"),
+                        "note": {"en": "Dropped. Nothing else changed.", "fi": "Poistettu. Mikään muu ei muuttunut."}[m.prefs.lang]},
+                       [], [{"type": "action_cleared"}])
     if name == "update_plan":
         p = state.setdefault("prefs", {})
         changed = []

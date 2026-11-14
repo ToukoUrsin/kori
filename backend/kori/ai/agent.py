@@ -114,9 +114,9 @@ def get_session(sid: str) -> Session | None:
     return _sessions.get(sid)
 
 
-def _config(m: Money, mode: str) -> types.GenerateContentConfig:
+def _config(m: Money, mode: str, action: dict | None = None) -> types.GenerateContentConfig:
     return types.GenerateContentConfig(
-        system_instruction=prompts.system_prompt(m, mode), tools=TOOLS,
+        system_instruction=prompts.system_prompt(m, mode, action), tools=TOOLS,
         automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True),
         thinking_config=types.ThinkingConfig(thinking_level="low"))
 
@@ -222,7 +222,7 @@ async def run_turn(sess: Session, text: str, mode: str, emit: Emit) -> dict:
 
         async def emit(kind: str, data: dict):
             await raw_emit(kind, adapt(m, data))
-    cfg = _config(m, mode)
+    cfg = _config(m, mode, st.get("action"))
     turn: list = [types.Content(role="user", parts=[types.Part(text=text)])]
     allowed: set[float] = grounding.collect(text)
     used: list[str] = []
@@ -271,12 +271,16 @@ async def run_turn(sess: Session, text: str, mode: str, emit: Emit) -> dict:
                     if e["type"] == "plan_changed":
                         S.save(sess.device, sess.customer_id, st)
                         m = Money(sess.customer_id, prefs=S.prefs_of(st, sess.lang))
-                        cfg = _config(m, mode)
+                        cfg = _config(m, mode, st.get("action"))
                         fresh = T.execute(m, st, "safe_to_spend", {})
                         out.result["safe_to_spend_now"] = {k: fresh.result[k] for k in ("amount", "per_day", "days_to_payday", "status")}
                         grounding.collect(out.result, allowed)
                         cards.append(fresh.cards[0])
                         await emit("card", {"card": fresh.cards[0]})
+                    elif e["type"] in ("action_set", "action_cleared"):
+                        S.save(sess.device, sess.customer_id, st)
+                        m = Money(sess.customer_id, prefs=S.prefs_of(st, sess.lang))
+                        cfg = _config(m, mode, st.get("action"))
                     await emit("effect", e)
                 responses.append(types.Part(function_response=types.FunctionResponse(id=fc.id, name=name, response={"result": out.result})))
             turn.append(types.Content(role="user", parts=responses))
@@ -329,7 +333,8 @@ async def run_turn(sess: Session, text: str, mode: str, emit: Emit) -> dict:
     done = {"grounded": not flagged, "flagged": flagged, "withheld": withheld, "error": failed,
             "checked": len(grounding.numbers_in_text(final, sess.lang)),
             "followups": T.followups(used, sess.lang), "tools": used, "ms": int((time.time() - t0) * 1000),
-            "consistency": consistency}
+            "consistency": consistency,
+            "figures": grounding.figures(final, [{"tool": t, "result": r} for t, r in zip(used, results)], sess.lang)}
     await emit("done", done)
     return {"text": final, "cards": cards, **done}
 

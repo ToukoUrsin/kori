@@ -18,6 +18,7 @@ from .ai import agent, cards as C, tools as T
 from .data import get_customer
 from .engine import insights, lessons, persona
 from .engine.core import Money
+from .engine import loop
 from .engine.query import month_label, query, tx_row
 from .engine.whatif import what_if
 from .taxonomy import BASKETS, CATEGORIES, cat_label
@@ -103,19 +104,31 @@ def home(customer: str, lang: str = "en", x_kori_device: str | None = Header(Non
     prof = persona.profile(m)
     fc = C.forecast_card(m)
     return W(m, {
-        "persona": _persona(m), "pay_word": ("eläkepäivä" if m.customer.age >= 68 and m.prefs.lang == "fi" else
-                                               "pension day" if m.customer.age >= 68 else
-                                               "palkkapäivä" if m.prefs.lang == "fi" else "payday"), "today": m.today.isoformat(),
+        "persona": _persona(m), "pay_word": loop._W(m).payday, "today": m.today.isoformat(),
         "greeting": L(f"Hi {S.name_of(customer)}", f"Hei {S.name_of(customer)}"),
         "safe": {**m.safe, "cushion": m.cushion}, "forecast": fc["data"], "baskets": m.baskets(),
-        "notices": insights.notices(m, 5), "save": m.safe_to_save,
+        "notices": insights.notices(m, 5, st.get("action")), "save": m.safe_to_save,
         "profile": {"archetype": prof["archetype"], "fitness": prof["fitness"], "shape": prof["shape"]},
         "suggestions": SUGGEST[m.prefs.lang], "goal": _goal(m),
         "lessons_total": len(ls),
         "lessons": {"done": sum(1 for x in ls if done.get(x["id"], {}).get("done")), "total": len(ls), "lessons_total": len(ls),
                     "next": {"id": nxt["id"], "title": nxt["title"], "minutes": nxt["minutes"], "concept": nxt["concept"]} if nxt else None},
         "pins": len(st.get("pins", [])),
+        "loop": _loop_home(m, st),
     })
+
+
+def _loop_home(m: Money, st: dict) -> dict:
+    """The habit loop on the home screen: how the last cycle went, and the one thing (active, or suggested)."""
+    ci = loop.check_in(m)
+    c = ci.get("cycle") or {}
+    action = st.get("action")
+    return {"check_in": {"available": ci["available"], "headline": ci["headline"], "what_did_it": ci.get("driver_line"),
+                         "history_line": ci.get("history_line"), "period": c.get("label"), "within": c.get("within"),
+                         "over_by": c.get("over_by"), "difference": c.get("difference"), "partial_view": ci["partial_view"],
+                         "history": [{"label": r["label"], "within": r["within"]} for r in ci["history"]["cycles"]]},
+            "action": {**loop.progress(m, action), "why": action.get("why")} if action else None,
+            "suggestion": None if action else loop.suggest(m)}
 
 
 class CardReq(BaseModel):
@@ -203,6 +216,115 @@ class PlanReq(BaseModel):
     basket_overrides: dict[str, str] | None = None
 
 
+class ActionReq(BaseModel):
+    customer: str
+    lang: str = "en"
+    kind: str | None = None          # cap_category | pause_category | daily_pace | set_aside
+    target: str | None = None
+    cap: float | None = None
+    amount: float | None = None
+    accept_suggestion: bool = False
+    pick: int | None = None          # 1 or 2: one of the suggestion's other ways
+
+
+REVERSIBLE = {"en": "You can change it or drop it any time.", "fi": "Voit muuttaa sitä tai luopua siitä milloin vain."}
+
+
+def _action_view(customer: str, lang: str, device: str, st: dict) -> dict:
+    """The loop after a change, on fresh numbers (setting money aside moves safe to spend)."""
+    m = Money(customer, prefs=S.prefs_of(st, _lang(lang)))
+    a = st.get("action")
+    return W(m, {"active": {**loop.progress(m, a), "why": a.get("why")} if a else None,
+                 "suggestion": None if a else loop.suggest(m), "check_in": loop.check_in(m),
+                 "safe": {k: m.safe[k] for k in ("amount", "per_day", "days_to_payday", "status")},
+                 "note": REVERSIBLE[m.prefs.lang]})
+
+
+@app.get("/api/action")
+def action_get(customer: str, lang: str = "en", x_kori_device: str | None = Header(None)):
+    """The habit loop: the last pay cycle, and the one thing for this one (active with progress, or the suggestion)."""
+    _, st, device = _money(customer, lang, x_kori_device)
+    return _action_view(customer, lang, device, st)
+
+
+@app.post("/api/action")
+def action_post(req: ActionReq, x_kori_device: str | None = Header(None)):
+    """Keep one thing: the suggestion (accept_suggestion), one of its other ways (pick), or the user's own."""
+    m, st, device = _money(req.customer, req.lang, x_kori_device)
+    try:
+        if req.pick:
+            alts = loop.suggest(m).get("alternatives") or []
+            if not 1 <= req.pick <= len(alts):
+                raise ValueError(f"pick must be between 1 and {len(alts)}")
+            o = alts[req.pick - 1]
+            action = loop.build(m, o["kind"], o["target"], o["cap"], o["amount"])
+        else:
+            action = loop.build(m, None if req.accept_suggestion else req.kind, req.target, req.cap, req.amount)
+    except ValueError as e:
+        raise HTTPException(422, str(e))
+    if action.get("kind") in (None, "none"):
+        return {**_action_view(req.customer, req.lang, device, st), "set": False}
+    loop.commit(st, m, action)
+    S.save(device, req.customer, st)
+    return {**_action_view(req.customer, req.lang, device, st), "set": True}
+
+
+@app.put("/api/action")
+def action_put(req: ActionReq, x_kori_device: str | None = Header(None)):
+    """Change the number of the active thing."""
+    m, st, device = _money(req.customer, req.lang, x_kori_device)
+    if not st.get("action"):
+        raise HTTPException(404, "nothing is set")
+    if req.cap is None and req.amount is None:
+        raise HTTPException(422, "give cap or amount")
+    loop.change(st, m, cap=req.cap, amount=req.amount)
+    S.save(device, req.customer, st)
+    return {**_action_view(req.customer, req.lang, device, st), "set": True}
+
+
+@app.delete("/api/action")
+def action_delete(customer: str, lang: str = "en", x_kori_device: str | None = Header(None)):
+    """Drop it. Everything goes back to how it was."""
+    _, st, device = _money(customer, lang, x_kori_device)
+    old = loop.drop(st)
+    S.save(device, customer, st)
+    return {**_action_view(customer, lang, device, st), "cleared": bool(old), "previous": old.get("title") if old else None}
+
+
+class ConsentReq(BaseModel):
+    customer: str
+    other_bank: bool = False
+    lang: str = "en"
+
+
+def _consent(m: Money, linked: bool) -> dict:
+    lang = m.prefs.lang
+    L = lambda en, fi: en if lang == "en" else fi
+    return {"scopes": [
+        {"key": "transactions", "granted": True, "required": True, "label": L("Transactions", "Tapahtumat"), "detail": L("Your transactions on this account.", "Tämän tilin tapahtumat.")},
+        {"key": "other_bank", "granted": bool(linked), "simulated": True, "label": L("Another bank account", "Toisen pankin tili"),
+         "detail": L("A simulated PSD2 link adds salary moved to another bank." if m.sweep_typical else "This demo customer has no salary transfer to add.",
+                      "Simuloitu PSD2-linkki lisää toiseen pankkiin siirtyvän palkan." if m.sweep_typical else "Tällä demoasiakkaalla ei ole lisättävää palkkasiirtoa.")}
+    ], "partial_view": bool(m.partial_view),
+    "note": L("The other-bank link is simulated in this demo." if linked else ("I only see part of your money until you link the other account." if m.partial_view else "I can already see this account's transactions."),
+               "Toisen pankin linkki on tässä demossa simuloitu." if linked else ("Näen vain osan rahoistasi, kunnes liität toisen tilin." if m.partial_view else "Näen jo tämän tilin tapahtumat."))}
+
+
+@app.get("/api/consent")
+def consent_get(customer: str, lang: str = "en", x_kori_device: str | None = Header(None)):
+    m, st, _ = _money(customer, lang, x_kori_device)
+    return W(m, _consent(m, bool(st["prefs"].get("other_bank_linked"))))
+
+
+@app.put("/api/consent")
+def consent_put(req: ConsentReq, x_kori_device: str | None = Header(None)):
+    m, st, device = _money(req.customer, req.lang, x_kori_device)
+    st["prefs"]["other_bank_linked"] = bool(req.other_bank)
+    S.save(device, req.customer, st)
+    m, _, _ = _money(req.customer, req.lang, x_kori_device)
+    return W(m, _consent(m, bool(req.other_bank)))
+
+
 @app.put("/api/plan")
 def plan_put(req: PlanReq, x_kori_device: str | None = Header(None)):
     m, st, device = _money(req.customer, req.lang, x_kori_device)
@@ -216,6 +338,9 @@ def plan_put(req: PlanReq, x_kori_device: str | None = Header(None)):
         p["goal"] = {"name": str(req.goal.get("name") or "Goal")[:40], "amount": float(req.goal.get("amount") or 0)}
     if req.clear_goal:
         p["goal"] = None
+    before_usual = dict(m.usual.get("categories", {}))
+    before_baskets = {b: m.usual.get(b, 0.0) for b in BASKETS}
+    before_basket_map = {c: m._basket_of(c) for c in CATEGORIES}
     if req.basket_overrides is not None:
         p["basket_overrides"] = {k: v for k, v in req.basket_overrides.items() if k in CATEGORIES and v in BASKETS}
     S.save(device, req.customer, st)
@@ -226,6 +351,12 @@ def plan_put(req: PlanReq, x_kori_device: str | None = Header(None)):
                              "fi": "Turvallinen käyttövara ei muuttunut, koska tämän palkkajakson tuloraja on jo tilillä vapaana olevaa rahaa pienempi."}[m.prefs.lang]
     else:
         result["reason"] = None
+    if req.basket_overrides is not None:
+        after_m, _, _ = _money(req.customer, req.lang, x_kori_device)
+        result["basket_changes"] = [{"category": c, "from_basket": before_basket_map.get(c), "to_basket": after_m._basket_of(c),
+                                      "usual_month_before": before_baskets, "usual_month_after": {b: after_m.usual.get(b, 0.0) for b in BASKETS},
+                                      "usual_month_changed": before_baskets != {b: after_m.usual.get(b, 0.0) for b in BASKETS}}
+                                     for c in req.basket_overrides if c in CATEGORIES]
     return result
 
 
@@ -258,6 +389,12 @@ class TeachReq(BaseModel):
     answer: str
 
 
+class SortReq(BaseModel):
+    customer: str
+    lang: str = "en"
+    picks: dict | list = {}
+
+
 @app.post("/api/lessons/{lesson_id}/teachback")
 async def lesson_teachback(lesson_id: str, req: TeachReq, x_kori_device: str | None = Header(None)):
     m, st, device = _money(req.customer, req.lang, x_kori_device)
@@ -269,6 +406,29 @@ async def lesson_teachback(lesson_id: str, req: TeachReq, x_kori_device: str | N
                                                 "answer": req.answer.strip()[:400], "teachback": g}
     S.save(device, req.customer, st)
     return g
+
+
+@app.post("/api/lessons/{lesson_id}/sort")
+def lesson_sort(lesson_id: str, req: SortReq, x_kori_device: str | None = Header(None)):
+    m, st, device = _money(req.customer, req.lang, x_kori_device)
+    le = lessons.get(m, lesson_id)
+    if not le:
+        raise HTTPException(404, "lesson not available")
+    items = lessons.sort_items(m)
+    picks = req.picks if isinstance(req.picks, dict) else {str(x.get("id")): x.get("basket") for x in req.picks if isinstance(x, dict)}
+    rows = []
+    right = 0
+    for item in items:
+        picked = picks.get(str(item["id"]), picks.get(item["id"]))
+        ok = picked == item["basket"]
+        right += int(ok)
+        rows.append({"id": item["id"], "picked": picked, "correct": item["basket"], "right": ok,
+                     "explanation": item["why"], "payment": item})
+    score = {"right": right, "total": len(rows), "percent": round(100 * right / len(rows)) if rows else 0}
+    st.setdefault("lessons", {}).setdefault(lesson_id, {})["sort"] = {"score": score, "items": rows, "ts": time.time()}
+    S.save(device, req.customer, st)
+    return W(m, {"lesson": lesson_id, "score": score, "items": rows,
+                 "stored": True, "basket_overrides": "Use PUT /api/plan with basket_overrides to move a payment for your situation."})
 
 
 class DoneReq(BaseModel):

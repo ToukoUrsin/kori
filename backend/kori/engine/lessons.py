@@ -47,7 +47,10 @@ def build(m: Money) -> list[dict]:
     lesson("baskets", L("Three baskets", "Kolme koria"),
            L("Every euro you spend falls into one of three baskets. Each basket needs a different kind of attention.",
              "Jokainen käyttämäsi euro putoaa yhteen kolmesta korista. Jokainen kori vaatii erilaista huomiota."),
-           [{"title": L("Fixed musts", "Kiinteät pakolliset"), "basket": FIXED,
+           [{"title": L("Sort six recent payments", "Lajittele kuusi maksutapahtumaasi"), "kind": "sort", "items": sort_items(m),
+             "body": L("Put each payment in the basket that fits your life. You can move one later if your situation is different.",
+                       "Laita jokainen maksu koriin, joka sopii sinun elämääsi. Voit siirtää maksun myöhemmin, jos tilanteesi on erilainen."),
+            }, {"title": L("Fixed musts", "Kiinteät pakolliset"), "basket": FIXED,
              "body": L(f"Rent, housing costs, utilities. Same size, same time, every month. Yours: {E(u[FIXED])} a month. You don't decide these monthly; you decide them once.",
                        f"Vuokra, asumiskulut, laskut. Sama summa, sama aika, joka kuukausi. Sinulla: {E(u[FIXED])} kuussa. Näistä ei päätetä joka kuukausi, vaan kerran.")},
             {"title": L("Surprise musts", "Yllättävät pakolliset"), "basket": SURPRISE,
@@ -234,6 +237,30 @@ def build(m: Money) -> list[dict]:
                {"prompt": L("Why look at a change per year instead of per month?", "Miksi muutosta kannattaa katsoa vuoden eikä kuukauden tasolla?"),
                 "rubric": ["says a small monthly amount looks trivial but the yearly total is meaningful",
                            "gives or refers to a concrete amount or goal it could fund"]})
+    return out
+
+
+def sort_items(m: Money) -> list[dict]:
+    """Six recognisable recent payments, covering all baskets where possible."""
+    d = m.df[(m.df["spend"] > 0) & (m.df["date"] >= m.today - __import__("datetime").timedelta(days=120))].copy()
+    chosen = []
+    for b in (FIXED, SURPRISE, EVERYDAY):
+        x = d[d["basket"] == b].sort_values(["date", "spend"], ascending=[False, False])
+        if len(x): chosen.append(x.iloc[0])
+    remaining = d[~d.index.isin([r.name for r in chosen])].sort_values(["date", "spend"], ascending=[False, False])
+    chosen.extend([r for _, r in remaining.iterrows()][:max(0, 6 - len(chosen))])
+    chosen = chosen[:6]
+    lang = m.prefs.lang
+    L = lambda en, fi: en if lang == "en" else fi
+    why = {FIXED: L("The same kind of payment repeats: a fixed must.", "Samantyyppinen maksu toistuu: kiinteä pakollinen."),
+           SURPRISE: L("You need it, but you cannot know exactly when: a surprise must.", "Tarvitset sen, mutta et voi tietää tarkkaa ajankohtaa: yllättävä pakollinen."),
+           EVERYDAY: L("It is everyday spending you can steer as you go.", "Se on arjen menoa, jota voit ohjata matkan varrella.")}
+    out = []
+    for r in chosen:
+        out.append({"id": int(r.id), "merchant": r.merchant if isinstance(r.merchant, str) else None, "date": r.date.isoformat(), "amount": r2(r.spend),
+                    "category": r.category, "category_label": cat_label(r.category, lang), "basket": r.basket,
+                    "basket_label": {FIXED: "Fixed musts", SURPRISE: "Surprise musts", EVERYDAY: "Everyday"}[r.basket] if lang == "en" else {FIXED: "Kiinteät pakolliset", SURPRISE: "Yllättävät pakolliset", EVERYDAY: "Arjen menot"}[r.basket],
+                    "why": why[r.basket]})
     return out
 
 

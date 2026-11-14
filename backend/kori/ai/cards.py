@@ -13,6 +13,7 @@ from ..engine.core import Money
 from ..engine.insights import eur
 from ..engine.query import query, resolve_period
 from ..engine.whatif import what_if
+from ..engine import loop
 from ..state import new_id
 from ..taxonomy import BASKETS, CATEGORIES, cat_label, kind_label
 
@@ -178,6 +179,31 @@ def notices_card(m: Money) -> dict:
                 {"tool": "coach_notices", "args": {}})
 
 
+def checkin_card(m: Money) -> dict:
+    """How the last complete pay cycle went: what the pay left for everyday, what everyday took, what did it."""
+    data = loop.check_in(m)
+    w = loop._W(m)
+    title = w.L(f"Your last {w.cycle}", "Viime eläkejaksosi" if w.pension else "Viime palkkajaksosi")
+    return card("checkin", title, data, {"tool": "check_in", "args": {"part": "look_back"}}, data.get("cycle", {}).get("label") if data.get("cycle") else None)
+
+
+ACTION_KEYS = ("kind", "target", "cap", "amount", "cycle_start", "set_on")
+
+
+def action_card(m: Money, action: dict | None = None) -> dict:
+    """The one thing: its progress when one is set, else the suggestion (or why there is none yet)."""
+    w = loop._W(m)
+    if action and action.get("kind") in loop.KINDS:
+        p = loop.progress(m, action)
+        return card("action", p["title"], {"state": "active", "progress": p, "why": action.get("why")},
+                    {"tool": "set_action", "args": {"action": {k: action.get(k) for k in ACTION_KEYS}}},
+                    w.L("Your one thing", "Yksi asiasi"))
+    s = loop.suggest(m)
+    title = w.L(f"One thing for this {w.cycle}", "Yksi asia tälle eläkejaksolle" if w.pension else "Yksi asia tälle palkkajaksolle")
+    return card("action", title, {"state": "none" if s["kind"] == "none" else "suggested", "suggestion": s},
+                {"tool": "check_in", "args": {"part": "thing"}})
+
+
 def lesson_card(m: Money, lesson_id: str) -> dict | None:
     le = lessons.get(m, lesson_id)
     if not le:
@@ -213,6 +239,10 @@ def from_source(m: Money, tool: str, args: dict) -> dict | None:
         return save_card(m)
     if tool == "coach_notices":
         return notices_card(m)
+    if tool == "check_in":
+        return action_card(m) if args.get("part") == "thing" else checkin_card(m)
+    if tool == "set_action":
+        return action_card(m, args.get("action") if isinstance(args.get("action"), dict) else None)
     if tool == "track_record":
         return track_card(m)
     if tool == "start_lesson":

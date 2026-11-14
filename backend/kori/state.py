@@ -33,7 +33,8 @@ def name_of(customer_id: str) -> str:
 
 
 def _blank() -> dict:
-    return {"prefs": {"cushion": None, "savings_goal_monthly": None, "basket_overrides": {}, "goal": None},
+    return {"prefs": {"cushion": None, "savings_goal_monthly": None, "basket_overrides": {}, "goal": None,
+                        "other_bank_linked": False},
             "pins": [], "lessons": {}, "created": time.time()}
 
 
@@ -74,7 +75,8 @@ def prefs_of(state: dict, lang: str = "en") -> Prefs:
     p = state.get("prefs") or {}
     return Prefs(lang=lang if lang in ("en", "fi") else "en", cushion=p.get("cushion"),
                  savings_goal_monthly=p.get("savings_goal_monthly"),
-                 basket_overrides=dict(p.get("basket_overrides") or {}), goal=p.get("goal"))
+                 basket_overrides=dict(p.get("basket_overrides") or {}), goal=p.get("goal"),
+                 other_bank_linked=bool(p.get("other_bank_linked", False)))
 
 
 def money(device: str, customer_id: str, lang: str = "en") -> tuple[Money, dict]:

@@ -30,6 +30,10 @@ Tie answers back to the baskets when it helps the user see where a euro belongs.
 - Never recommend for or against a loan, credit card, pay-later product or investment. Say that in one sentence, then offer to
   show what a stated monthly payment or saving would do to safe to spend with a what-if.
 - No shame, no moralising, no "you should". Describe what the numbers show and offer one option. The user decides.
+- ONE THING: for "how did last month go", "what should I change", "give me one thing to try" call check_in. Offer exactly one thing,
+  with its reason and number in one sentence. When the tool gives a question, ask it and name what each answer leads to. Call
+  set_action only after the user chooses or agrees. Then say it is set, what to watch, and that it can be changed or dropped any
+  time. There is only ever one thing: a new one replaces the old one.
 - If the user is in real financial distress (cannot pay rent or bills), be kind, say what the numbers show, and suggest talking to
   their bank's customer service or the free Guarantee Foundation (Takuusäätiö) debt advice line.
 - You only see this account. Merchant names in this demo are made up; categories and amounts are from the dataset.
@@ -57,20 +61,30 @@ Say amounts as whole euros in words a person would use ("about a thousand and ni
 Never read out long lists; the screen shows them. If the user interrupts or changes topic, follow them."""
 
 
-def system_prompt(m: Money, mode: str = "text") -> str:
+def system_prompt(m: Money, mode: str = "text", action: dict | None = None) -> str:
     lang = m.prefs.lang
     t = m.today
     c = m.customer
     day = f"{WEEKDAY['en'][t.weekday()]} {t.day} {MONTHS_LONG['en'][t.month - 1]} {t.year}"
+    linked_line = (f"This is a simulated link to another bank and adds about {m.linked_view['amount_counted']:.0f} EUR of salary moved out to your view. Call it an estimate."
+                   if m.linked_view else
+                   ("IMPORTANT: most of this user’s salary moves to another bank right after payday, so you only see part of their money. Say so when it matters and never judge their total finances."
+                    if m.partial_view else "This account receives the salary and pays the bills."))
     ctx = f"""
 # Context
 - Today is {day} (the demo runs on a fixed date; data is visible up to today).
 - User: {name_of(m.customer_id)}, {c.age} years old, lives in {c.area}. Currency: euro.
 - App language: {'Finnish' if lang == 'fi' else 'English'}. {'Kirjoita luontevaa, selkeää suomea ja sinuttele.' if lang == 'fi' else ''}
 - History available: {len(m.full_months)} complete months. {'This user lives on a pension. Always say "pension" and "pension day" (Finnish: eläke, eläkepäivä), never salary, pay or payday. It' if is_pensioner(c.age) else 'Pay'} usually arrives on the 15th, sometimes at the end of the month.
-- {'IMPORTANT: most of this user’s salary moves to another bank right after payday, so you only see part of their money. Say so when it matters and never judge their total finances.' if m.partial_view else 'This account receives the salary and pays the bills.'}
+- {linked_line}
 - Plan: cushion {m.cushion:.0f} EUR; planned monthly saving {m.savings_plan:.0f} EUR{'; goal: ' + str(m.prefs.goal) if m.prefs.goal else ''}."""
     ctx += f"\n- Current money status: {m.safe['status']} ({m.safe['status_label']}). {m.safe['status_line']}"
+    # The action is kept in the per-device state and is deliberately one line
+    # so the model can relate affordability questions to it without inventing
+    # a second budget.
+    if action:
+        ctx += (f"\n- The user's one thing for this pay cycle: \"{action.get('title')}\" (set on {action.get('set_on')}). For how it is "
+                f"going call check_in with part=thing. To change its number call set_action with only cap or amount. To drop it call clear_action.")
     ctx += "\n- Tone rule: when status is tight, very_tight or empty, never say comfortable, plenty, room, breathing room, or more room. Name the constraint plainly and offer one concrete option."
     if mode == "voice":
         ctx += "\n- If the user names today or this week, lead with that period's figure (this_week or a calculated day figure), then mention the until-payday figure."
@@ -90,4 +104,5 @@ Learner's answer: "{answer}"
 
 Return JSON: {{"passed": true|false, "got": "one short sentence naming what they got right, quoting their idea",
 "missing": "one short sentence with the one thing to add, or empty if nothing", "encouragement": "one short warm sentence"}}
-Write in {language}. Do not mention any number that is not in the lesson text above."""
+Write in {language}. Do not mention any number that is not in the lesson text above.
+No dashes between clauses: use a comma or a full stop."""

@@ -134,3 +134,67 @@ def consistency_issues(results: list[dict]) -> list[dict]:
         walk(result)
     return [{"quantity": key, "values": sorted({round(v, 2) for v in vals})}
             for key, vals in found.items() if len({round(v, 2) for v in vals}) > 1]
+
+
+_FIELD_LABELS = {
+    "amount": ("Safe to spend until payday", "Turvallista käyttää palkkapäivään asti"),
+    "per_day": ("Safe pace per day", "Turvallinen päivätahti"),
+    "this_week": ("Safe to spend this week", "Turvallista käyttää tällä viikolla"),
+    "usual_per_day": ("Your usual everyday pace per day", "Tavallinen arjen päivätahtisi"),
+    "everyday_spent": ("Everyday spending in the pay cycle", "Palkkajakson arjen menot"),
+    "everyday_available": ("Everyday money left by income", "Tuloista arkeen jäävä raha"),
+    "total": ("Total in the tool result", "Työkalun tulos yhteensä"),
+}
+
+
+def _paths(obj, path=""):
+    if isinstance(obj, bool) or obj is None:
+        return
+    if isinstance(obj, (int, float)):
+        yield path, float(obj)
+    elif isinstance(obj, dict):
+        for k, v in obj.items():
+            yield from _paths(v, f"{path}.{k}" if path else str(k))
+    elif isinstance(obj, (list, tuple)):
+        for i, v in enumerate(obj):
+            yield from _paths(v, f"{path}[{i}]")
+
+
+def _fallback_label(tool: str, path: str, lang: str) -> str:
+    key = path.rsplit(".", 1)[-1].split("[")[0]
+    if key in _FIELD_LABELS:
+        return _FIELD_LABELS[key][1 if lang == "fi" else 0]
+    words = key.replace("_", " ").strip() or "figure"
+    if lang == "fi":
+        words = {"count": "määrä", "spent": "käytetty", "usual": "tavallinen", "total": "yhteensä",
+                 "difference": "ero", "over_by": "ylitys", "days_left": "päiviä jäljellä"}.get(key, words)
+        return f"{tool.replace('_', ' ')}: {words}"
+    title = tool.replace("_", " ").title()
+    return f"{title}: {words}" if lang == "en" else f"{title}: {words}"
+
+
+def figures(text: str, results: list, lang: str = "en") -> list[dict]:
+    """Map each number written in an answer to its first matching tool field.
+
+    ``results`` accepts either plain result dicts or ``{tool, result}`` records.
+    Rounded speech keeps the source field and is marked as rounded.
+    """
+    paths = []
+    for item in results:
+        if isinstance(item, dict) and "result" in item:
+            tool, obj = item.get("tool", "tool"), item.get("result")
+        else:
+            tool, obj = "tool", item
+        paths.extend((tool, p, abs(v)) for p, v in _paths(obj))
+    out = []
+    for written, value in numbers_in_text(text, lang):
+        match = next(((tool, path, source) for tool, path, source in paths
+                      if abs(source - value) < 1e-9 or abs(round(source) - value) < 0.5), None)
+        if not match:
+            continue
+        tool, path, source = match
+        key = path.rsplit(".", 1)[-1].split("[")[0]
+        label = _fallback_label(tool, path, lang)
+        out.append({"text": written, "value": value, "tool": tool, "path": path,
+                    "label": label, "rounded": abs(source - value) > 1e-9})
+    return out

@@ -80,7 +80,7 @@ def tidy(text: str) -> str:
     return text.replace("..", ".").replace(".,", ".,").replace(". .", ".")
 
 
-def notices(m: Money, limit: int = 6) -> list[dict]:
+def notices(m: Money, limit: int = 6, action: dict | None = None) -> list[dict]:
     lang = m.prefs.lang
     L = lambda en, fi: en if lang == "en" else fi
     E = lambda v, cents=False: eur(v, lang, cents)
@@ -99,6 +99,12 @@ def notices(m: Money, limit: int = 6) -> list[dict]:
             L(f"About {E(m.sweep_typical)} of your salary moves to another bank the day after payday. My numbers cover what stays here. Linking the other account would give you the full picture.",
               f"Noin {E(m.sweep_typical)} palkastasi siirtyy toiseen pankkiin palkkapäivän jälkeen. Lukuni kattavat sen, mikä jää tänne. Toisen tilin liittäminen näyttäisi koko kuvan."),
             L("What can you see about my money?", "Mitä näet rahoistani?"), metric=m.sweep_typical)
+    elif m.linked_view:
+        add("linked_view", "info", 95,
+            L("Your linked view adds the salary moved out", "Liitetty näkymä lisää siirtyneen palkan"),
+            L(f"This demo counts about {E(m.linked_view['amount_counted'])} moved to another bank as your money. It is an estimate from a simulated link.",
+              f"Tässä demossa noin {E(m.linked_view['amount_counted'])} toiseen pankkiin siirtynyttä rahaa lasketaan omaksesi. Arvio tulee simuloidusta linkistä."),
+            L("What did the other-bank link add?", "Mitä toisen pankin linkki lisäsi?"), metric=m.linked_view["amount_counted"])
 
     # 0b. pay has not arrived on the 15th this month
     if not m.paid_this_month and m.today.day >= 15 and not m.partial_view and len(m.salaries):
@@ -260,5 +266,13 @@ def notices(m: Money, limit: int = 6) -> list[dict]:
     except KeyError:
         pass
 
+    if action:
+        from .loop import progress as action_progress
+        p = action_progress(m, action)
+        if p["verdict"] in ("at_risk", "over"):
+            add("action_" + p["verdict"], "warn", 110,
+                L("Your one thing needs attention", "Yksi asiasi tarvitsee huomiota"),
+                p["line"],
+                L("How am I doing with it?", "Miten minulla menee sen kanssa?"), metric=p.get("spent"))
     out.sort(key=lambda x: -x["priority"])
     return out[:limit]
