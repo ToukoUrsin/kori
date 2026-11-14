@@ -714,7 +714,7 @@
       var k = this.children; for (var i = k.length - 1; i >= 0; i--) if (own(k[i])) k[i].remove();
       if (!p) return;
       var tile = this.getAttribute("layout") === "tile", meta = [p.brand && String(p.name || "").toLowerCase().indexOf(String(p.brand).toLowerCase()) !== 0 ? p.brand : "", p.size || p.store].filter(Boolean).slice(0, tile ? 1 : 2).join(" · ");
-      var img = h("img", "k-pic" + (tile ? " l" : "")); img.alt = ""; img.loading = "eager"; if (p.image) img.src = p.image; img.onerror = function () { img.style.visibility = "hidden"; };
+      var img = h("img", "k-pic" + (tile ? " l" : "")); img.alt = ""; img.loading = "eager"; if (p.image) img.src = p.image; img.onerror = function () { if (p.image && !img._again) { img._again = 1; setTimeout(function () { img.src = p.image + "&r=1"; }, 1200); } else img.style.visibility = "hidden"; };
       var text = h("div", "k-ptext", '<div class="k-pname">' + esc(p.name || "") + "</div>" + (meta ? '<div class="k-pmeta">' + esc(meta) + "</div>" : ""));
       var first = this.firstChild;
       this.insertBefore(img, first); this.insertBefore(text, first);

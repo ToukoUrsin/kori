@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import asyncio
 import hashlib
+import io
 import json
 import logging
 import os
@@ -65,7 +66,25 @@ def lab_static(path: str):
     return FileResponse(config.WEB_DIST / "index.html", headers={"Cache-Control": "no-cache"})
 
 
-_IMG_DIR = config.STATE_DIR / "lab_img"
+_IMG_DIR = config.STATE_DIR / "lab_img_v2"     # v1 kept the shops' originals, megabytes for a thumbnail
+_IMG_EDGE = 480                                # the longest side a view ever shows, at phone density
+
+
+def small(body: bytes, ctype: str) -> tuple[bytes, str]:
+    """A shop's picture cut to what a phone shows: a 3000 px original becomes a few kilobytes. Anything that cannot be
+    read as a picture (or is small already) passes through untouched."""
+    try:
+        from PIL import Image
+        im = Image.open(io.BytesIO(body))
+        if max(im.size) <= _IMG_EDGE and len(body) <= 60_000:
+            return body, ctype
+        im.thumbnail((_IMG_EDGE, _IMG_EDGE))
+        alpha = im.mode in ("RGBA", "LA", "PA") or (im.mode == "P" and "transparency" in im.info)
+        out = io.BytesIO()
+        im.convert("RGBA" if alpha else "RGB").save(out, "WEBP", quality=82, method=4)
+        return out.getvalue(), "image/webp"
+    except Exception:   # noqa: BLE001 - an odd file is still better shown than dropped
+        return body, ctype
 _UA = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0 Safari/537.36"
 
 
@@ -87,7 +106,8 @@ def img(k: str | None = None, u: str | None = None):
             ctype = (r.headers.get("content-type") or "").split(";")[0].strip().lower()
             if r.status_code != 200 or not ctype.startswith("image/") or len(r.content) > 5_000_000:
                 raise HTTPException(502, "the picture could not be loaded")
-            body_f.write_bytes(r.content)
+            body, ctype = small(r.content, ctype)
+            body_f.write_bytes(body)
             type_f.write_text(ctype)
         except httpx.HTTPError as e:
             raise HTTPException(502, "the picture could not be loaded") from e
