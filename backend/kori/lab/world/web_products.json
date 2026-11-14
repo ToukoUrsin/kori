@@ -1,102 +1,940 @@
-[
-  {
-    "name": "Lenovo IdeaPad Slim 3 15ABR8 laptop",
-    "price": 549.0,
+{
+ "fetched": "2026-11-14",
+ "note": "Really fetched by build_web_products(); used only when the live call fails.",
+ "queries": {
+  "laptop": [
+   {
+    "name": "Lenovo V15 G6 15,6\" kannettava tietokone, Windows 11 Pro (83M40009MX)",
+    "price": 549.99,
     "currency": "EUR",
-    "image": "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?auto=format&fit=crop&w=800&q=80",
-    "url": "https://www.verkkokauppa.com/fi/product/856713/Lenovo-IdeaPad-Slim-3-15ABR8-15-6-kannettava",
+    "image": "https://static.verkcdn.com/images/59/2_1032002-1687x1448.jpg",
+    "url": "https://www.verkkokauppa.com/fi/product/1032005/Lenovo-V15-G6-15-6-kannettava-tietokone-Windows-11-Pro-83M40",
     "store": "Verkkokauppa.com",
-    "snippet": "15.6 inch laptop, Ryzen processor, 16 GB RAM and 512 GB SSD.",
-    "fetched": "2026-11-14"
-  },
-  {
-    "name": "Apple MacBook Air 13 M3",
-    "price": 1199.0,
+    "snippet": "Tehokas 15,6 tuuman kannettava, jossa on Intel N100 -prosessori, 16 Gt DDR5-muistia ja 256 Gt SSD-tallennus. Laite toimii Windows 11 Pro -käyttöjärjestelmällä ja sisältää nopean Wi-Fi 6 -yhteyden sekä monipuoliset liitännät.",
+    "fetched": "2026-11-14",
+    "live": true
+   },
+   {
+    "name": "HP Kannettava tietokone 15-fd0082no 15.6'' FHD 4GB/128GB",
+    "price": 319.0,
     "currency": "EUR",
-    "image": "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?auto=format&fit=crop&w=800&q=80",
-    "url": "https://www.gigantti.fi/product/tietokoneet-ja-toimistotarvikkeet/kannettavat-tietokoneet/macbook/apple-macbook-air-13-m3",
-    "store": "Gigantti",
-    "snippet": "Apple MacBook Air with 13-inch display and M3 chip.",
-    "fetched": "2026-11-14"
-  },
-  {
-    "name": "Samsung Galaxy A55 5G 128GB",
-    "price": 349.0,
+    "image": "https://cdn.s-cloud.fi/v1/w384_q60/assets/dam-id/Fy8M6_hgKrjBXWaU518Q0G.webp",
+    "url": "https://www.prisma.fi/tuotteet/111257050/hp-kannettava-tietokone-15-fd0082no-156-fhd-4gb128gb-111257050?listName=search+result&listNameExtra=kannettava+tietokone",
+    "store": "Prisma.fi",
+    "snippet": "Asiakasomistajahinta 303,05 €, ilman S-Etukorttia 319,00 €",
+    "fetched": "2026-11-14",
+    "live": true,
+    "member_price": 303.05
+   },
+   {
+    "name": "HP ProBook 445 G11 14\" kannettava, Windows 11 Pro (9Y7J4ET)",
+    "price": 799.99,
     "currency": "EUR",
-    "image": "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=800&q=80",
-    "url": "https://www.verkkokauppa.com/fi/product/912345/Samsung-Galaxy-A55-5G-alykannykka",
+    "image": "https://static.verkcdn.com/images/46/2_993559-1632x1024.jpeg",
+    "url": "https://www.verkkokauppa.com/fi/product/993559/HP-ProBook-445-G11-14-kannettava-Windows-11-Pro-9Y7J4ET",
     "store": "Verkkokauppa.com",
-    "snippet": "5G smartphone with bright AMOLED display and long battery life.",
-    "fetched": "2026-11-14"
-  },
-  {
-    "name": "Apple iPhone 16 128GB",
-    "price": 899.0,
+    "snippet": "14-tuumainen kannettava tietokone, joka yhdistää AMD Ryzen -prosessorin tehon, kattavan HP Wolf Security -tietoturvan ja pitkäkestoisen akun.",
+    "fetched": "2026-11-14",
+    "live": true
+   },
+   {
+    "name": "HP Kannettava tietokone 15-fd0084no 15.6'' FHD - Intel N250 - CP4U9EA#UUW",
+    "price": 429.0,
     "currency": "EUR",
-    "image": "https://images.unsplash.com/photo-1592899677977-9c10ca588bbd?auto=format&fit=crop&w=800&q=80",
-    "url": "https://www.gigantti.fi/product/puhelimet-ja-tabletit/matkapuhelimet/apple-iphone-16",
-    "store": "Gigantti",
-    "snippet": "iPhone with A18 chip and 48 MP camera.",
-    "fetched": "2026-11-14"
-  },
-  {
-    "name": "Helkama E7 sähköpyörä",
-    "price": 1999.0,
+    "image": "https://cdn.s-cloud.fi/v1/w384_q60/assets/dam-id/4WQhA_ljK_59yaIIn6Art2.webp",
+    "url": "https://www.prisma.fi/tuotteet/111257053/hp-kannettava-tietokone-15-fd0084no-156-fhd-intel-n250-cp4u9eauuw-111257053?listName=search+result&listNameExtra=kannettava+tietokone",
+    "store": "Prisma.fi",
+    "snippet": "Asiakasomistajahinta 407,55 €, ilman S-Etukorttia 429,00 €",
+    "fetched": "2026-11-14",
+    "live": true,
+    "member_price": 407.55
+   },
+   {
+    "name": "ASUS TUF Gaming A16 kannettava, Windows 11 (FA607NUQ-RL038W)",
+    "price": 1149.99,
     "currency": "EUR",
-    "image": "https://images.unsplash.com/photo-1571068316344-75bc76f77890?auto=format&fit=crop&w=800&q=80",
-    "url": "https://www.prisma.fi/tuotteet/110000000/helkama-e7-sahkopyora",
-    "store": "Prisma",
-    "snippet": "City e-bike with integrated battery and step-through frame.",
-    "fetched": "2026-11-14"
-  },
-  {
-    "name": "Trek FX 2 Disc hybrid bike",
-    "price": 799.0,
-    "currency": "EUR",
-    "image": "https://images.unsplash.com/photo-1485965120184-e220f721d03e?auto=format&fit=crop&w=800&q=80",
-    "url": "https://www.verkkokauppa.com/fi/product/654321/Trek-FX-2-Disc-hybridipyora",
+    "image": "https://static.verkcdn.com/images/34/2_1030247-1999x2000.jpg",
+    "url": "https://www.verkkokauppa.com/fi/product/1030247/ASUS-TUF-Gaming-A16-kannettava-Windows-11-FA607NUQ-RL038W",
     "store": "Verkkokauppa.com",
-    "snippet": "Lightweight hybrid bike for commuting and fitness.",
-    "fetched": "2026-11-14"
-  },
-  {
-    "name": "Dell 27 USB-C monitor",
-    "price": 329.0,
-    "currency": "EUR",
-    "image": "https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?auto=format&fit=crop&w=800&q=80",
-    "url": "https://www.verkkokauppa.com/fi/product/765432/Dell-27-U2724DE-USB-C-naytto",
-    "store": "Verkkokauppa.com",
-    "snippet": "27-inch QHD monitor with USB-C docking.",
-    "fetched": "2026-11-14"
-  },
-  {
-    "name": "Sony WH-1000XM5 headphones",
+    "snippet": "Tehokas pelikannettava, jossa AMD Ryzen 7 -prosessori ja NVIDIA GeForce RTX 4050 -näytönohjain. 16\" FHD+ 144 Hz -näyttö takaa sulavan pelikokemuksen ja kestävä rakenne soveltuu vaativaan käyttöön.",
+    "fetched": "2026-11-14",
+    "live": true
+   },
+   {
+    "name": "Dell Latitude 5420 kannettava tietokone, tehdashuollettu, käytetty tietokone",
     "price": 299.0,
     "currency": "EUR",
-    "image": "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=800&q=80",
-    "url": "https://www.gigantti.fi/product/audio-ja-video/kuulokkeet/sony-wh-1000xm5",
-    "store": "Gigantti",
-    "snippet": "Wireless noise-cancelling over-ear headphones.",
-    "fetched": "2026-11-14"
-  },
-  {
-    "name": "Finnair Helsinki–Oulu return flight",
-    "price": 148.0,
+    "image": "https://cdn.s-cloud.fi/v1/w384_q60/assets/dam-id/BTK8Dtvqa9C9dNTvrbuz_l.webp",
+    "url": "https://www.prisma.fi/tuotteet/111245782/dell-latitude-5420-kannettava-tietokone-tehdashuollettu-kaytetty-tietokone-111245782?listName=search+result&listNameExtra=kannettava+tietokone",
+    "store": "Prisma.fi",
+    "snippet": "Asiakasomistajahinta 284,05 €, ilman S-Etukorttia 299,00 €",
+    "fetched": "2026-11-14",
+    "live": true,
+    "member_price": 284.05
+   },
+   {
+    "name": "ASUS TUF Gaming A16 kannettava, Windows 11 (FA608UM-RV010W)",
+    "price": 1349.99,
     "currency": "EUR",
-    "image": "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=800&q=80",
-    "url": "https://www.finnair.com/fi-fi",
-    "store": "Finnair",
-    "snippet": "Example return fare; price varies by date and availability.",
-    "fetched": "2026-11-14"
-  },
-  {
-    "name": "Prisma 4K 55 inch television",
+    "image": "https://static.verkcdn.com/images/32/2_1030256-4500x3236.jpg",
+    "url": "https://www.verkkokauppa.com/fi/product/1030256/ASUS-TUF-Gaming-A16-kannettava-Windows-11-FA608UM-RV010W",
+    "store": "Verkkokauppa.com",
+    "snippet": "Suorituskykyinen, kestävä ja moderni pelikannettava tehokkaalla AMD Ryzen 7 -suorittimella, uuden sukupolven NVIDIA GeForce RTX 5060 -näytönohjaimella sekä TUF-sarjan tunnetulla kestävyydellä.",
+    "fetched": "2026-11-14",
+    "live": true
+   },
+   {
+    "name": "Lenovo kannettava tietokone IdeaPad Slim 3 15AMN8 AMD Ryzen 5 7520U 15.6''",
+    "price": 549.0,
+    "currency": "EUR",
+    "image": "https://cdn.s-cloud.fi/v1/w384_q60/assets/dam-id/C8MgWzCgqFFBuxGPTIwk6r.webp",
+    "url": "https://www.prisma.fi/tuotteet/111252599/lenovo-kannettava-tietokone-ideapad-slim-3-15amn8-amd-ryzen-5-7520u-156-111252599?listName=search+result&listNameExtra=kannettava+tietokone",
+    "store": "Prisma.fi",
+    "snippet": "Asiakasomistajahinta 521,55 €, ilman S-Etukorttia 549,00 €",
+    "fetched": "2026-11-14",
+    "live": true,
+    "member_price": 521.55
+   }
+  ],
+  "phone": [
+   {
+    "name": "realme 16 5G puhelin, 256/8 Gt, valkoinen",
+    "price": 249.0,
+    "currency": "EUR",
+    "image": "https://static.verkcdn.com/images/41/2_1050331-858x1008.jpg",
+    "url": "https://www.verkkokauppa.com/fi/product/1050331/realme-16-5G-puhelin-256-8-Gt-valkoinen",
+    "store": "Verkkokauppa.com",
+    "snippet": "Ultrakevyt ja ohut 5G-älypuhelin, jossa suuri 6550 mAh akku ja kirkas 6,57 tuuman AMOLED-näyttö. Kaksois-50 MP AI-muotokuvakamerat takaavat tarkat ja luonnolliset kuvat, ja laite kestää vettä, pölyä sekä kuumuutta IP69-suojauksella.",
+    "fetched": "2026-11-14",
+    "live": true
+   },
+   {
+    "name": "Apple iPhone 16e 128 Gt -puhelin, valkoinen (MD1R4)",
+    "price": 729.0,
+    "currency": "EUR",
+    "image": "https://static.verkcdn.com/images/67/2_979055-4000x4000.jpeg",
+    "url": "https://www.verkkokauppa.com/fi/product/979055/Apple-iPhone-16e-128-Gt-puhelin-valkoinen-MD1R4",
+    "store": "Verkkokauppa.com",
+    "snippet": "Tuorein iPhone. Makeaan hintaan.",
+    "fetched": "2026-11-14",
+    "live": true
+   },
+   {
+    "name": "HONOR älypuhelin X5c Plus 4GB+64GB musta",
+    "price": 129.0,
+    "currency": "EUR",
+    "image": "https://cdn.s-cloud.fi/v1/w384_q60/assets/dam-id/FseCIjRvqlHBShoyfRrt04.webp",
+    "url": "https://www.prisma.fi/tuotteet/111226050/honor-alypuhelin-x5c-plus-4gb64gb-musta-111226050?listName=search+result&listNameExtra=%C3%A4lypuhelin",
+    "store": "Prisma.fi",
+    "snippet": "Asiakasomistajahinta 122,55 €, ilman S-Etukorttia 129,00 €",
+    "fetched": "2026-11-14",
+    "live": true,
+    "member_price": 122.55
+   },
+   {
+    "name": "Ulefone Armor X12 Pro -puhelin, 64/4 Gt, musta/oranssi",
+    "price": 149.0,
+    "currency": "EUR",
+    "image": "https://static.verkcdn.com/images/22/2_889678-2128x1967.jpeg",
+    "url": "https://www.verkkokauppa.com/fi/product/889678/Ulefone-Armor-X12-Pro-puhelin-64-4-Gt-musta-oranssi",
+    "store": "Verkkokauppa.com",
+    "snippet": "Ulefone Armor X12 Pro on rugged-puhelin, joka tarjoaa erinomaisen kestävyyden ja edistykselliset ominaisuudet suhteellisen pienikokoisessa ja kevyessä, vain 257 gramman paketissa.",
+    "fetched": "2026-11-14",
+    "live": true
+   },
+   {
+    "name": "Apple iPhone 18 Pro Max 256 Gt puhelin, hopea",
+    "price": 1549.0,
+    "currency": "EUR",
+    "image": "https://static.verkcdn.com/images/57/2_1074140-4000x4000.jpg",
+    "url": "https://www.verkkokauppa.com/fi/product/1074140/Apple-iPhone-18-Pro-Max-256-Gt-puhelin-hopea",
+    "store": "Verkkokauppa.com",
+    "snippet": "Ole kovin pro.",
+    "fetched": "2026-11-14",
+    "live": true
+   },
+   {
+    "name": "HONOR älypuhelin X5c Plus 4GB+64GB sininen",
+    "price": 129.0,
+    "currency": "EUR",
+    "image": "https://cdn.s-cloud.fi/v1/w384_q60/assets/dam-id/07XHBd2LKcxA_YD63bz0Wl.webp",
+    "url": "https://www.prisma.fi/tuotteet/111226051/honor-alypuhelin-x5c-plus-4gb64gb-sininen-111226051?listName=search+result&listNameExtra=%C3%A4lypuhelin",
+    "store": "Prisma.fi",
+    "snippet": "Asiakasomistajahinta 122,55 €, ilman S-Etukorttia 129,00 €",
+    "fetched": "2026-11-14",
+    "live": true,
+    "member_price": 122.55
+   },
+   {
+    "name": "Ulefone Armor X16 Pro 5G puhelin, 256/8 Gt, musta / tummanruskea",
+    "price": 369.0,
+    "currency": "EUR",
+    "image": "https://static.verkcdn.com/images/0/2_1008023-1500x1500.jpg",
+    "url": "https://www.verkkokauppa.com/fi/product/1008023/Ulefone-Armor-X16-Pro-5G-puhelin-256-8-Gt-musta-tummanruskea",
+    "store": "Verkkokauppa.com",
+    "snippet": "Ulefone Armor X16 Pro kestää vettä, pölyä ja iskuja IP68/IP69K- ja MIL-STD-810H -sertifiointien mukaisesti. Puhelimessa on tehokas MediaTek Dimensity 6300 -suoritin, 256 Gt tallennustilaa, 64 MP kamera sekä pitkäkestoinen 10360 mAh akku 33 W pikalatauksella.",
+    "fetched": "2026-11-14",
+    "live": true
+   },
+   {
+    "name": "Apple iPhone 18 Pro Max 1 Tt puhelin, hopea",
+    "price": 2299.0,
+    "currency": "EUR",
+    "image": "https://static.verkcdn.com/images/57/2_1074140-4000x4000.jpg",
+    "url": "https://www.verkkokauppa.com/fi/product/1074164/Apple-iPhone-18-Pro-Max-1-Tt-puhelin-hopea",
+    "store": "Verkkokauppa.com",
+    "snippet": "Ole kovin pro.",
+    "fetched": "2026-11-14",
+    "live": true
+   }
+  ],
+  "headphones": [
+   {
+    "name": "Logitech G Pro X Lightspeed -pelikuulokkeet",
+    "price": 119.99,
+    "currency": "EUR",
+    "image": "https://static.verkcdn.com/images/96/2_641347-727x850.jpeg",
+    "url": "https://www.verkkokauppa.com/fi/product/641347/Logitech-G-Pro-X-Lightspeed-pelikuulokkeet",
+    "store": "Verkkokauppa.com",
+    "snippet": "Logitech G Pro X, Langaton, 20 - 20000 Hz, Pelaaminen, 370 g, Kuulokkeet, Musta",
+    "fetched": "2026-11-14",
+    "live": true
+   },
+   {
+    "name": "CMF Buds 2a by Nothing vastamelunapppikuulokkeet, oranssi",
+    "price": 49.0,
+    "currency": "EUR",
+    "image": "https://static.verkcdn.com/images/53/2_1051423-5000x5000.jpg",
+    "url": "https://www.verkkokauppa.com/fi/product/1051423/CMF-Buds-2a-by-Nothing-vastamelunapppikuulokkeet-oranssi",
+    "store": "Verkkokauppa.com",
+    "snippet": "CMF Buds 2a ovat täysin langattomat nappikuulokkeet, joissa on jopa 42 dB aktiivinen melunvaimennus, 12,4 mm bio-kuitukaiuttimet ja enintään 35,5 tunnin kokonaisakku. Rohkea muotoilu, vakuuttava ääni ja edullinen hinta.",
+    "fetched": "2026-11-14",
+    "live": true
+   },
+   {
+    "name": "Sony langattomat vastamelunappikuulokkeet WF-C710NB musta",
+    "price": 99.0,
+    "currency": "EUR",
+    "image": "https://cdn.s-cloud.fi/v1/w384_q60/assets/dam-id/5Mc8JAdIqd28vU8wRyvQ8k.webp",
+    "url": "https://www.prisma.fi/tuotteet/111138801/sony-langattomat-vastamelunappikuulokkeet-wf-c710nb-musta-111138801?listName=search+result&listNameExtra=kuulokkeet",
+    "store": "Prisma.fi",
+    "snippet": "Asiakasomistajahinta 94,05 €, ilman S-Etukorttia 99,00 €",
+    "fetched": "2026-11-14",
+    "live": true,
+    "member_price": 94.05
+   },
+   {
+    "name": "Sony WH-CH520 -langattomat sankakuulokkeet, musta",
+    "price": 29.0,
+    "currency": "EUR",
+    "image": "https://static.verkcdn.com/images/58/2_863314-1518x2355.jpeg",
+    "url": "https://www.verkkokauppa.com/fi/product/863314/Sony-WH-CH520-langattomat-sankakuulokkeet-musta",
+    "store": "Verkkokauppa.com",
+    "snippet": "Sankakuulokkeet päivittäiseen käyttöön erinomaisella äänenlaadulla ja käyttömukavuudella sekä mykistävällä jopa 50 tunnin kuunteluajalla.",
+    "fetched": "2026-11-14",
+    "live": true
+   },
+   {
+    "name": "B&W Px7 S2e vastamelukuulokkeet, musta",
+    "price": 219.0,
+    "currency": "EUR",
+    "image": "https://static.verkcdn.com/images/88/2_896725-774x1346.jpg",
+    "url": "https://www.verkkokauppa.com/fi/product/896725/B-W-Px7-S2e-vastamelukuulokkeet-musta",
+    "store": "Verkkokauppa.com",
+    "snippet": "B&W:n suositun langattoman vastamelukuulokkeen S2e-versio. Tuotenimen \"e\" viittaa sanaa \"evolved\" - kehittynyt - sillä Px7 S2e ottaa mallia isoveljestään Px8:sta. Koe luokkansa paras ääni uudelleen viritetyn akustiikan tuottamana.",
+    "fetched": "2026-11-14",
+    "live": true
+   },
+   {
+    "name": "Sony Bluetooth vastamelusankakuulokkeet WH-ULT900NB musta",
+    "price": 149.0,
+    "currency": "EUR",
+    "image": "https://cdn.s-cloud.fi/v1/w384_q60/assets/dam-id/Cbx0PmlcKQABJf1H07iZGE.webp",
+    "url": "https://www.prisma.fi/tuotteet/111002862/sony-bluetooth-vastamelusankakuulokkeet-wh-ult900nb-musta-111002862?listName=search+result&listNameExtra=kuulokkeet",
+    "store": "Prisma.fi",
+    "snippet": "Asiakasomistajahinta 141,55 €, ilman S-Etukorttia 149,00 €",
+    "fetched": "2026-11-14",
+    "live": true,
+    "member_price": 141.55
+   },
+   {
+    "name": "Philips TAT3000BK/00 langattomat nappikuulokkeet, musta",
+    "price": 39.99,
+    "currency": "EUR",
+    "image": "https://static.verkcdn.com/images/8/2_1054768-1280x1024.jpg",
+    "url": "https://www.verkkokauppa.com/fi/product/1054768/Philips-TAT3000BK-00-langattomat-nappikuulokkeet-musta",
+    "store": "Verkkokauppa.com",
+    "snippet": "Langattomat nappikuulokkeet tuottavat lämmintä ja yksityiskohtaista ääntä 10 mm:n kaiuttimilla. Niissä on mukautuva melunvaimennus, IPX4-luokituksen mukainen roiske- ja hienkestävyys sekä jopa 48 tunnin akunkesto latauskotelon kanssa.",
+    "fetched": "2026-11-14",
+    "live": true
+   },
+   {
+    "name": "JBL Bluetooth vastamelunappikuulokkeet Vibe Beam 2 musta",
+    "price": 39.0,
+    "currency": "EUR",
+    "image": "https://cdn.s-cloud.fi/v1/w384_q60/assets/dam-id/5HqEiSOtKhOAWnW6zQxPJE.webp",
+    "url": "https://www.prisma.fi/tuotteet/111007892/jbl-bluetooth-vastamelunappikuulokkeet-vibe-beam-2-musta-111007892?listName=search+result&listNameExtra=kuulokkeet",
+    "store": "Prisma.fi",
+    "snippet": "Asiakasomistajahinta 37,05 €, ilman S-Etukorttia 39,00 €",
+    "fetched": "2026-11-14",
+    "live": true,
+    "member_price": 37.05
+   }
+  ],
+  "television": [
+   {
+    "name": "LG 55\" OLED B6E – 4K TV",
+    "price": 799.0,
+    "currency": "EUR",
+    "image": "https://static.verkcdn.com/images/26/2_1035593-2876x1861.jpg",
+    "url": "https://www.verkkokauppa.com/fi/product/1035593/LG-55-OLED-B6E-4K-TV",
+    "store": "Verkkokauppa.com",
+    "snippet": "LG OLED B6E tarjoaa OLED‑kuvan täydellisen kontrastin, tarkan 4K‑laadun ja älykkään α8 AI Processor 4K Gen3 ‑suorituskyvyn, joka optimoi sisällön automaattisesti. Se sopii sekä viihteeseen että pelaamiseen HDR‑tuella, 120 hertsin paneelilla ja FreeSync Premium Pro‑ sekä G‑Sync‑yhteensopivuudella.",
+    "fetched": "2026-11-14",
+    "live": true
+   },
+   {
+    "name": "Samsung 55\" 4K UHD Smart LED TV TU55U7005HUXNA",
     "price": 399.0,
     "currency": "EUR",
-    "image": "https://images.unsplash.com/photo-1593784991095-a205069470b6?auto=format&fit=crop&w=800&q=80",
-    "url": "https://www.prisma.fi/tuotteet/100000000/prisma-55-4k-televisio",
-    "store": "Prisma",
-    "snippet": "55-inch 4K smart television.",
-    "fetched": "2026-11-14"
-  }
-]
+    "image": "https://cdn.s-cloud.fi/v1/w384_q60/assets/dam-id/AD9UaJ0iaSe9BcY7Nb6euo.webp",
+    "url": "https://www.prisma.fi/tuotteet/111353308/samsung-55-4k-uhd-smart-led-tv-tu55u7005huxna-111353308?listName=search+result&listNameExtra=televisio",
+    "store": "Prisma.fi",
+    "snippet": "Asiakasomistajahinta 379,05 €, ilman S-Etukorttia 399,00 €",
+    "fetched": "2026-11-14",
+    "live": true,
+    "member_price": 379.05
+   },
+   {
+    "name": "Philips The One 50\" PUS9000 – 4K QLED Ambilight TV",
+    "price": 899.0,
+    "currency": "EUR",
+    "image": "https://static.verkcdn.com/images/0/2_982766-2464x1612.jpeg",
+    "url": "https://www.verkkokauppa.com/fi/product/982766/Philips-The-One-50-PUS9000-4K-QLED-Ambilight-TV",
+    "store": "Verkkokauppa.com",
+    "snippet": "The One ei ole vain helppo käyttää; se on televisio, jossa on kaikki. Huipputarkka kuva, vaikuttava ääni ja älykkäät ominaisuudet yhdistyvät saumattomasti, tarjoten täydellisen viihde-elämyksen.",
+    "fetched": "2026-11-14",
+    "live": true
+   },
+   {
+    "name": "Samsung 65\" 4K UHD Smart LED TV TU65U7005HUXNA",
+    "price": 499.0,
+    "currency": "EUR",
+    "image": "https://cdn.s-cloud.fi/v1/w384_q60/assets/dam-id/CwxLlXTuaA7B7LpCJ-zok6.webp",
+    "url": "https://www.prisma.fi/tuotteet/111353312/samsung-65-4k-uhd-smart-led-tv-tu65u7005huxna-111353312?listName=search+result&listNameExtra=televisio",
+    "store": "Prisma.fi",
+    "snippet": "Asiakasomistajahinta 474,05 €, ilman S-Etukorttia 499,00 €",
+    "fetched": "2026-11-14",
+    "live": true,
+    "member_price": 474.05
+   },
+   {
+    "name": "Samsung 50\" U80 – 4K LED TV (2026)",
+    "price": 349.0,
+    "currency": "EUR",
+    "image": "https://static.verkcdn.com/images/3/2_1046113-3500x2180.jpg",
+    "url": "https://www.verkkokauppa.com/fi/product/1046113/Samsung-50-U80-4K-LED-TV-2026",
+    "store": "Verkkokauppa.com",
+    "snippet": "Samsung U80 on monipuolinen 4K-televisio, joka yhdistää Crystal-näyttötekniikan selkeän kuvanlaadun, HDR10+-tuen ja tekoälypohjaisen kuvanoptimoinnin. Tizen-älytoiminnot, Apple AirPlay, Google Cast ja Q-Symphony-yhteensopivuus tekevät siitä kätevän valinnan koko kodin viihdekeskukseksi.",
+    "fetched": "2026-11-14",
+    "live": true
+   },
+   {
+    "name": "Finlux 40\" Full HD LED TV 40F8.3ECI",
+    "price": 199.0,
+    "currency": "EUR",
+    "image": "https://cdn.s-cloud.fi/v1/w384_q60/assets/dam-id/DrTr8L5v4Zz9aE2BWVjvME.webp",
+    "url": "https://www.prisma.fi/tuotteet/111304325/finlux-40-full-hd-led-tv-40f83eci-111304325?listName=search+result&listNameExtra=televisio",
+    "store": "Prisma.fi",
+    "snippet": "Asiakasomistajahinta 189,05 €, ilman S-Etukorttia 199,00 €",
+    "fetched": "2026-11-14",
+    "live": true,
+    "member_price": 189.05
+   },
+   {
+    "name": "TCL 55\" C7L  – 4K SQD Mini-LED Google TV",
+    "price": 899.0,
+    "currency": "EUR",
+    "image": "https://static.verkcdn.com/images/80/2_1043740-4980x2999.jpg",
+    "url": "https://www.verkkokauppa.com/fi/product/1043740/TCL-55-C7L-4K-SQD-Mini-LED-Google-TV",
+    "store": "Verkkokauppa.com",
+    "snippet": "TCL 55\" C7L on laadukas 4K SQD Mini‑LED ‑älytelevisio Google TV ‑käyttöjärjestelmällä. 800 tarkkaa paikallishimmennysaluetta, jopa 2700 cd/m² kirkkaus sekä 144 Hz:n paneeli ja 288 Hz:n VRR‑pelituki tarjoavat sulavan ja yksityiskohtaisen kuvan elokuville ja peleille. Bang & Olufsen ‑äänentoisto ja moderni kehyksetön design viimeistelevät kokonaisuuden.",
+    "fetched": "2026-11-14",
+    "live": true
+   },
+   {
+    "name": "Samsung 32\" HD Ready Smart LED TV TU32H5005F",
+    "price": 229.0,
+    "currency": "EUR",
+    "image": "https://cdn.s-cloud.fi/v1/w384_q60/assets/dam-id/9Fpl0xeIqrFBrMVcPZX5nM.webp",
+    "url": "https://www.prisma.fi/tuotteet/111158905/samsung-32-hd-ready-smart-led-tv-tu32h5005f-111158905?listName=search+result&listNameExtra=televisio",
+    "store": "Prisma.fi",
+    "snippet": "Asiakasomistajahinta 217,55 €, ilman S-Etukorttia 229,00 €",
+    "fetched": "2026-11-14",
+    "live": true,
+    "member_price": 217.55
+   }
+  ],
+  "bicycle": [
+   {
+    "name": "Atala Zeno 20\" 6-v -taittopyörä, musta",
+    "price": 229.0,
+    "currency": "EUR",
+    "image": "https://static.verkcdn.com/images/23/2_1027502-5000x3333.jpg",
+    "url": "https://www.verkkokauppa.com/fi/product/1027502/Atala-Zeno-20-6-v-taittopyora-musta",
+    "store": "Verkkokauppa.com",
+    "snippet": "Atala Zeno 20\" 6-v -taittopyörä sopii kaupunkiajoon ja retkille. Pyörässä on kevyt alumiinirunko, 6-vaihteinen Shimano Tourney -vaihteisto ja mekaaniset V-jarrut.",
+    "fetched": "2026-11-14",
+    "live": true
+   },
+   {
+    "name": "Atala E-SPIKE 28\" 7.5 LADY sähköpyörä, 49 cm, harmaa/sininen",
+    "price": 1699.0,
+    "currency": "EUR",
+    "image": "https://static.verkcdn.com/images/63/2_1025972-2880x1920.jpg",
+    "url": "https://www.verkkokauppa.com/fi/product/1025972/Atala-E-SPIKE-28-7-5-LADY-sahkopyora-49-cm-harmaa-sininen",
+    "store": "Verkkokauppa.com",
+    "snippet": "Atala E-SPIKE 28\" 7.5 LADY sähköpyörässä on tehokas Anandan takanapamoottori ja 540 Wh akku, jotka mahdollistavat avustetun ajon jopa 70–120 km. Pyörässä on Shimano Tourney 7-vaihteisto, hydrauliset levyjarrut ja mukava 49 cm alumiinirunko.",
+    "fetched": "2026-11-14",
+    "live": true
+   },
+   {
+    "name": "Tunturi Montauk 29\" Unisex maastopyörä 8-vaihdetta tummansininen-valkoinen-punainen",
+    "price": 399.0,
+    "currency": "EUR",
+    "image": "https://cdn.s-cloud.fi/v1/w384_q60/assets/dam-id/EKw7Z7N1qLt8O8p26VoCM5.webp",
+    "url": "https://www.prisma.fi/tuotteet/110989100/tunturi-montauk-29-unisex-maastopyora-8-vaihdetta-tummansininen-valkoinen-punainen-110989100?listName=search+result&listNameExtra=polkupy%C3%B6r%C3%A4",
+    "store": "Prisma.fi",
+    "snippet": "Asiakasomistajahinta 379,05 €, ilman S-Etukorttia 399,00 €",
+    "fetched": "2026-11-14",
+    "live": true,
+    "member_price": 379.05
+   },
+   {
+    "name": "Atala Loop 24\" 1-V polkupyörä, vanilja",
+    "price": 238.0,
+    "currency": "EUR",
+    "image": "https://static.verkcdn.com/images/72/2_1027490-1632x1320.jpg",
+    "url": "https://www.verkkokauppa.com/fi/product/1027490/Atala-Loop-24-1-V-polkupyora-vanilja",
+    "store": "Verkkokauppa.com",
+    "snippet": "Atala Loop 24\" 1-V on yksivaihteinen polkupyörä, jossa on jalkajarru, lokasuojat, seisontatuki ja tavarateline. Pyörän runko on terästä ja se sopii ajajalle, jonka pituus on 140–180 cm.",
+    "fetched": "2026-11-14",
+    "live": true
+   },
+   {
+    "name": "Helkama X sähköpyörä, (17\") 29\", 10-vaiht., laguuninvihreä",
+    "price": 3798.0,
+    "currency": "EUR",
+    "image": "https://static.verkcdn.com/images/85/2_969578-3283x1774.jpg",
+    "url": "https://www.verkkokauppa.com/fi/product/969578/Helkama-X-sahkopyora-17-29-10-vaiht-laguuninvihrea",
+    "store": "Verkkokauppa.com",
+    "snippet": "Helkama X on jäykkäperäinen sähkömaastopyörä metsälenkeille ja työmatkoille. Siinä on tehokas Shimanon moottori ja runkoon integroitu tyylikäs päivävalo.",
+    "fetched": "2026-11-14",
+    "live": true
+   },
+   {
+    "name": "Tunturi Montana 29\" Unisex maastopyörä 8-vaihdetta sinivihreä-valkoinen-turkoosi",
+    "price": 399.0,
+    "currency": "EUR",
+    "image": "https://cdn.s-cloud.fi/v1/w384_q60/assets/dam-id/CYsKe454qOU9a4_Zg5OWSi.webp",
+    "url": "https://www.prisma.fi/tuotteet/110989114/tunturi-montana-29-unisex-maastopyora-8-vaihdetta-sinivihrea-valkoinen-turkoosi-110989114?listName=search+result&listNameExtra=polkupy%C3%B6r%C3%A4",
+    "store": "Prisma.fi",
+    "snippet": "Asiakasomistajahinta 379,05 €, ilman S-Etukorttia 399,00 €",
+    "fetched": "2026-11-14",
+    "live": true,
+    "member_price": 379.05
+   },
+   {
+    "name": "Insera Breeze 20\" 3-vaihteinen lasten maastopyörä, oranssi",
+    "price": 379.0,
+    "currency": "EUR",
+    "image": "https://static.verkcdn.com/images/25/01-4000x2490.jpg",
+    "url": "https://www.verkkokauppa.com/fi/product/1021760/Insera-Breeze-20-3-vaihteinen-lasten-maastopyora-oranssi",
+    "store": "Verkkokauppa.com",
+    "snippet": "Kevyt alumiinirunkoinen pikkumaasturi sopii 110 – 130 cm pituisille lapsille. Shimano Nexus 3-vaihteinen vaihteisto ja etujousitus tekevät ajamisesta sujuvaa ja mukavaa.",
+    "fetched": "2026-11-14",
+    "live": true
+   },
+   {
+    "name": "Helkama Carbon X sähköpyörä, 18\", 12-vaiht., yötaivas",
+    "price": 6398.0,
+    "currency": "EUR",
+    "image": "https://static.verkcdn.com/images/98/2_976802-4000x2263.jpg",
+    "url": "https://www.verkkokauppa.com/fi/product/976802/Helkama-Carbon-X-sahkopyora-18-12-vaiht-yotaivas",
+    "store": "Verkkokauppa.com",
+    "snippet": "Helkaman Carbon X on hiilikuiturunkoinen sähkötäysjoustopyörä vaativimmillekin maastopyöräkuskeille. Moderni geometria, huippukomponentit ja hiilikuiturunko luovat kokonaisuuden, joka taklaa haastavimmatkin maastot.",
+    "fetched": "2026-11-14",
+    "live": true
+   }
+  ],
+  "robot vacuum": [
+   {
+    "name": "Roborock Qrevo Edge 2 -robottipölynimuri, valkoinen",
+    "price": 499.0,
+    "currency": "EUR",
+    "image": "https://static.verkcdn.com/images/77/2_1061995-3829x4547.jpg",
+    "url": "https://www.verkkokauppa.com/fi/product/1061995/Roborock-Qrevo-Edge-2-robottipolynimuri-valkoinen",
+    "store": "Verkkokauppa.com",
+    "snippet": "Roborock Qrevo Edge 2 on tehokas ja älykäs robottipölynimuri, joka sopii erilaisiin kodin siivoustarpeisiin. Sen 25 000 Pa:n HyperForce-imuteho takaa tehokkaan pölyn ja lian poistamisen, ja ultraohut 7,98 cm:n rakenne mahdollistaa siivouksen myös matalien kalusteiden alla.",
+    "fetched": "2026-11-14",
+    "live": true
+   },
+   {
+    "name": "Dreame L10s Ultra gen 3 robotti-imuri valkoinen",
+    "price": 549.0,
+    "currency": "EUR",
+    "image": "https://cdn.s-cloud.fi/v1/w384_q60/assets/dam-id/4ZyDefw0qz08SPXWAqjOqG.webp",
+    "url": "https://www.prisma.fi/tuotteet/111437252/dreame-l10s-ultra-gen-3-robotti-imuri-valkoinen-111437252?listName=search+result&listNameExtra=robotti-imuri",
+    "store": "Prisma.fi",
+    "snippet": "Asiakasomistajahinta 466,65 €, ilman S-Etukorttia 549,00 €",
+    "fetched": "2026-11-14",
+    "live": true,
+    "member_price": 466.65
+   },
+   {
+    "name": "Dreame X60 Ultra robotti-imuri, valkoinen",
+    "price": 799.0,
+    "currency": "EUR",
+    "image": "https://static.verkcdn.com/images/14/2_1033577-6000x6000.jpg",
+    "url": "https://www.verkkokauppa.com/fi/product/1033577/Dreame-X60-Ultra-robotti-imuri-valkoinen",
+    "store": "Verkkokauppa.com",
+    "snippet": "Erittäin matalarunkoinen ja älykäs robotti‑imuri, joka liukuu ketterästi huonekalujen alle ja ylittää tavallista korkeammin myös kodin kynnykset. Sen voimakas imuteho, tarkka esteiden tunnistus ja täysin automatisoitu mopin puhdistus tekevät siivouksesta vaivatonta alusta loppuun.",
+    "fetched": "2026-11-14",
+    "live": true
+   },
+   {
+    "name": "Roborock Robotti-imuri Q7 BF+ Musta",
+    "price": 249.0,
+    "currency": "EUR",
+    "image": "https://cdn.s-cloud.fi/v1/w384_q60/assets/dam-id/6jSI_XcranWAWxRhCB5Kbb.webp",
+    "url": "https://www.prisma.fi/tuotteet/111243485/roborock-robotti-imuri-q7-bf-musta-111243485?listName=search+result&listNameExtra=robotti-imuri",
+    "store": "Prisma.fi",
+    "snippet": "Asiakasomistajahinta 211,65 €, ilman S-Etukorttia 249,00 €",
+    "fetched": "2026-11-14",
+    "live": true,
+    "member_price": 211.65
+   },
+   {
+    "name": "Roborock Qrevo 2 Pro robotti-imuri, musta",
+    "price": 699.0,
+    "currency": "EUR",
+    "image": "https://static.verkcdn.com/images/74/2_1070615-4600x6000.jpg",
+    "url": "https://www.verkkokauppa.com/fi/product/1070615/Roborock-Qrevo-2-Pro-robotti-imuri-musta",
+    "store": "Verkkokauppa.com",
+    "snippet": "Tehoharppaus arjen siivoukseen: Roborock Qrevo 2 Pro imuroi jopa 25 000 Pa:n teholla ja moppaa märkämoppauksella. Mustan robotin FlexiArm-reunamoppaus ja käännettävä sivuharja puhdistavat myös reunat ja nurkat.",
+    "fetched": "2026-11-14",
+    "live": true
+   },
+   {
+    "name": "Lykke Robotti-Imuri Pro 1000",
+    "price": 99.9,
+    "currency": "EUR",
+    "image": "https://cdn.s-cloud.fi/v1/w384_q60/assets/dam-id/3uo0fjC7qiO8c0XHjuIdzP.webp",
+    "url": "https://www.prisma.fi/tuotteet/110528959/lykke-robotti-imuri-pro-1000-110528959?listName=search+result&listNameExtra=robotti-imuri",
+    "store": "Prisma.fi",
+    "snippet": "Asiakasomistajahinta 84,92 €, ilman S-Etukorttia 99,90 €",
+    "fetched": "2026-11-14",
+    "live": true,
+    "member_price": 84.92
+   },
+   {
+    "name": "Dreame L50s Pro Ultra robotti-imuri, valkoinen",
+    "price": 899.0,
+    "currency": "EUR",
+    "image": "https://static.verkcdn.com/images/64/2_1045822-5000x5000.jpg",
+    "url": "https://www.verkkokauppa.com/fi/product/1045822/Dreame-L50s-Pro-Ultra-robotti-imuri-valkoinen",
+    "store": "Verkkokauppa.com",
+    "snippet": "Robotti-imuri yhdistää tehokkaan 30 000 Pa imutehon ja älykkään moppausjärjestelmän, joka puhdistaa lattiat tarkasti reunoja ja nurkkia myöten. Se liikkuu sujuvasti esteiden yli ja huolehtii automaattisesti mopin pesusta, kuivatuksesta sekä pölysäiliön tyhjennyksestä.",
+    "fetched": "2026-11-14",
+    "live": true
+   },
+   {
+    "name": "Roborock Robotti-imuri Q10 PF+ Valkoinen",
+    "price": 399.0,
+    "currency": "EUR",
+    "image": "https://cdn.s-cloud.fi/v1/w384_q60/assets/dam-id/8ntfmHuiKgPBJRswl-hKMW.webp",
+    "url": "https://www.prisma.fi/tuotteet/111243486/roborock-robotti-imuri-q10-pf-valkoinen-111243486?listName=search+result&listNameExtra=robotti-imuri",
+    "store": "Prisma.fi",
+    "snippet": "Asiakasomistajahinta 339,15 €, ilman S-Etukorttia 399,00 €",
+    "fetched": "2026-11-14",
+    "live": true,
+    "member_price": 339.15
+   }
+  ],
+  "espresso machine": [
+   {
+    "name": "Princess espressokeitin",
+    "price": 99.0,
+    "currency": "EUR",
+    "image": "https://static.verkcdn.com/images/82/2_663955-2218x2793.jpeg",
+    "url": "https://www.verkkokauppa.com/fi/product/663955/Princess-espressokeitin",
+    "store": "Verkkokauppa.com",
+    "snippet": "Tämä tyylikäs kahvinkeitin varmistaa, että voit valmistaa ihanan vahvaa ja voimakasta espressoa kotona. 20 baarin pumppu tarjoaa täydellisen paineen yhdelle tai kahdelle kupilliselle espressoa. Mukana adapteri Nespresso-kapseleille.",
+    "fetched": "2026-11-14",
+    "live": true
+   },
+   {
+    "name": "De'Longhi Espressokeitin EC685.M Dedica",
+    "price": 199.0,
+    "currency": "EUR",
+    "image": "https://cdn.s-cloud.fi/v1/w384_q60/assets/dam-id/0XiAzVn7qRhBoP4GTgJSWx.webp",
+    "url": "https://www.prisma.fi/tuotteet/100134649/de-longhi-espressokeitin-ec685m-dedica-100134649?listName=search+result&listNameExtra=machine+espressokeitin",
+    "store": "Prisma.fi",
+    "snippet": "Asiakasomistajahinta 169,15 €, ilman S-Etukorttia 199,00 €",
+    "fetched": "2026-11-14",
+    "live": true,
+    "member_price": 169.15
+   },
+   {
+    "name": "Bosch PFE401C3 espressokone",
+    "price": 699.0,
+    "currency": "EUR",
+    "image": "https://static.verkcdn.com/images/6/2_1087316-2544x3112.jpg",
+    "url": "https://www.verkkokauppa.com/fi/product/1087316/Bosch-PFE401C3-espressokone",
+    "store": "Verkkokauppa.com",
+    "snippet": "Nauti vastajauhetusta kahvista ja viimeistele juomasi maitovaahdolla espressokoneen integroidun myllyn ja maidonvaahdottimen avulla. Säädä jauhatus, uuttolämpötila ja juomamäärä omaan makuusi sopiviksi.",
+    "fetched": "2026-11-14",
+    "live": true
+   },
+   {
+    "name": "Ariete Vintage espressokeitin",
+    "price": 169.0,
+    "currency": "EUR",
+    "image": "https://cdn.s-cloud.fi/v1/w384_q60/assets/dam-id/9qxq4sqK4E-98e6NU0ebci.webp",
+    "url": "https://www.prisma.fi/tuotteet/110569873/ariete-vintage-espressokeitin-110569873?listName=search+result&listNameExtra=machine+espressokeitin",
+    "store": "Prisma.fi",
+    "snippet": "Asiakasomistajahinta 143,65 €, ilman S-Etukorttia 169,00 €",
+    "fetched": "2026-11-14",
+    "live": true,
+    "member_price": 143.65
+   },
+   {
+    "name": "Sage Dual Boiler -espressokeitin",
+    "price": 1499.0,
+    "currency": "EUR",
+    "image": "https://static.verkcdn.com/images/92/2_660571-1427x1376.jpeg",
+    "url": "https://www.verkkokauppa.com/fi/product/660571/Sage-Dual-Boiler-espressokeitin",
+    "store": "Verkkokauppa.com",
+    "snippet": "Sage Dual Boiler espressokeitin on täydellinen valinta kahvin asiantuntijalle, joka itse haluaa ohjata uuttoprosessin jokaista vaihetta. Voit valmistaa espressoa ja vaahdottaa maitoa samanaikaisesti, niin että kahvi säilyttää hyvän arominsa.",
+    "fetched": "2026-11-14",
+    "live": true
+   },
+   {
+    "name": "De'Longhi EC950.M Dedica Maestro Plus espressokeitin",
+    "price": 449.0,
+    "currency": "EUR",
+    "image": "https://static.verkcdn.com/images/32/2_912841-2034x4000.jpg",
+    "url": "https://www.verkkokauppa.com/fi/product/912841/De-Longhi-EC950-M-Dedica-Maestro-Plus-espressokeitin",
+    "store": "Verkkokauppa.com",
+    "snippet": "Luotu muotoilua ja käytännöllisyyttä silmällä pitäen, sen useat käyttöä helpottavat ominaisuudet ilmentävät johtavan kahvilaitevalmistajan tietotaitoa, teknologista osaamista ja intohimoa kahviin.",
+    "fetched": "2026-11-14",
+    "live": true
+   },
+   {
+    "name": "Cuisinart espressokeitin EM160E",
+    "price": 199.0,
+    "currency": "EUR",
+    "image": "https://cdn.s-cloud.fi/v1/w384_q60/assets/dam-id/E-a9Sv-JqC_BzOdjO3Pmc1.webp",
+    "url": "https://www.prisma.fi/tuotteet/111237064/cuisinart-espressokeitin-em160e-111237064?listName=search+result&listNameExtra=machine+espressokeitin",
+    "store": "Prisma.fi",
+    "snippet": "Asiakasomistajahinta 169,15 €, ilman S-Etukorttia 199,00 €",
+    "fetched": "2026-11-14",
+    "live": true,
+    "member_price": 169.15
+   },
+   {
+    "name": "Smeg ECF02CREU espressokeitin, kermanvalkoinen",
+    "price": 279.0,
+    "currency": "EUR",
+    "image": "https://static.verkcdn.com/images/49/01_2000_2000-1326x1475.png",
+    "url": "https://www.verkkokauppa.com/fi/product/1036682/Smeg-ECF02CREU-espressokeitin-kermanvalkoinen",
+    "store": "Verkkokauppa.com",
+    "snippet": "Espressokeitin puristaa kahvista täyteläisen aromin 15 barin paineella ja lämmittää veden nopeasti thermoblock-järjestelmällä. Siinä on manuaalinen maitovaahdotin, irrotettava vesisäiliö ja retrotyylinen design.",
+    "fetched": "2026-11-14",
+    "live": true
+   }
+  ],
+  "winter jacket": [
+   {
+    "name": "House miesten vanutakki 204H352661",
+    "price": 59.95,
+    "currency": "EUR",
+    "image": "https://cdn.s-cloud.fi/v1/w384_q60/assets/dam-id/1bjVnEyvqEG9sGj5CRXelD.webp",
+    "url": "https://www.prisma.fi/tuotteet/111276230/house-miesten-vanutakki-204h352661-111276230?listName=search+result&listNameExtra=talvitakki",
+    "store": "Prisma.fi",
+    "snippet": "Asiakasomistajahinta 50,96 €, ilman S-Etukorttia 59,95 €",
+    "fetched": "2026-11-14",
+    "live": true,
+    "member_price": 50.96
+   },
+   {
+    "name": "Whistler Wander miesten ulkoilutakki W-PRO 10000",
+    "price": 109.0,
+    "currency": "EUR",
+    "image": "https://cdn.s-cloud.fi/v1/w384_q60/assets/dam-id/DyKvHgtS4ysBGtatGAC26W.webp",
+    "url": "https://www.prisma.fi/tuotteet/110877063/whistler-miesten-wander-ulkoilutakki-110877063?listName=search+result&listNameExtra=talvitakki&offerId=110877063007-0-0",
+    "store": "Prisma.fi",
+    "snippet": "Asiakasomistajahinta 92,65 €, ilman S-Etukorttia 109,00 €",
+    "fetched": "2026-11-14",
+    "live": true,
+    "member_price": 92.65
+   },
+   {
+    "name": "The North Face jr talvitakki B RVR PERRITO JACKET",
+    "price": 109.0,
+    "currency": "EUR",
+    "image": "https://cdn.s-cloud.fi/v1/w384_q60/assets/dam-id/BpD-LG4AqQ5AspAuNx0a_8.webp",
+    "url": "https://www.prisma.fi/tuotteet/111080706/the-north-face-jr-talvitakki-b-rvr-perrito-jacket-111080706?listName=search+result&listNameExtra=talvitakki&offerId=111080706002-0-0",
+    "store": "Prisma.fi",
+    "snippet": "Asiakasomistajahinta 92,65 €, ilman S-Etukorttia 109,00 €",
+    "fetched": "2026-11-14",
+    "live": true,
+    "member_price": 92.65
+   },
+   {
+    "name": "Reima lasten talvitakki Portti",
+    "price": 74.95,
+    "currency": "EUR",
+    "image": "https://cdn.s-cloud.fi/v1/w384_q60/assets/dam-id/FrA2KG3Na0B9-HIIsC3JYM.webp",
+    "url": "https://www.prisma.fi/tuotteet/111291031/reima-lasten-talvitakki-portti-111291031?listName=search+result&listNameExtra=talvitakki&offerId=111291031002-0-0",
+    "store": "Prisma.fi",
+    "snippet": "Asiakasomistajahinta 63,71 €, ilman S-Etukorttia 74,95 €",
+    "fetched": "2026-11-14",
+    "live": true,
+    "member_price": 63.71
+   },
+   {
+    "name": "The North Face Nuorten käännettävä  talvitakki G REV. PERRITO PARKA",
+    "price": 139.0,
+    "currency": "EUR",
+    "image": "https://cdn.s-cloud.fi/v1/w384_q60/assets/dam-id/3sqQiKRQ4Lt9vq_gQp47yU.webp",
+    "url": "https://www.prisma.fi/tuotteet/111080705/the-north-face-nuorten-kaannettava-talvitakki-g-rev-perrito-parka-111080705?listName=search+result&listNameExtra=talvitakki",
+    "store": "Prisma.fi",
+    "snippet": "Asiakasomistajahinta 118,15 €, ilman S-Etukorttia 139,00 €",
+    "fetched": "2026-11-14",
+    "live": true,
+    "member_price": 118.15
+   },
+   {
+    "name": "Didriksons Jennie naisten vedenpitävä talvitakki",
+    "price": 199.0,
+    "currency": "EUR",
+    "image": "https://cdn.s-cloud.fi/v1/w384_q60/assets/dam-id/3d0xtKaYasg8cH1nVUEmCO.webp",
+    "url": "https://www.prisma.fi/tuotteet/111088525/didriksons-naisten-vedenpitava-talvitakki-jennie-111088525?listName=search+result&listNameExtra=talvitakki",
+    "store": "Prisma.fi",
+    "snippet": "Asiakasomistajahinta 169,15 €, ilman S-Etukorttia 199,00 €",
+    "fetched": "2026-11-14",
+    "live": true,
+    "member_price": 169.15
+   },
+   {
+    "name": "Helly Hansen miesten kevytvanutakki Vancouver INS Rain 54484",
+    "price": 169.0,
+    "currency": "EUR",
+    "image": "https://cdn.s-cloud.fi/v1/w384_q60/assets/dam-id/9rhE6TsJq6vA41GcCHMRww.webp",
+    "url": "https://www.prisma.fi/tuotteet/111292196/helly-hansen-miesten-kevytvanutakki-vancouver-ins-rain-54484-111292196?listName=search+result&listNameExtra=talvitakki",
+    "store": "Prisma.fi",
+    "snippet": "Asiakasomistajahinta 143,65 €, ilman S-Etukorttia 169,00 €",
+    "fetched": "2026-11-14",
+    "live": true,
+    "member_price": 143.65
+   },
+   {
+    "name": "Reima lasten talvitakki Raisio 5100289A",
+    "price": 109.0,
+    "currency": "EUR",
+    "image": "https://cdn.s-cloud.fi/v1/w384_q60/assets/dam-id/1G_8y5UMaNcBeYD3_7hevt.webp",
+    "url": "https://www.prisma.fi/tuotteet/111415283/reima-lasten-talvitakki-raisio-5100289a-111415283?listName=search+result&listNameExtra=talvitakki&offerId=111415283002-0-0",
+    "store": "Prisma.fi",
+    "snippet": "Asiakasomistajahinta 92,65 €, ilman S-Etukorttia 109,00 €",
+    "fetched": "2026-11-14",
+    "live": true,
+    "member_price": 92.65
+   }
+  ],
+  "sofa": [
+   {
+    "name": "Venture Home Bolero 3-istuttava sohva, punainen",
+    "price": 661.95,
+    "currency": "EUR",
+    "image": "https://cdn.s-cloud.fi/v1/w384_q60/assets/dam-id/2GmLOupHaDLArWKxNR0Y73.webp",
+    "url": "https://www.prisma.fi/tuotteet/111434183/venture-home-bolero-3-istuttava-sohva-punainen-111434183?listName=search+result&listNameExtra=sohva",
+    "store": "Prisma.fi",
+    "snippet": "",
+    "fetched": "2026-11-14",
+    "live": true
+   },
+   {
+    "name": "Vind Positano kulmasohva, beige",
+    "price": 2855.95,
+    "currency": "EUR",
+    "image": "https://cdn.s-cloud.fi/v1/w384_q60/assets/dam-id/E7jZL0PYqHG9Cmip-Lf02v.webp",
+    "url": "https://www.prisma.fi/tuotteet/111433870/vind-positano-kulmasohva-beige-111433870?listName=search+result&listNameExtra=sohva",
+    "store": "Prisma.fi",
+    "snippet": "",
+    "fetched": "2026-11-14",
+    "live": true
+   },
+   {
+    "name": "Venture Home Zoom 2-istuttava sohva, valkoinen",
+    "price": 616.95,
+    "currency": "EUR",
+    "image": "https://cdn.s-cloud.fi/v1/w384_q60/assets/dam-id/CcbUGv-gaLP8PGSBKJBRMj.webp",
+    "url": "https://www.prisma.fi/tuotteet/111434174/venture-home-zoom-2-istuttava-sohva-valkoinen-111434174?listName=search+result&listNameExtra=sohva",
+    "store": "Prisma.fi",
+    "snippet": "",
+    "fetched": "2026-11-14",
+    "live": true
+   },
+   {
+    "name": "Venture Home Calais 3-istuttava sohva, sametti, tummanharmaa",
+    "price": 549.95,
+    "currency": "EUR",
+    "image": "https://cdn.s-cloud.fi/v1/w384_q60/assets/dam-id/6KAgVjeEqt79xP2i38wkEB.webp",
+    "url": "https://www.prisma.fi/tuotteet/111434190/venture-home-calais-3-istuttava-sohva-sametti-tummanharmaa-111434190?listName=search+result&listNameExtra=sohva",
+    "store": "Prisma.fi",
+    "snippet": "",
+    "fetched": "2026-11-14",
+    "live": true
+   },
+   {
+    "name": "Vind Amalfi kulmasohva, tummanharmaa",
+    "price": 1681.95,
+    "currency": "EUR",
+    "image": "https://cdn.s-cloud.fi/v1/w384_q60/assets/dam-id/BgPlpTNj4299_ct2sjcgKS.webp",
+    "url": "https://www.prisma.fi/tuotteet/111434195/vind-amalfi-kulmasohva-tummanharmaa-111434195?listName=search+result&listNameExtra=sohva",
+    "store": "Prisma.fi",
+    "snippet": "",
+    "fetched": "2026-11-14",
+    "live": true
+   },
+   {
+    "name": "Venture Home Cielo 3-istuttava sohva, bouclé, ruskea",
+    "price": 1509.95,
+    "currency": "EUR",
+    "image": "https://cdn.s-cloud.fi/v1/w384_q60/assets/dam-id/EbPlIDQL4GcAQ2FDxzrqpU.webp",
+    "url": "https://www.prisma.fi/tuotteet/111434172/venture-home-cielo-3-istuttava-sohva-boucle-ruskea-111434172?listName=search+result&listNameExtra=sohva",
+    "store": "Prisma.fi",
+    "snippet": "",
+    "fetched": "2026-11-14",
+    "live": true
+   },
+   {
+    "name": "Venture Home Nova 3-istuttava sohva, musta",
+    "price": 892.95,
+    "currency": "EUR",
+    "image": "https://cdn.s-cloud.fi/v1/w384_q60/assets/dam-id/2qqQyeQsK6Z8SMKrZIqIpa.webp",
+    "url": "https://www.prisma.fi/tuotteet/111434196/venture-home-nova-3-istuttava-sohva-musta-111434196?listName=search+result&listNameExtra=sohva",
+    "store": "Prisma.fi",
+    "snippet": "",
+    "fetched": "2026-11-14",
+    "live": true
+   },
+   {
+    "name": "SoBuy sohvasänky tummanharmaa FST101-DG",
+    "price": 259.39,
+    "currency": "EUR",
+    "image": "https://cdn.s-cloud.fi/v1/w384_q60/assets/dam-id/1QOgDx_J4IH9pBtJBtli0T.webp",
+    "url": "https://www.prisma.fi/tuotteet/111434789/sobuy-sohvasanky-tummanharmaa-fst101-dg-111434789?listName=search+result&listNameExtra=sohva",
+    "store": "Prisma.fi",
+    "snippet": "",
+    "fetched": "2026-11-14",
+    "live": true
+   }
+  ],
+  "gaming console": [
+   {
+    "name": "Nintendo Switch + Mario Kart 8 Deluxe pelikonsolipaketti",
+    "price": 259.0,
+    "currency": "EUR",
+    "image": "https://static.verkcdn.com/images/91/01_2219_1882_icecat-2219x1882.jpg",
+    "url": "https://www.verkkokauppa.com/fi/product/1079879/Nintendo-Switch-Mario-Kart-8-Deluxe-pelikonsolipaketti",
+    "store": "Verkkokauppa.com",
+    "snippet": "Nintendo Switch -pelikonsolissa on 6,2 tuuman kosketusnäyttö ja kolme pelitilaa: TV-, pöytä- ja käsikonsolitila. Paketti sisältää fyysisen Mario Kart 8 Deluxe -pelin, telakan, Joy-Con-ohjaimet sekä tarvittavat lisävarusteet.",
+    "fetched": "2026-11-14",
+    "live": true
+   },
+   {
+    "name": "PlayStation 5 pelikonsoli Digital 825 Gb",
+    "price": 649.0,
+    "currency": "EUR",
+    "image": "https://cdn.s-cloud.fi/v1/w384_q60/assets/dam-id/BbtuIhGm4LwB1RHPEVCPtH.webp",
+    "url": "https://www.prisma.fi/tuotteet/111214243/playstation-5-pelikonsoli-digital-825-gb-111214243?listName=search+result&listNameExtra=pelikonsoli",
+    "store": "Prisma.fi",
+    "snippet": "Asiakasomistajahinta 616,55 €, ilman S-Etukorttia 649,00 €",
+    "fetched": "2026-11-14",
+    "live": true,
+    "member_price": 616.55
+   },
+   {
+    "name": "PlayStation 5 Pro 2 Tb (PS5) pelikonsoli",
+    "price": 999.0,
+    "currency": "EUR",
+    "image": "https://static.verkcdn.com/images/5/2_1019795-4765x2240.jpg",
+    "url": "https://www.verkkokauppa.com/fi/product/1019795/PlayStation-5-Pro-2-Tb-PS5-pelikonsoli",
+    "store": "Verkkokauppa.com",
+    "snippet": "PlayStation 5 Pro nostaa suorituskyvyn uudelle tasolle tekoälyn parantamalla kuvanlaadulla, 4K- ja 8K-tuella, säteenseurannalla ja 2 Tt:n SSD-tallennustilalla. Koe sulava 120 FPS -pelaaminen ja täysi immersio PS5 Pro Enhanced -peleissä.",
+    "fetched": "2026-11-14",
+    "live": true
+   },
+   {
+    "name": "PlayStation 5 pelikonsoli Standard 1 Tb",
+    "price": 699.0,
+    "currency": "EUR",
+    "image": "https://cdn.s-cloud.fi/v1/w384_q60/assets/dam-id/D_QxktMv4DgAhZKJxbFVF-.webp",
+    "url": "https://www.prisma.fi/tuotteet/111214242/playstation-5-pelikonsoli-standard-1-tb-111214242?listName=search+result&listNameExtra=pelikonsoli",
+    "store": "Prisma.fi",
+    "snippet": "Asiakasomistajahinta 664,05 €, ilman S-Etukorttia 699,00 €",
+    "fetched": "2026-11-14",
+    "live": true,
+    "member_price": 664.05
+   },
+   {
+    "name": "THEA1200 Retro Console",
+    "price": 199.0,
+    "currency": "EUR",
+    "image": "https://static.verkcdn.com/images/54/2_1030166-1920x1080.jpg",
+    "url": "https://www.verkkokauppa.com/fi/product/1030166/THEA1200-Retro-Console",
+    "store": "Verkkokauppa.com",
+    "snippet": "Legendaarinen 90-luvun kotitietokone palaa täysikokoisena uudelleentulkintana, jossa on toimiva näppäimistö, HDMI- ja neljä USB-liitäntää. Konsoli sisältää 25 klassikkopeliä, mahdollistaa omien pelien lataamisen USB-tikulta ja tarjoaa täydellisen Amiga-kokemuksen Workbenchin avulla.",
+    "fetched": "2026-11-14",
+    "live": true
+   },
+   {
+    "name": "Nintendo Switch konsoli sini/puna Joy-Con ohjaimilla",
+    "price": 319.0,
+    "currency": "EUR",
+    "image": "https://cdn.s-cloud.fi/v1/w384_q60/assets/dam-id/1pPYzZYG4Qz93AOpUPP9mF.webp",
+    "url": "https://www.prisma.fi/tuotteet/100243697/nintendo-switch-konsoli-sinipuna-joy-con-ohjaimilla-100243697?listName=search+result&listNameExtra=pelikonsoli",
+    "store": "Prisma.fi",
+    "snippet": "Asiakasomistajahinta 303,05 €, ilman S-Etukorttia 319,00 €",
+    "fetched": "2026-11-14",
+    "live": true,
+    "member_price": 303.05
+   },
+   {
+    "name": "Nintendo Switch OLED -pelikonsoli, neonsininen / neonpunainen",
+    "price": 369.99,
+    "currency": "EUR",
+    "image": "https://static.verkcdn.com/images/87/2_718349-689x670.jpg",
+    "url": "https://www.verkkokauppa.com/fi/product/718349/Nintendo-Switch-OLED-pelikonsoli-neonsininen-neonpunainen",
+    "store": "Verkkokauppa.com",
+    "snippet": "Nintendo Switch OLED on varustettu kirkkaalla 7-tuumaisella OLED-näytöllä. Suuren ruudun elävät värit ja korkea kontrasti tarjoavat rikkaan pelikokemuksen. Konsoli on varustettu myös uudistetulla ja säädettävällä tuella. Voit siis asetella konsolisi pelatessasi sopivaan kulmaan. Myös äänimaailmaa on parannettu ja koet peliäänet entistä paremmin ja kirkkaammin, kun pelaat käsikonsolimoodissa.",
+    "fetched": "2026-11-14",
+    "live": true
+   },
+   {
+    "name": "LEGO® LEGO Creator 31380 Retrotyylinen pelikonsoli",
+    "price": 18.95,
+    "currency": "EUR",
+    "image": "https://cdn.s-cloud.fi/v1/w384_q60/assets/dam-id/ESFEOXa2a3E876Ud2jYEUn.webp",
+    "url": "https://www.prisma.fi/tuotteet/111249923/lego-lego-creator-31380-retrotyylinen-pelikonsoli-111249923?listName=search+result&listNameExtra=pelikonsoli",
+    "store": "Prisma.fi",
+    "snippet": "Asiakasomistajahinta 16,11 €, ilman S-Etukorttia 18,95 €",
+    "fetched": "2026-11-14",
+    "live": true,
+    "member_price": 16.11
+   }
+  ]
+ }
+}

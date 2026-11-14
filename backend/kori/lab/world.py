@@ -634,7 +634,7 @@ _WEB_KINDS: list[tuple[str, str, list[str], str, str, str]] = [
     ("television", r"\btv\b|televisio\w*|television\w*|telkkar\w*", ["televisions"], "televisio",
      r"\btv\b|televisio|\d\d\s?\"|oled|qled", r"teline|kaukosäädin|antenni|kaapeli|pöytä|taso"),
     ("bicycle", r"\bbikes?\b|bicycle\w*|polkupyör\w*|fillar\w*|sähköpyör\w*", ["bicycles", "electric_bikes"], "polkupyörä",
-     r"pyörä|bike|cycle", r"lukko|kypärä|valo|pumppu|teline|sisärengas|rengas|satula|potkupyörä|kuntopyörä|tarakka|kori|apupyör"),
+     r"pyörä|bike|cycle", r"lukko|kypärä|valo|pumppu|teline|sisärengas|rengas|satula|potkupyörä|kuntopyörä|tarakka|kori|apupyör|laturi|akku|näyttö|ketju"),
     ("robot vacuum", r"robo\w*\s?vacuum\w*|robot cleaner|robotti\s?-?imur\w*", ["robot_vacuum_cleaners"], "robotti-imuri",
      r"robot", r"suodatin|harja|pussi|varaosa|lisävaruste|tarvike"),
     ("espresso machine", r"espresso\w*|coffee machine\w*|kahvikone\w*|kahvinkeitin\w*", ["espresso_machines"], "espressokeitin",
@@ -708,18 +708,20 @@ def _prisma_search(term: str) -> list[dict]:
         price_at = chunk.find('data-test-id="product-card-price"')
         if not (name and href and img) or price_at < 0:
             continue
-        text = html_lib.unescape(re.sub(r"<[^>]+>", " ", chunk[price_at:price_at + 1500]))
-        text = re.sub(r"\s+", " ", text.split(">", 1)[-1]).strip()
+        tail = chunk[price_at:].split(">", 1)[-1]
+        tail = re.sub(r"<svg.*?</svg>", " ", tail, flags=re.S)
+        text = re.sub(r"\s+", " ", html_lib.unescape(re.sub(r"<[^>]+>", " ", tail))).strip()[:200]
         prices = _euros(text)
         if not prices:
             continue
         regular = re.search(r"ilman S-Etukorttia:?\s*(\d[\d\s]*,\d{2})\s*€", text)
         row = {"name": html_lib.unescape(name.group(1)), "price": prices[0], "currency": "EUR",
                "image": html_lib.unescape(img.group(1)), "url": "https://www.prisma.fi" + html_lib.unescape(href.group(1)),
-               "store": "Prisma.fi", "snippet": text[:160], "fetched": _today(), "live": True}
+               "store": "Prisma.fi", "snippet": "", "fetched": _today(), "live": True}
         if regular:
             row["member_price"] = prices[0]
             row["price"] = _euros(regular.group(0))[0]
+            row["snippet"] = f"Asiakasomistajahinta {prices[0]:.2f} €, ilman S-Etukorttia {row['price']:.2f} €".replace(".", ",")
         out.append(row)
     return out
 

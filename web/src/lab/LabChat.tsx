@@ -61,26 +61,45 @@ function fmtValue(value: number | string, unit: string, lang: LabLang) {
   return new Intl.NumberFormat(lang === "fi" ? "fi-FI" : "en-IE", { maximumFractionDigits: 1 }).format(value);
 }
 
-async function* realEvents(customer: string, lang: LabLang, session: string, message: string, signal: AbortSignal): AsyncGenerator<LabEvent> {
-  const response = await fetch("/api/lab/chat", { method: "POST", headers: { "Content-Type": "application/json", Accept: "text/event-stream", "X-Kori-Device": readStored("kori.device") || "lab-web" }, body: JSON.stringify({ customer, lang, session, message }), signal });
-  if (!response.ok || !response.body) throw new Error(`Chat request failed (${response.status})`);
-  const reader = response.body.getReader();
-  const decoder = new TextDecoder();
-  let buffer = "";
-  for (;;) {
-    const { value, done } = await reader.read();
-    buffer += decoder.decode(value || new Uint8Array(), { stream: !done });
-    let split = buffer.search(/\r?\n\r?\n/);
-    while (split >= 0) {
-      const raw = buffer.slice(0, split);
-      buffer = buffer.slice(split).replace(/^\r?\n\r?\n/, "");
-      let event = "message";
-      const data: string[] = [];
-      for (const line of raw.split(/\r?\n/)) { if (line.startsWith("event:")) event = line.slice(6).trim(); else if (line.startsWith("data:")) data.push(line.slice(5).trimStart()); }
-      if (data.length) { try { yield { event, data: JSON.parse(data.join("\n")) }; } catch { /* skip malformed event */ } }
-      split = buffer.search(/\r?\n\r?\n/);
+// One turn as events. The turn keeps running on the server if the connection drops (a lift, a tunnel, a booth's wifi):
+// the same turn id with the last event number picks the stream up where it broke.
+async function* realEvents(customer: string, lang: LabLang, session: string, message: string, turn: string, signal: AbortSignal): AsyncGenerator<LabEvent> {
+  let last = 0, tries = 0, finished = false;
+  while (!finished) {
+    try {
+      const response = await fetch("/api/lab/chat", { method: "POST", headers: { "Content-Type": "application/json", Accept: "text/event-stream", "X-Kori-Device": readStored("kori.device") || "lab-web" }, body: JSON.stringify({ customer, lang, session, message, turn, after: last }), signal });
+      if (!response.ok || !response.body) {
+        if (response.status >= 400 && response.status < 500) throw Object.assign(new Error(`Chat request failed (${response.status})`), { final: true });
+        throw new Error(`Chat request failed (${response.status})`);
+      }
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      for (;;) {
+        const { value, done } = await reader.read();
+        buffer += decoder.decode(value || new Uint8Array(), { stream: !done });
+        let split = buffer.search(/\r?\n\r?\n/);
+        while (split >= 0) {
+          const raw = buffer.slice(0, split);
+          buffer = buffer.slice(split).replace(/^\r?\n\r?\n/, "");
+          let event = "message", n = -1;
+          const data: string[] = [];
+          for (const line of raw.split(/\r?\n/)) { if (line.startsWith("event:")) event = line.slice(6).trim(); else if (line.startsWith("data:")) data.push(line.slice(5).trimStart()); else if (line.startsWith("id:")) n = Number(line.slice(3).trim()); }
+          if (data.length && !(n > 0 && n <= last)) {
+            if (n > last) { last = n; tries = 0; }
+            if (event === "done" || event === "error") finished = true;
+            try { yield { event, data: JSON.parse(data.join("\n")) }; } catch { /* skip malformed event */ }
+          }
+          split = buffer.search(/\r?\n\r?\n/);
+        }
+        if (done) break;
+      }
+      if (finished) return;
+      throw new Error("The connection dropped");
+    } catch (error) {
+      if (signal.aborted || (error as { final?: boolean }).final || ++tries > 8) throw error;
+      await new Promise((resolve) => setTimeout(resolve, Math.min(4000, 400 * tries)));
     }
-    if (done) break;
   }
 }
 
@@ -208,7 +227,7 @@ export default function LabChat({ onVoice }: { onVoice?: () => void } = {}) {
     setDraft("");
     setTurns((all) => [...all, { id, question, text: "", runs: [], views: [], sources: [], chips: [], pending: true }]);
     try {
-      const stream = mock ? playMock(lang, question) : realEvents(customer, lang, session, question, controller.signal);
+      const stream = mock ? playMock(lang, question) : realEvents(customer, lang, session, question, id, controller.signal);
       for await (const event of stream) {
         if (controller.signal.aborted) return;
         patchTurn(id, (turn) => {

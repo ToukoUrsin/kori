@@ -155,7 +155,8 @@ WRITING CODE
 - A view with motion or a control needs data to move: a row per weekday and hour, a row per month, a row per option.
 
 THE ANSWER AND THE BRIEF
-- ANSWER: lead with the finding. Two sentences at most, three figures at most, the key one in bold: the view carries the rest. {money_style}; whole euros
+- ANSWER: lead with the finding. Two sentences and 35 words at most, three figures at most, the key one in bold, no dashes or brackets:
+  the view carries everything else. {money_style}; whole euros
   unless cents matter. Do not describe the view or say "below".
 - BRIEF: ask for a view on almost every answer. Say what they should see or do and which ledger names carry it. Dream big on form and leave the pixels
   to the designer: a heat grid, a calendar, a tap-through story of the year, a pick-this-instead comparison with product pictures, a slider that moves a
@@ -645,6 +646,10 @@ def _fallback_view(ledger: dict, lang: str) -> str:
             'border-bottom:1px solid #eceef0}.k-fb b{font-variant-numeric:tabular-nums}</style><div class="k-fb">' + rows + "</div>")
 
 
+LEDE = ("\nThe first sentence of the view: one plain finding a customer would say out loud. Any date, name or amount in it comes from the "
+        "ledger through a placeholder; say nothing about causes or timing that the ledger does not state.")
+
+
 async def _view(w: _Work, question: str, answer: str, title: str, brief: str) -> None:
     """The designer builds the interface for this answer from a snapshot of the ledger; the fragment streams to the phone."""
     lang, t = w.lang, w.turn
@@ -657,7 +662,7 @@ async def _view(w: _Work, question: str, answer: str, title: str, brief: str) ->
     t0, html, by = time.time(), "", "ledger"
     try:
         from . import designer
-        payload = {"question": question, "lang": lang, "answer": answer, "brief": brief, "title": title, "data": ledger, "width": 390}
+        payload = {"question": question, "lang": lang, "answer": answer, "brief": brief + LEDE, "title": title, "data": ledger, "width": 390}
         async for delta in designer.write_ui(payload):
             if delta:
                 html += delta
