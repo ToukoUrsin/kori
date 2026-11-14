@@ -74,7 +74,7 @@ Gemini picks which calculation to run and explains the result. Our own engine co
 - Open /host: Kori inside a stand-in bank app. The host asks for consent, opens Kori in a web view, and gets the safe-to-spend number back for its own home screen. Ten small messages, in docs/INTEGRATION.md.
 - The engine runs next to the data. Only the question and the numbers needed for the answer go to the model.
 - Works with a partial view: when the salary sits in another bank, Kori says what it can't see and refuses to guess.
-- Says it's an AI. No investment or credit advice. Says "pension" to pensioners.
+- Says it's an AI. No investment or credit advice.
 - 194 automated tests, and fallbacks when voice isn't available.
 
 Open the link on your phone and ask it anything.
