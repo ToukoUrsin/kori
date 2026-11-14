@@ -86,6 +86,16 @@
   }
   function factUnit(name) { var f = S.data.facts && S.data.facts[name]; return f && f.unit; }
   function table(name) { var t = S.data.tables && S.data.tables[name]; return t ? t.rows : []; }
+  // the rows an element reads: its table, or only the rows where one column has one value (where="monthly=150")
+  function rowsOf(elm) {
+    var rows = table(elm.getAttribute("table")), w = elm.getAttribute("where");
+    if (!w) return rows;
+    return w.split(/\s*[;&]\s*/).reduce(function (acc, cond) {
+      var i = cond.indexOf("="); if (i < 1) return acc;
+      var col = cond.slice(0, i).trim(), val = cond.slice(i + 1).trim().replace(/^["']|["']$/g, "");
+      return acc.filter(function (r) { var v = r[col]; return String(v) === val || (val !== "" && !isNaN(+val) && typeof v === "number" && Math.abs(v - +val) < 1e-9); });
+    }, rows);
+  }
   function product(id) { var ps = S.data.products || []; for (var i = 0; i < ps.length; i++) if (ps[i].id === id) return ps[i]; return typeof id === "number" ? ps[id] : undefined; }
   function normalise(d) {
     d = d || {}; d.facts = d.facts || {}; d.tables = d.tables || {}; d.products = d.products || []; d.sources = d.sources || [];
@@ -379,7 +389,7 @@
       var series = [], kind = "ord", xmin = Infinity, xmax = -Infinity, ymin = Infinity, ymax = -Infinity, ordN = 0;
       kids.forEach(function (c) {
         var tag = c.nodeName.toLowerCase(); if (tag !== "k-line" && tag !== "k-area") return;
-        var rows = table(c.getAttribute("table")), xc = c.getAttribute("x") || xcol;
+        var rows = rowsOf(c), xc = c.getAttribute("x") || xcol;
         var cols = tag === "k-area" && c.hasAttribute("lo") ? [c.getAttribute("lo"), c.getAttribute("hi")] : [c.getAttribute("y") || "value"];
         var pts = [];
         rows.forEach(function (r, i) {
@@ -401,7 +411,7 @@
       if (!series.length || !isFinite(xmin)) return;
       kids.forEach(function (c) { // rules and marks stretch the y range too
         if (c.nodeName === "K-RULE" && isFinite(+c.getAttribute("y"))) { ymin = Math.min(ymin, +c.getAttribute("y")); ymax = Math.max(ymax, +c.getAttribute("y")); }
-        if (c.nodeName === "K-NOW" || c.nodeName === "K-MARK") { var xs = c.nodeName === "K-NOW" ? [c.getAttribute("x") || S.data.today] : table(c.getAttribute("table")).map(function (r) { return r[c.getAttribute("x") || xcol]; }); xs.forEach(function (v) { var q = xval(v); if (q[1] !== "ord") { xmin = Math.min(xmin, q[0]); xmax = Math.max(xmax, q[0]); } }); }
+        if (c.nodeName === "K-NOW" || c.nodeName === "K-MARK") { var xs = c.nodeName === "K-NOW" ? [c.getAttribute("x") || S.data.today] : rowsOf(c).map(function (r) { return r[c.getAttribute("x") || xcol]; }); xs.forEach(function (v) { var q = xval(v); if (q[1] !== "ord") { xmin = Math.min(xmin, q[0]); xmax = Math.max(xmax, q[0]); } }); }
       });
       if (this.hasAttribute("ymin")) ymin = +this.getAttribute("ymin");
       if (this.hasAttribute("ymax")) ymax = +this.getAttribute("ymax");
@@ -486,7 +496,7 @@
           if (c.getAttribute("label")) el("text", { x: PL + 2, y: py - 5, class: "k-ax on k-halo", "text-anchor": "start", style: "fill:" + col }, axis).textContent = c.getAttribute("label");
         } else if (tag === "k-mark") {
           var by = {}, order = [];
-          table(c.getAttribute("table")).forEach(function (r) { var k = r[c.getAttribute("x") || xcol]; if (!by[k]) { by[k] = []; order.push(k); } by[k].push(r[c.getAttribute("label") || "label"]); });
+          rowsOf(c).forEach(function (r) { var k = r[c.getAttribute("x") || xcol]; if (!by[k]) { by[k] = []; order.push(k); } by[k].push(r[c.getAttribute("label") || "label"]); });
           order.forEach(function (k) {
             var q = xval(k), px = X(q[0]), v = onLine(q[0]), py = v == null ? T + ph : Y(v);
             // the name sits above the plot, a hairline drops from it to the point on the line
@@ -535,7 +545,7 @@
   /* ---------------- k-heat: a grid of values, or a year of days ---------------- */
   define("k-heat", {
     _render: function () {
-      var me = this, W = this.clientWidth || S.width - 40, rows = table(this.getAttribute("table")), vcol = this.getAttribute("v") || "value";
+      var me = this, W = this.clientWidth || S.width - 40, rows = rowsOf(this), vcol = this.getAttribute("v") || "value";
       var dateCol = this.getAttribute("date"), xc = this.getAttribute("x"), yc = this.getAttribute("y"), xf = this.getAttribute("xfmt"), yfm = this.getAttribute("yfmt");
       var col = tone(this.getAttribute("tone"), "brand");
       this._clear();
@@ -622,7 +632,7 @@
   /* ---------------- k-bars ---------------- */
   define("k-bars", {
     _render: function () {
-      var me = this, W = this.clientWidth || S.width - 40, rows = table(this.getAttribute("table")).slice(), xc = this.getAttribute("x") || "label", yc = this.getAttribute("y") || "value";
+      var me = this, W = this.clientWidth || S.width - 40, rows = rowsOf(this).slice(), xc = this.getAttribute("x") || "label", yc = this.getAttribute("y") || "value";
       var f = this.getAttribute("fmt") || "eur0", xf = this.getAttribute("xfmt"), horiz = this.getAttribute("dir") === "h", limit = +this.getAttribute("limit") || (horiz ? 8 : 40);
       var sort = this.getAttribute("sort"); if (sort) { var desc = sort[0] === "-", sc = sort.replace(/^-/, "") || yc; rows.sort(function (a, b) { return desc ? b[sc] - a[sc] : a[sc] - b[sc]; }); }
       rows = rows.slice(0, limit);
@@ -681,7 +691,7 @@
   define("k-each", {
     _render: function () {
       var tpl = this.querySelector(":scope > template"); this._clear(); if (!tpl) return;
-      var src = this.hasAttribute("products") ? S.data.products : table(this.getAttribute("table")), rows = src.slice(), sort = this.getAttribute("sort");
+      var src = this.hasAttribute("products") ? S.data.products : rowsOf(this), rows = src.slice(), sort = this.getAttribute("sort");
       if (sort) { var desc = sort[0] === "-", sc = sort.replace(/^-/, ""); rows.sort(function (a, b) { return desc ? (b[sc] > a[sc] ? 1 : -1) : a[sc] > b[sc] ? 1 : -1; }); }
       var limit = +this.getAttribute("limit"), more = this.getAttribute("more"), total = rows.length;
       var html = tpl.innerHTML, box = document.createElement("template"), me = this, firstDraw = !this._drawn; this._drawn = true;
@@ -862,5 +872,8 @@
     fill: fillRow, reduced: REDUCED, _fail: fail,
   });
 
+  // el.hidden = false must also work on an <svg> a view drew itself (the property exists only on HTML elements)
+  if (window.SVGElement && !("hidden" in SVGElement.prototype)) Object.defineProperty(SVGElement.prototype, "hidden", {
+    get: function () { return this.hasAttribute("hidden"); }, set: function (v) { if (v) this.setAttribute("hidden", ""); else this.removeAttribute("hidden"); } });
   post({ kori: "ready", pulse: 1 });          // pulse: this frame answers "ping" with "pong"
 })();

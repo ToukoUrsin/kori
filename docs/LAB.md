@@ -108,6 +108,7 @@ Pictures are always proxy paths (`/api/lab/img?k=<key>`): the proxy only serves 
 - One HTML fragment: optional `<style>`, then markup, then optional `<script>` last. No `<html>`, `<head>`, `<body>`, no external URLs.
 - **Never type a figure.** Single figures: `{{eating_out_month|eur}}` (formats: `eur`, `eur0`, `pct`, `int`, `num`, `date`, `raw`). Rows: read `K.table("by_weekday")` in the script, format with `K.fmt.eur(v)`. Products: `K.data.products`.
 - Totals worked out on screen (a slider, toggled swaps) must be sums, differences or lookups of ledger values. Simulations come as tables from the sandbox, one row per slider position, not as formulas in the view.
+- Every element that reads a table takes `where="column=value"` and reads only those rows, so a model that came as one long table with a step column is still one kit chart; a slider sets `where` and the chart redraws.
 - Any element can carry `data-trace="<fact or table name>"`; tapping it opens the run.
 - `K.ask("...")` sends a follow-up question. `K.open(url)` opens a source.
 - 390 px wide phone first. The runtime ships Kori's tokens, type scale and a small kit; the designer is free to draw anything on top (SVG, canvas, three.js from the vendored copy).
