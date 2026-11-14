@@ -128,6 +128,25 @@ def show(products) -> None:
             _products.append(_plain(p))
 
 
+_said: list[str] = []
+
+
+def eur(value, cents: bool = False) -> str:
+    """Money the way this customer reads it: €1,357 or €56.54 in English, 1 357 € or 56,54 € in Finnish."""
+    v = float(value)
+    s = f"{v:,.2f}" if cents else f"{round(v):,}"
+    if (G.get("me") or {}).get("lang") == "fi":
+        return s.replace(",", "\u00a0").replace(".", ",") + "\u00a0€"
+    return ("-€" + s[1:]) if s.startswith("-") else "€" + s
+
+
+def say(text) -> None:
+    """The written answer, when the cell can already give it: the customer reads it the moment the cell has run."""
+    t = " ".join(str(text).split())
+    if t:
+        _said[:] = [t[:700]]
+
+
 # -------------------------------------------------------------------- the door
 _calls = 0
 
@@ -171,7 +190,7 @@ def _load() -> dict:
 
 
 G: dict = {"__name__": "__kori__", "pd": pd, "np": np, "duckdb": duckdb, "math": math, "json": json, "datetime": datetime,
-           "emit": emit, "table": table, "show": show,
+           "emit": emit, "table": table, "show": show, "say": say, "eur": eur,
            "kori": _Door("engine"), "shop": _Door("shop"), "web": _Door("web"), "market": _Door("market")}
 
 
@@ -213,12 +232,12 @@ def main() -> None:
             continue
         if req.get("op") != "run":
             continue
-        _facts.clear(), _tables.clear(), _products.clear()
+        _facts.clear(), _tables.clear(), _products.clear(), _said.clear()
         ok, out, err = _run(req.get("code") or "")
         if len(out) > MAX_OUT:
             out = out[:MAX_OUT] + f"\n[... {len(out) - MAX_OUT} more characters not shown]"
         _send({"t": "done", "id": req.get("id"), "ok": ok, "out": out, "err": err,
-               "facts": list(_facts), "tables": list(_tables), "products": list(_products)})
+               "facts": list(_facts), "tables": list(_tables), "products": list(_products), "say": _said[0] if ok and _said else None})
 
 
 if __name__ == "__main__":

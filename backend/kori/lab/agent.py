@@ -51,6 +51,13 @@ BRIEF: <for the designer: what the customer should see or be able to do, the for
    Add VIEW and BRIEF to the cell that puts everything the view needs on the ledger, which is nearly always your first cell: the designer
    then starts building the moment the cell succeeds, while you write the answer. That saves the customer several seconds. Leave them
    out only if you must look at the result before you can know what the view should be, or if more cells will follow.
+CHIPS: <question> | <question> | <question>
+   Whenever this cell is the last one you need, also end it with say(...) and add the CHIPS line: the customer then reads the
+   answer the moment the cell has run, seconds sooner than if you write it afterwards. say() takes the answer exactly as form 3
+   describes it: 1 to 3 short sentences in the customer's language, **bold** around the one key figure, every figure in it emitted
+   by this cell. Build it from the values the code computed, with money through eur(): say(f"You could save **{eur(m)}** a month, or
+   {eur(y)} a year."). Where the wording depends on the result (yes or no, which day, which product), decide it in the code
+   with if/else. Leave say() out only when more cells will follow.
 
 2. Hand a heavy modelling job to the larger model (a Monte Carlo run, a multi-year projection, a loan schedule, a portfolio simulation):
 MODEL: <what the model shows, 3 to 7 words>
@@ -88,6 +95,8 @@ THE LEDGER (the only way a figure reaches the customer)
 emit(name, value, unit="eur", label="")     one figure. units: eur, eur_per_day, eur_per_month, pct (35 means 35%), count, days, months, years, date, ratio, text
 table(name, rows, label="")                 a DataFrame or list of dicts, at most 400 rows, plain column names
 show(products)                              real products (rows from shop.* or web.products) the view should picture
+say(text)                                   the written answer, when the cell can already give it (see HOW TO REPLY)
+eur(x, cents=False)                         money as the customer reads it, for say(): eur(1356.89) -> "€1,357", eur(56.54, True) -> "€56.54" (in Finnish "1 357 €", "56,54 €")
 
 THE DOOR (the only way out; each call is logged and shown to the customer)
 {engine}{shop}web.search(query, n=6)                       pages: title, url, snippet, image
@@ -380,9 +389,10 @@ def _modeller_attempts() -> list[tuple[str, str | None]]:
 
 
 async def _stream(attempts: list[tuple[str, str | None]], contents: list, cfg: types.GenerateContentConfig, on_text=None,
-                  hedge_after: float = 6.0, timeout: float = 90.0) -> tuple[str, str]:
+                  hedge_after: float = 6.0, timeout: float = 90.0, race: int = 1) -> tuple[str, str]:
     """One streamed reply as (text, model). If the model is silent for `hedge_after` seconds a second attempt starts
-    beside it; the first one to say anything is the one we listen to and the other is dropped."""
+    beside it; the first one to say anything is the one we listen to and the other is dropped. `race` attempts start
+    together: where a person waits, the quicker of two is worth a second request."""
     q: asyncio.Queue = asyncio.Queue()
 
     async def attempt(i: int, model: str, key: str | None) -> None:
@@ -404,12 +414,13 @@ async def _stream(attempts: list[tuple[str, str | None]], contents: list, cfg: t
             log.warning("model attempt %s (%s) failed: %s", i, model, str(e)[:200])
             await q.put((i, e))
 
-    tasks = {0: asyncio.create_task(attempt(0, *attempts[0]))}
-    started, winner, failed, text, t0 = 1, None, set(), "", time.time()
+    race = max(1, min(race, len(attempts)))
+    tasks = {i: asyncio.create_task(attempt(i, *attempts[i])) for i in range(race)}
+    started, winner, failed, text, t0 = race, None, set(), "", time.time()
     try:
         while True:
             more = winner is None and started < len(attempts)
-            wait = max(0.05, hedge_after * started - (time.time() - t0)) if more else timeout
+            wait = max(0.05, hedge_after * (started - race + 1) - (time.time() - t0)) if more else timeout
             try:
                 i, item = await asyncio.wait_for(q.get(), wait)
             except asyncio.TimeoutError:
@@ -464,8 +475,9 @@ def _parse(text: str) -> dict:
         end = body.find("\n```")
         code, rest = (body[:end], body[end + 4:]) if end >= 0 else (body.rstrip("`\n "), "")
         r = _RUN.search(head)
+        chips = [c.strip(" -•\n\t") for c in re.split(r"\s*\|\s*|\n", _field(rest, "CHIPS")) if c.strip(" -•\n\t")]
         return {"kind": "run", "title": (r.group(1).strip() if r else "")[:80], "code": code.strip("\n"),
-                "view": _field(rest, "VIEW")[:80], "brief": _field(rest, "BRIEF")}
+                "view": _field(rest, "VIEW")[:80], "brief": _field(rest, "BRIEF"), "chips": [c[:90] for c in chips][:3]}
     if t.startswith("MODEL:"):
         first, _, rest = t.partition("\n")
         job = re.split(r"^[ \t]*(?:VIEW|BRIEF):", rest, maxsplit=1, flags=re.M)[0].strip()
@@ -517,6 +529,7 @@ class _Work:
         self.facts: dict[str, dict] = {}
         self.tables: dict[str, dict] = {}
         self.products: list[dict] = []
+        self.said = ""                                 # the answer the last cell wrote itself, if it did
         self.runs = self.calls = self.views = 0
         self.models: dict[str, str] = {"analyst": config.GEMINI_MODEL}
 
@@ -547,6 +560,7 @@ class _Work:
 
         k = await kernel.kernel_for(self.sess.id, self.m.customer_id, self.lang)
         res = await k.run(rid, code, self.door, on_call)
+        self.said = (res.get("say") or "") if res["ok"] else ""
         added: dict = {"facts": {}, "tables": {}, "products": 0}
         if res["ok"]:
             for f in res["facts"]:
@@ -727,8 +741,10 @@ async def run_turn(sess: LabSession, turn: Turn) -> None:
         try:
             for step in range(MAX_STEPS):
                 typing = _Typing(w)
-                text, model = await _stream(_analyst_attempts(), contents, cfg, typing)
+                t_step = time.time()
+                text, model = await _stream(_analyst_attempts(), contents, cfg, typing, race=2)
                 rep = _parse(text)
+                log.info("analyst step %d (%s): %.1fs, %d chars", step, rep["kind"], time.time() - t_step, len(text))
                 if rep["kind"] == "run" and rep["code"]:
                     await warm
                     out = await w.cell(rep["title"], rep["code"], model, rid=typing.rid)
@@ -736,6 +752,10 @@ async def run_turn(sess: LabSession, turn: Turn) -> None:
                     if out["ok"] and rep["brief"] and view is None and (w.facts or w.tables or w.products):
                         view = asyncio.create_task(_view(w, turn.message, "", rep["view"] or rep["title"], rep["brief"]))
                         extra = "The designer is building the view from this ledger now. Reply with ANSWER and CHIPS only."
+                    if out["ok"] and w.said and not check.answer(w.said, check.allowed(w.ledger(), turn.message), lang):
+                        answer, chips = w.said, rep["chips"]            # the cell said it: no second round with the model
+                        mine.extend([_said(text), _result(out), _said("ANSWER: " + answer)])
+                        break
                     add(_said(text), _result(out, extra))
                 elif rep["kind"] == "model":
                     await warm

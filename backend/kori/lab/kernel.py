@@ -222,7 +222,8 @@ class Kernel:
             if self.proc and self.proc.returncode is not None:
                 await self.close()
             return {"ok": bool(res.get("ok")), "out": res.get("out") or "", "err": res.get("err"), "facts": res.get("facts") or [],
-                    "tables": res.get("tables") or [], "products": res.get("products") or [], "ms": int((time.time() - t0) * 1000), "calls": calls}
+                    "tables": res.get("tables") or [], "products": res.get("products") or [], "say": res.get("say"),
+                    "ms": int((time.time() - t0) * 1000), "calls": calls}
 
     async def close(self) -> None:
         p, self.proc = self.proc, None

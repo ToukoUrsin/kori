@@ -46,7 +46,7 @@ with a sandbox of its own (the contract is in `docs/LAB.md`):
    transactions and has no network. It can call the engine above, search S-kaupat and Finnish web shops, read
    S-Pankki's fund facts, and hand a heavy model (4,000 simulated futures, a loan schedule) to `gemini-4-carbon`.
 2. **Every figure goes on a ledger**, put there by the code that computed it.
-3. **Claude builds the screen** (`claude-fable-5-2`) for this one answer from the ledger: a chart, a picker, product
+3. **Claude builds the screen** (`claude-opus-5-5`) for this one answer from the ledger: a chart, a picker, product
    tiles, switches. It streams into a locked frame that cannot reach the network or the app.
 4. **A check reads the screen.** Figures are filled in from the ledger. A figure the designer typed that is not on
    the ledger is flagged under the view.
@@ -177,7 +177,7 @@ PYTHONPATH=. uv run uvicorn kori.app:app --port 8811
 cd ../web && pnpm install && pnpm dev      # http://localhost:8812
 ```
 
-Tests (194: engine arithmetic, number check, API, the sandbox, the shop and swap rules, the demo customers in both languages):
+Tests (198: engine arithmetic, number check, API, the sandbox, the shop and swap rules, the demo customers in both languages):
 
 ```bash
 cd backend && PYTHONPATH=. uv run pytest -q

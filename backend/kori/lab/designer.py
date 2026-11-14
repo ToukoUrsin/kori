@@ -24,7 +24,7 @@ from .. import config
 log = logging.getLogger("kori.lab.designer")
 
 PROMPT_FILE = Path(__file__).with_name("ui_prompt.md")
-FIRST_TEXT_S = float(os.environ.get("KORI_UI_FIRST_S", "8"))     # Claude must start writing within this, or Gemini takes over
+FIRST_TEXT_S = float(os.environ.get("KORI_UI_FIRST_S", "14"))    # Claude must start writing within this, or Gemini takes over (it thinks 7 to 8 s on the largest ledgers)
 HEDGE_S = float(os.environ.get("KORI_UI_HEDGE_S", "4"))          # silent this long: Gemini starts beside it, so a takeover is not from cold
 EFFORT = os.environ.get("KORI_UI_EFFORT", "low")                  # thinking cannot be switched off on these models; low starts fastest
 MAX_TOKENS = 12000

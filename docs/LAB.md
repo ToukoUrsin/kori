@@ -16,6 +16,8 @@ The customer types or speaks a question. An agent answers it by writing code, no
 4. **Check.** Figures in the fragment are placeholders filled from the ledger. Any literal figure the designer typed is compared with the ledger and flagged if it is not there. Kit elements that draw from a table (`k-each`, `k-bars`, `k-product` …) are traced to that table cell by cell, and a table the ledger does not have is flagged. In the plain chat a flagged view shows one quiet line under it ("2 figures here could not be checked against your data").
 5. **Frame.** The fragment runs in a locked iframe: no network, no access to the app, pictures only through Kori's proxy.
 
+Speed: the customer reads the answer when the code has run, not when the view is done. The cell that computes the figures also writes the sentence (`say`, with money through `eur`), the same check runs on it, and the designer starts on the view at that moment. If the sentence has a figure that is not on the ledger it is dropped and the analyst writes the answer in a second round. Two analyst attempts start together and the first to finish is used.
+
 Pitch line that is true of this design: *no number is guessed. The agent writes code that runs on your own transactions, and every figure on screen traces to a run you can open.*
 
 ## Parts and owners
@@ -127,6 +129,8 @@ pd, np, duckdb, math, json, datetime
 emit(name, value, unit="eur", label="")      # put one figure on the ledger
 table(name, rows_or_dataframe, label="")     # put a table on the ledger (at most 400 rows)
 show(products)                               # put products (from shop/web calls) on the ledger
+say(text)                                    # the written answer, when this cell can already give it
+eur(x, cents=False)                          # money the way this customer reads it: €1,357 or 1 357 €
 
 kori.safe_to_spend()   kori.usual_month()   kori.forecast(pace="safe"|"usual")   kori.bills()
 kori.replay()          kori.afford(amount, label="")   kori.what_if(changes)      kori.goal(amount, months=None, by=None)
@@ -153,5 +157,5 @@ market.history(symbol, years=10)              # monthly closes of an index or fu
 | Analyst: writes and runs the code, decides what to show | `gemini-4-hydrogen` | A person is waiting |
 | Modeller: Monte Carlo, multi-year projections, loan schedules | `gemini-4-carbon` | Heavier reasoning, called when the analyst asks for a model |
 | Web researcher (`web.ask`) | `gemini-4-hydrogen` with Google Search | Grounded answers with sources |
-| Designer: writes the interface | `claude-fable-5-2` (env `KORI_UI_MODEL`; `claude-opus-5-5` also works), Gemini if Claude gives no first text within 8 s | Best at writing interfaces. Warmed at start and every 50 minutes so the first customer does not wait for it |
+| Designer: writes the interface | `claude-opus-5-5` (env `KORI_UI_MODEL`), Gemini if Claude gives no first text within 14 s | Best at writing interfaces. Measured on recorded ledgers: first text in 0.6 to 1.4 s on product and swap views, 3.6 s on the eating-out view, 7 to 8 s on the ten-year model. `claude-fable-5-2` writes as well but thinks 11 to 20 s before its first text on views with products, so it is not the default. Warmed at start and every 50 minutes so the first customer does not wait for it |
 | Voice | ElevenLabs Agents, Kori's server as the brain | As before |
