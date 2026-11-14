@@ -23,7 +23,7 @@ from google.genai import types
 from .. import config, state as S
 from ..engine.core import Money
 from . import grounding, prompts, tools as T
-from ..wording import adapt, is_pensioner
+from ..wording import adapt, is_pensioner, pension_text
 
 log = logging.getLogger("kori.agent")
 Emit = Callable[[str, dict], Awaitable[None]]
@@ -362,11 +362,15 @@ async def run_turn(sess: Session, text: str, mode: str, emit: Emit) -> dict:
     sess.log.append({"role": "coach", "text": final, "cards": [c["id"] for c in cards]})
     await emit("text", {"text": final})
     consistency = grounding.consistency_issues(results)
+    figs = [] if withheld or failed else grounding.figures(final, mine + earlier, sess.lang, question=text)
+    if is_pensioner(m.customer.age):
+        for f in figs:      # "source" is an identifier elsewhere, so the wording pass skips it: here it is words
+            f["source"] = pension_text(f["source"])
     done = {"grounded": not flagged, "flagged": flagged, "withheld": withheld, "error": failed,
-            "checked": len(grounding.numbers_in_text(final, sess.lang)),
+            "checked": len(figs) or len(grounding.numbers_in_text(final, sess.lang)),
             "followups": T.followups(used, sess.lang), "tools": used, "ms": int((time.time() - t0) * 1000),
             "consistency": consistency,
-            "figures": grounding.figures(final, mine + earlier, sess.lang)}
+            "figures": figs}
     await emit("done", done)
     return {"text": final, "cards": cards, **done}
 

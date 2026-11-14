@@ -24,7 +24,7 @@ def _sub(pattern: str, repl: str, text: str, flags=re.IGNORECASE) -> str:
 
 EN = [
     (r"\bpaydays\b", "pension days"), (r"\bpayday\b", "pension day"),
-    (r"\bpay cycles\b", "pension months"), (r"\bpay cycle\b", "pension month"),
+    (r"\bpay cycles\b", "pension cycles"), (r"\bpay cycle\b", "pension cycle"),
     (r"\bsalary\b", "pension"), (r"\bpaycheck\b", "pension"),
     # "pay" as a noun: not "to pay", "can't pay", "pay yourself", "pay it/for/off/the/a/your"
     (r"(?<!to )(?<!can't )(?<!cannot )(?<!can )(?<!you )(?<!i )(?<!we )\bpay\b(?! yourself| it\b| for\b| off\b| the\b| a\b| your\b| my\b| back\b| first\b)", "pension"),

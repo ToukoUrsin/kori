@@ -192,6 +192,120 @@ _FIELD_LABELS = {
     "months_number_would_have_held": ("Months the number would have held", "Kuukaudet, joina luku olisi pitänyt"),
     "months_stayed_within_number": ("Months you stayed within it", "Kuukaudet, joina pysyit siinä"),
     "share_held": ("Share of customers for whom the number held", "Osuus asiakkaista, joilla luku piti"),
+    # what-if
+    "monthly_effect": ("Effect a month", "Vaikutus kuussa"),
+    "yearly_effect": ("Effect over a year", "Vaikutus vuodessa"),
+    "monthly_change": ("Change a month", "Muutos kuussa"),
+    "from_monthly": ("What it is in your usual month", "Määrä tavallisena kuukautena"),
+    "to_monthly": ("What it would be a month", "Määrä muutoksen jälkeen"),
+    "total_effect_over_period": ("Effect over the whole period", "Vaikutus koko jaksolla"),
+    "one_off_total": ("The one-off cost", "Kertameno"),
+    "left_over.now": ("Left over in your usual month now", "Tavallisesta kuusta jää nyt"),
+    "left_over.after": ("Left over after the change", "Jää muutoksen jälkeen"),
+    "everyday_per_day.now": ("Everyday pace a day now", "Arjen päivätahti nyt"),
+    "everyday_per_day.after": ("Everyday pace a day after the change", "Arjen päivätahti muutoksen jälkeen"),
+    "per_day_change": ("Change in pace a day", "Päivätahdin muutos"),
+    "per_day_before": ("Safe pace a day now", "Turvallinen päivätahti nyt"),
+    "per_day_after": ("Safe pace a day after it", "Turvallinen päivätahti sen jälkeen"),
+    "safe_to_spend.before": ("Safe to spend now", "Käyttövara nyt"),
+    "safe_to_spend.after": ("Safe to spend after the change", "Käyttövara muutoksen jälkeen"),
+    "safe_to_spend.change": ("Change in safe to spend", "Käyttövaran muutos"),
+    "amount_after": ("Safe to spend after it", "Käyttövara sen jälkeen"),
+    "reserve.available": ("Your surprise reserve", "Yllätysvarasi"),
+    "reserve.used": ("Taken from the surprise reserve", "Yllätysvarasta käytetty"),
+    "no_return": ("Set aside, with no return", "Sivuun laitettuna ilman tuottoa"),
+    "example_4pct": ("Example at 4% a year", "Esimerkki 4 %:n vuosituotolla"),
+    "pct": ("Percent of the change", "Muutoksen prosentti"),
+    "per_cycle.now": ("Everyday money a pay cycle now", "Arjen raha palkkajaksossa nyt"),
+    "per_cycle.after": ("Everyday money a pay cycle after the change", "Arjen raha palkkajaksossa muutoksen jälkeen"),
+    "per_cycle.change": ("Change in everyday money a pay cycle", "Arjen rahan muutos palkkajaksossa"),
+    "per_day.now": ("Pace a day now", "Päivätahti nyt"),
+    "per_day.change": ("Change in pace a day", "Päivätahdin muutos"),
+    "monthly.now": ("Everyday spending a month now", "Arjen menot kuussa nyt"),
+    "monthly.after": ("Everyday spending a month after the change", "Arjen menot kuussa muutoksen jälkeen"),
+    # affordability
+    "from_safe_to_spend": ("Taken from safe to spend", "Käyttövarasta otettu"),
+    "balance_before": ("Account balance before the purchase", "Tilin saldo ennen ostoa"),
+    "balance_after": ("Account balance after the purchase", "Tilin saldo oston jälkeen"),
+    "buffer_before": ("Buffer before the purchase", "Puskuri ennen ostoa"),
+    "buffer_after": ("Buffer after the purchase", "Puskuri oston jälkeen"),
+    "options.days": ("Days until payday", "Päiviä palkkapäivään"),
+    "per_day_until_then": ("Pace a day until then", "Päivätahti siihen asti"),
+    "per_day_after_buying_then": ("Pace a day if you buy it after payday", "Päivätahti, jos ostat palkkapäivän jälkeen"),
+    "options.months": ("Months to set aside for it", "Kuukausia säästämiseen"),
+    "options.monthly": ("To set aside a month for it", "Sivuun kuussa sitä varten"),
+    "left_over_monthly": ("Left over in your usual month", "Tavallisesta kuusta jää yli"),
+    # safe to spend, in detail
+    "fixed_due": ("Bills still due before payday", "Ennen palkkapäivää erääntyvät laskut"),
+    "cash.free": ("Free after bills still due", "Vapaana laskujen jälkeen"),
+    "extra_days": ("Days pay has come late", "Päiviä, jotka palkka on myöhästynyt"),
+    "late_pay.rate": ("How often pay came late", "Kuinka usein palkka myöhästyi"),
+    "extra_needed": ("Kept back in case pay is late", "Varattu palkan myöhästymisen varalle"),
+    "everyday_budget": ("Everyday money for this pay cycle", "Arjen raha tälle palkkajaksolle"),
+    "everyday_monthly": ("Everyday spending in your usual month", "Arjen menot tavallisena kuukautena"),
+    "budget.surprise": ("Share for surprises a month", "Osuus yllätyksiin kuussa"),
+    "cycle_days": ("Days in the pay cycle", "Päiviä palkkajaksossa"),
+    # the replay of past months
+    "stayed_within": ("Months you stayed within the number", "Kuukaudet, joina pysyit luvussa"),
+    "went_over": ("Months you went over it", "Kuukaudet, joina ylitit sen"),
+    "customers": ("Customers in the replay", "Asiakkaita uudelleenlaskennassa"),
+    "cases": ("Customer-months replayed", "Uudelleen lasketut asiakaskuukaudet"),
+    "safe_held_pct": ("Share where the safe number held", "Osuus, jossa turvallinen luku piti"),
+    "held_pct": ("Share where the safe number held", "Osuus, jossa turvallinen luku piti"),
+    "balance_as_budget_held_pct": ("Share where the balance held as a budget", "Osuus, jossa saldo piti budjettina"),
+    "balance_as_budget_pct": ("Share where the balance held as a budget", "Osuus, jossa saldo piti budjettina"),
+    "months.safe": ("The safe number that month", "Sen kuun turvallinen luku"),
+    "months.spent": ("Spent that month", "Sinä kuussa käytetty"),
+    # people like you
+    "group.size": ("People in your comparison group", "Vertailuryhmäsi koko"),
+    "you": ("You", "Sinä"),
+    "p25": ("Lower quarter of people like you", "Kaltaistesi alin neljännes"),
+    "p75": ("Upper quarter of people like you", "Kaltaistesi ylin neljännes"),
+    "diff": ("Difference from the typical", "Ero tyypilliseen"),
+    "diff_pct": ("Difference from the typical, percent", "Ero tyypilliseen prosentteina"),
+    "eur_month": ("Finnish households a month (Statistics Finland)", "Suomalaiset kotitaloudet kuussa (Tilastokeskus)"),
+    # small purchases, forecast, baskets, saving
+    "per_month": ("A month", "Kuukaudessa"),
+    "share_of_everyday": ("Share of your everyday spending", "Osuus arjen menoistasi"),
+    "under": ("Counted as small when under", "Pieneksi lasketaan alle"),
+    "balance_today": ("Account balance today", "Tilin saldo tänään"),
+    "at_usual_pace.before_payday": ("Balance the day before payday at your usual pace", "Saldo palkkapäivän aattona tavallisella tahdilla"),
+    "at_safe_pace.before_payday": ("Balance the day before payday at the safe pace", "Saldo palkkapäivän aattona turvallisella tahdilla"),
+    "per_day.safe": ("Safe pace a day", "Turvallinen päivätahti"),
+    "expected_salary": ("Expected pay", "Odotettu palkka"),
+    "vs_usual_pct": ("Compared with your usual, percent", "Verrattuna tavalliseen, prosenttia"),
+    "share": ("Share of the total", "Osuus kokonaisuudesta"),
+    "spend": ("Spent this month", "Käytetty tässä kuussa"),
+    "usual_spend": ("Your usual month's spending", "Tavallisen kuusi menot"),
+    "left_over": ("Left over", "Jää yli"),
+    "saved": ("Saved", "Säästetty"),
+    "monthly_capacity": ("What your usual month leaves to save", "Tavallisesta kuusta jää säästöön"),
+    "extra_monthly": ("More you could set aside a month", "Lisää sivuun kuussa"),
+    "months_covered": ("Months your buffer covers", "Kuukaudet, jotka puskurisi kattaa"),
+    "target_months": ("Months a full buffer covers", "Täyden puskurin kuukaudet"),
+    "buffer.target": ("A full buffer", "Täysi puskuri"),
+    "buffer.gap": ("Missing from a full buffer", "Täydestä puskurista puuttuu"),
+    "musts_monthly": ("Your musts a month", "Pakolliset menosi kuussa"),
+    "period.days": ("Days in the period", "Päiviä jaksossa"),
+    "score": ("Score out of 100", "Pisteet sadasta"),
+    "fitness": ("Money fitness out of 100", "Rahakunto sadasta"),
+}
+# Numbers the engine wrote inside a sentence: named by the field that holds the sentence.
+_SENTENCE_LABELS = {
+    "why": ("The reason behind the one thing", "Yhden asian perustelu"),
+    "worth": ("What the one thing is worth", "Mitä yksi asia tuo"),
+    "would_have_held": ("How often it would have held", "Kuinka usein se olisi pitänyt"),
+    "headline": ("Your last pay cycle, in words", "Viime palkkajaksosi sanoin"),
+    "what_did_it": ("What did it last pay cycle", "Mikä sen aiheutti viime jaksolla"),
+    "line": ("How the one thing is going", "Miten yksi asiasi etenee"),
+    "text": ("In the calculation's own words", "Laskelman omin sanoin"),
+    "body": ("Worth knowing today", "Hyvä tietää tänään"),
+    "notices.title": ("Worth knowing today", "Hyvä tietää tänään"),
+    "then_the_thing_is": ("What the other answer would set", "Mitä toinen vastaus asettaisi"),
+    "other_ways.title": ("Another way to do it", "Toinen tapa"),
+    "other_ways.why": ("Another way to do it", "Toinen tapa"),
+    "thing.title": ("Your one thing", "Yksi asiasi"),
+    "note": ("In the calculation's own words", "Laskelman omin sanoin"),
 }
 _TOOL_NAMES = {
     "safe_to_spend": ("Safe to spend", "Turvallinen käyttövara"), "can_i_afford": ("Can I afford it", "Onko varaa"),
@@ -234,14 +348,50 @@ def _label(path: str, lang: str) -> tuple[str, bool]:
     return words[:1].upper() + words[1:], False
 
 
-def figures(text: str, results: list, lang: str = "en") -> list[dict]:
+def _strings(obj, path=""):
+    if isinstance(obj, str):
+        yield path, obj
+    elif isinstance(obj, dict):
+        for k, v in obj.items():
+            yield from _strings(v, f"{path}.{k}" if path else str(k))
+    elif isinstance(obj, (list, tuple)):
+        for i, v in enumerate(obj):
+            yield from _strings(v, f"{path}[{i}]")
+
+
+_IN_WORDS = ("In the calculation's own words", "Laskelman omin sanoin")
+_ASKED = (("The amount you asked about", "Kysymäsi summa"), ("Your question", "Kysymyksesi"))
+
+
+_COUNT_KEYS = {"days", "days_left", "days_in", "days_to_payday", "count", "held", "missed", "months", "months_checked",
+               "months_number_would_have_held", "months_stayed_within_number", "stayed_within", "went_over", "customers", "cases",
+               "size", "extra_days", "week_days", "cycle_days", "years", "target_months", "months_covered",
+               "below_zero_when_within", "below_zero_when_over", "pay_late_months", "score", "fitness"}
+_COUNT_KEYS2 = {"history.total", "history.within", "history.over", "replay.held", "replay.total"}
+
+
+def _kind(path: str) -> str:
+    """What a field holds: a share ("pct"), a count of days or months ("count"), or money."""
+    keys = [k.split("[")[0] for k in path.split(".")]
+    last = keys[-1]
+    if "pct" in last or "share" in last or last in ("rate", "percentile", "pace_ratio"):
+        return "pct"
+    if last in _COUNT_KEYS or ".".join(keys[-2:]) in _COUNT_KEYS2:
+        return "count"
+    return "money"
+
+
+def figures(text: str, results: list, lang: str = "en", question: str = "") -> list[dict]:
     """Where each number in an answer came from: the tool that computed it and the field, in words.
 
-    ``results`` accepts either plain result dicts or ``{tool, result}`` records.
-    A rounded figure keeps its source and is marked as rounded.
+    ``results`` accepts either plain result dicts or ``{tool, result}`` records. An amount is matched to a money
+    field, a percentage to a share, a bare number to a count of days or months, so a figure is never explained by
+    a field of another kind that happens to hold the same value. A rounded figure keeps its source and is marked as
+    rounded. An amount the engine gave inside a sentence, or one the user said in the question, is listed as that.
     """
     i = 1 if lang == "fi" else 0
     paths = []
+    worded = []                                        # amounts the engine wrote inside its own sentences
     for item in results:
         if isinstance(item, dict) and "result" in item:
             tool, obj = item.get("tool", "tool"), item.get("result")
@@ -249,8 +399,17 @@ def figures(text: str, results: list, lang: str = "en") -> list[dict]:
             tool, obj = "tool", item
         for pth, v in _paths(obj):
             label, known = _label(pth, lang)
-            paths.append((tool, pth, abs(v), label, known))
+            kind = _kind(pth)
+            paths.append((tool, pth, abs(v), label, known, kind))
+            if kind == "pct" and 0 < abs(v) <= 1.5:      # a share stored as 0.35 is said as 35%
+                paths.append((tool, pth, round(abs(v) * 100, 1), label, known, kind))
+        for pth, sentence in _strings(obj):
+            for l in ("en", "fi"):
+                for _, v in numbers_in_text(sentence, l):
+                    worded.append((tool, pth, v))
     paths.sort(key=lambda x: not x[4])                 # stable: named fields first
+    asked = {v for l in ("en", "fi") for _, v in numbers_in_text(question or "", l)}
+    src_name = lambda tool: _TOOL_NAMES.get(tool, (tool.replace("_", " "),) * 2)[i]
     out, seen, pos = [], set(), 0
     for written, value in numbers_in_text(text, lang):
         at = text.find(written, pos)
@@ -259,23 +418,36 @@ def figures(text: str, results: list, lang: str = "en") -> list[dict]:
         if at >= 0 and (_DATE_AFTER.match(text[pos:pos + 12]) or _DATE_FI.match(text[pos:pos + 4]) or
                         (lang == "fi" and re.search(r"\d\.$", text[max(0, at - 3):at]))):
             continue                                   # a day of the month, not a figure
-        match = (next((x for x in paths if abs(x[2] - value) < 1e-9), None)
-                 or next((x for x in paths if abs(round(x[2]) - value) < 0.5), None))
-        if not match:
+        unit, shown = "count", written                 # the unit the answer used, also when it was spoken ("520 euros")
+        if at >= 0:
+            before, after = text[max(0, at - 1):at], text[pos:pos + 10].lstrip("* ").lower()
+            if before == "€" or (lang == "en" and after.startswith("euro")):
+                unit, shown = "money", "€" + written
+            elif after.startswith("€") or (lang == "fi" and after.startswith("euro")):
+                unit, shown = "money", written + " €"
+            elif after.startswith("%") or after.startswith(("percent", "prosent")):
+                unit, shown = "pct", written + ("%" if lang == "en" else " %")
+        mine = [x for x in paths if x[5] == unit]
+        match = (next((x for x in mine if abs(x[2] - value) < 1e-9), None)
+                 or next((x for x in mine if abs(round(x[2]) - value) < 0.5), None))
+        if unit == "money" and value in asked and not (match and abs(match[2] - value) < 1e-9 and match[4] and "amount" not in match[1]):
+            row = {"tool": "question", "source": _ASKED[1][i], "path": "question", "label": _ASKED[0][i], "rounded": False}
+        elif match:
+            tool, pth, source, label, _, _ = match
+            row = {"tool": tool, "source": src_name(tool), "path": pth, "label": label, "rounded": abs(source - value) > 1e-9}
+        elif unit == "count":
+            continue                                   # a bare number with no count behind it: not listed
+        else:
+            w = (next((x for x in worded if abs(x[2] - value) < 1e-9), None)
+                 or next((x for x in worded if abs(round(x[2]) - value) < 0.5), None))
+            if not w:
+                continue
+            ks = [k.split("[")[0] for k in w[1].split(".")]
+            words = _SENTENCE_LABELS.get(".".join(ks[-2:])) or _SENTENCE_LABELS.get(ks[-1]) or _IN_WORDS
+            row = {"tool": w[0], "source": src_name(w[0]), "path": w[1], "label": words[i],
+                   "rounded": abs(w[2] - value) > 1e-9}
+        if (row["path"], value) in seen:
             continue
-        tool, pth, source, label, _ = match
-        if (pth, value) in seen:
-            continue
-        seen.add((pth, value))
-        shown = written
-        if at >= 0:                                    # keep the unit the answer used
-            before, after = text[max(0, at - 1):at], text[pos:pos + 2]
-            if before == "€":
-                shown = "€" + written
-            elif after.strip().startswith("€"):
-                shown = written + " €"
-            elif after.strip().startswith("%"):
-                shown = written + ("%" if lang == "en" else " %")
-        out.append({"text": shown, "value": value, "tool": tool, "source": _TOOL_NAMES.get(tool, (tool.replace("_", " "),) * 2)[i],
-                    "path": pth, "label": label, "rounded": abs(source - value) > 1e-9})
+        seen.add((row["path"], value))
+        out.append({"text": shown, "value": value, **row})
     return out
