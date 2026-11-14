@@ -231,7 +231,13 @@ export interface LoopReplay {
   text: string;
 }
 export interface LoopWorth { amount: number; of_overshoot?: number; text: string }
-export interface LoopQuestion { text: string; answers: { label: string; pick: number; title: string; key?: string }[] }
+export interface LoopQuestion {
+  /** the look-back fact and the question in one sentence */
+  text: string;
+  /** just the question */
+  short?: string;
+  answers: { label: string; pick: number; title: string; key?: string }[];
+}
 export interface LoopSuggestion {
   kind: "cap_category" | "pause_category" | "daily_pace" | "set_aside" | "none" | string;
   target?: string | null;
@@ -262,10 +268,10 @@ export interface LoopAction {
   days_left?: number;
   until_label?: string | null;
   verdict: "on_track" | "at_risk" | "over" | "done" | string;
-  limit?: number;
-  spent?: number;
-  left?: number;
-  unit: "cycle" | "day" | string;
+  limit?: number | null;
+  spent?: number | null;
+  left?: number | null;
+  unit?: "cycle" | "day" | string;
   days_in?: number;
   left_per_week?: number;
   lands_at_current_pace?: number;
@@ -274,7 +280,7 @@ export interface LoopAction {
   purchases?: LoopPurchase[];
   why?: string;
   line: string;
-  follow_up_preview?: { label: string; text: string; held?: boolean; [key: string]: unknown } | null;
+  follow_up_preview?: { label: string; text: string; held?: boolean; total?: number; limit?: number; [key: string]: unknown } | null;
 }
 export interface LoopData {
   check_in: LoopCheckIn;

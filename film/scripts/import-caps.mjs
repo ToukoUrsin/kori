@@ -4,12 +4,12 @@
 // Reads /bulk2/runs/spankki/film/<scenario>/, writes public/cap/ (not in git) and src/data/caps.json.
 import fs from 'node:fs';
 import path from 'node:path';
-import {execFileSync} from 'node:child_process';
+import {execFileSync, spawnSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
 
 const film = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const SRC = process.env.KORI_CAPS || '/bulk2/runs/spankki/film';
-const USED = ['voice2', 'chat', 'lesson', 'track', 'fi', 'today'];
+const USED = ['voice2', 'chat', 'lesson', 'track', 'fi', 'today', 'voice3', 'loop', 'lesson2', 'figures', 'peers', 'host'];
 const want = process.argv.slice(2).length ? process.argv.slice(2) : USED;
 const out = path.join(film, 'public/cap');
 fs.mkdirSync(out, {recursive: true});
@@ -17,6 +17,12 @@ const dataFile = path.join(film, 'src/data/caps.json');
 fs.mkdirSync(path.dirname(dataFile), {recursive: true});
 const caps = fs.existsSync(dataFile) ? JSON.parse(fs.readFileSync(dataFile, 'utf8')) : {};
 const ff = (a) => execFileSync('ffmpeg', ['-y', '-loglevel', 'error', ...a], {stdio: ['ignore', 'inherit', 'inherit']});
+// integrated loudness of a clip (LUFS), so the film can sit every real voice level with the narrator
+const lufs = (file) => {
+	const r = spawnSync('ffmpeg', ['-hide_banner', '-nostats', '-i', file, '-af', 'ebur128', '-f', 'null', '-'], {encoding: 'utf8'});
+	const m = [...r.stderr.matchAll(/I:\s+(-?[\d.]+) LUFS/g)].at(-1);
+	return m ? Number(m[1]) : undefined;
+};
 const newer = (a, b) => !fs.existsSync(b) || fs.statSync(a).mtimeMs > fs.statSync(b).mtimeMs;
 // the coach's "let me look" lines, as written in the backend, to show them spelled right
 const toolsPy = fs.readFileSync(path.join(film, '../backend/kori/ai/tools.py'), 'utf8');
@@ -79,7 +85,7 @@ for (const name of want) {
 	if (coach) {
 		const mp3 = path.join(out, `${name}-coach.mp3`);
 		if (newer(path.join(dir, coach.file), mp3)) ff(['-i', path.join(dir, coach.file), '-ar', '44100', '-ac', '2', '-b:a', '192k', mp3]);
-		cap.coach = {file: `cap/${name}-coach.mp3`, start: coach.start};
+		cap.coach = {file: `cap/${name}-coach.mp3`, start: coach.start, lufs: lufs(path.join(out, `${name}-coach.mp3`))};
 		const wordsFile = path.join(dir, 'words.json');
 		if (newer(path.join(dir, coach.file), wordsFile)) {
 			execFileSync('uv', ['run', '-q', '--with', 'faster-whisper', 'python', path.join(film, 'scripts/words.py'), path.join(dir, coach.file), t.lang, wordsFile], {stdio: 'inherit'});
@@ -100,7 +106,7 @@ for (const name of want) {
 				acc += w.length;
 				return {w, s, e: u.start + lead + (acc / total) * body};
 			});
-			cap.said.push({who: 'user', kind: 'question', text: u.text, file: `cap/${name}-user-${i}.mp3`, s: u.start, e: u.start + u.seconds, words});
+			cap.said.push({who: 'user', kind: 'question', text: u.text, file: `cap/${name}-user-${i}.mp3`, lufs: lufs(mp3), s: u.start, e: u.start + u.seconds, words});
 		});
 		// the coach: greeting before the first question, then per question "let me look" and the answer
 		const answers = cap.screen.filter((e) => e.name === 'coach').map((e) => {

@@ -1,19 +1,16 @@
-import { BookOpen, ChevronDown, ChevronRight, Info, Pin, Play, Square } from "lucide-react";
+import { BookOpen, ChevronRight, Info, Pin, Play, Square } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { BasketBar, vsUsualText } from "../components/cards/bodies";
 import { CardView } from "../components/cards/CardView";
 import { NoticeRow, StatusChip } from "../components/cards/parts";
+import { OneThing } from "../components/loop/OneThing";
 import { ForecastChart, ForecastLegend } from "../components/charts/ForecastChart";
 import { SpokenBar } from "../components/charts/SpokenBar";
 import { BigMoney, Collapse, Dot, ErrorInline, LangToggle, SectionHead, Skel } from "../components/ui/bits";
 import { day, longDate, money, weekday } from "../lib/format";
-import { api } from "../lib/api";
-import { isEmbedMode, postToHost } from "../lib/host";
 import { useApp } from "../lib/store";
-import type { Card, Home, LoopCheckIn, LoopReplay, LoopSuggestion } from "../lib/types";
+import type { Card, Home } from "../lib/types";
 import { AvatarButton } from "../shell/Shell";
-import { Sheet } from "../components/ui/Sheet";
-import { Button, cx } from "../components/ui/bits";
 
 /** A card teaser shows a whole thought or none: the first sentence, never a cut-off second one. */
 function firstSentence(text: string): string {
@@ -104,122 +101,6 @@ function Skeleton() {
   );
 }
 
-function ReplayBars({ replay }: { replay?: LoopReplay | null }) {
-  if (!replay) return null;
-  const max = Math.max(...replay.rows.map((r) => r.total), 1);
-  return (
-    <div className="mt-2 flex items-end gap-1" aria-label={replay.text}>
-      {replay.rows.map((r) => <span key={r.label} title={`${r.label}: ${r.total}`} className={cx("min-w-0 flex-1 rounded-[2px]", r.held ? "bg-brand" : "bg-warn-soft border border-warn")} style={{ height: `${Math.max(5, Math.round((r.total / max) * 25))}px` }} />)}
-    </div>
-  );
-}
-
-function History({ check }: { check: LoopCheckIn }) {
-  if (!check.history?.length) return null;
-  return <div className="mt-2 flex items-center gap-1.5" aria-label={check.history_line || undefined}>{check.history.map((h, i) => <span key={`${h.label}-${i}`} title={h.label} className={cx("h-2 w-2 rounded-full", h.within ? "bg-brand" : "bg-warn-soft border border-warn")} />)}</div>;
-}
-
-function SuggestionDetail({ suggestion, onTry }: { suggestion: LoopSuggestion; onTry: (s: LoopSuggestion) => void }) {
-  const { t } = useApp();
-  return (
-    <div className="space-y-3">
-      <div>
-        <p className="text-[15px] font-semibold leading-5 text-ink">{suggestion.title}</p>
-        <p className="mt-1 text-[13px] leading-[18px] text-ink-2">{suggestion.why}</p>
-      </div>
-      <div className="rounded-[10px] bg-sunk px-3 py-2.5">
-        {suggestion.worth?.text && <p className="text-[13px] leading-[18px] text-ink-2">{suggestion.worth.text}</p>}
-        {suggestion.replay?.text && <><p className="mt-1 text-[13px] leading-[18px] text-ink-2">{suggestion.replay.text}</p><ReplayBars replay={suggestion.replay} /></>}
-        {suggestion.reversible && <p className="mt-1 text-[12px] leading-4 text-ink-3">{suggestion.reversible}</p>}
-      </div>
-      <Button variant="primary" size="sm" data-loop-try onClick={() => onTry(suggestion)}>{t("loop.try")}</Button>
-    </div>
-  );
-}
-
-function LoopBlock({ d }: { d: Home }) {
-  const { customer, lang, t, bump, showToast } = useApp();
-  const loop = d.loop;
-  const [sheet, setSheet] = useState<"other" | "why" | "link" | null>(null);
-  const [change, setChange] = useState(false);
-  const [value, setValue] = useState("");
-  if (!loop) return null;
-  const check = loop.check_in;
-  const suggestion = loop.suggestion;
-  const action = loop.action;
-  const doSet = async (pick?: number) => {
-    try {
-      await api.setAction(pick === undefined ? { customer, lang, accept_suggestion: true } : { customer, lang, pick });
-      bump();
-    } catch (e) { showToast((e as Error).message || t("loop.saveFail")); }
-  };
-  const trySuggestion = (s: LoopSuggestion) => void doSet(s === suggestion ? undefined : (suggestion?.alternatives || []).findIndex((x) => x === s) + 1);
-  const drop = async () => {
-    if (!action) return;
-    const previous = { customer, lang, kind: action.kind, target: action.target || undefined, cap: action.cap ?? undefined, amount: action.amount ?? undefined };
-    try {
-      await api.clearAction(customer, lang);
-      bump();
-      showToast(t("loop.dropped"), { label: t("loop.undo"), run: () => void api.setAction(previous).then(bump) });
-    } catch (e) { showToast((e as Error).message || t("loop.saveFail")); }
-  };
-  const saveChange = async () => {
-    const n = Number(value);
-    if (!Number.isFinite(n) || n < 0) return;
-    try { await api.updateAction(action?.kind === "set_aside" ? { customer, lang, amount: n } : { customer, lang, cap: n }); bump(); setChange(false); }
-    catch (e) { showToast((e as Error).message || t("loop.saveFail")); }
-  };
-  const link = async () => {
-    try { await api.consent(customer, lang, true); bump(); setSheet(null); }
-    catch (e) { showToast((e as Error).message || t("loop.saveFail")); }
-  };
-
-  if (!check.available) return <section data-loop="none" className="mt-4 rounded-card border border-line bg-surface px-4 py-3"><p className="text-[14px] leading-5 text-ink">{check.headline}</p></section>;
-  if (!action && suggestion?.kind === "none") return (
-    <>
-      <section data-loop="none" className="mt-4 rounded-card border border-line bg-surface px-4 py-3.5">
-        {check.period && <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-3">{check.period}</p>}
-        <p className="mt-1 text-[14px] leading-5 text-ink">{check.headline}</p>
-        <p className="mt-1 text-[13px] leading-[18px] text-ink-2">{suggestion.why}</p>
-        {check.linked_view?.note && <p className="mt-2 text-[12px] leading-4 text-ink-3">{check.linked_view.note}</p>}
-        <Button variant="primary" block className="mt-3" onClick={() => isEmbedMode() ? postToHost({ type: "kori:request", v: 1, what: "link_other_bank" }) : setSheet("link")}>{t("loop.link")}</Button>
-      </section>
-      <Sheet open={sheet === "link"} onClose={() => setSheet(null)} label={t("loop.linkTitle")}>
-        <div className="px-5 pb-6 pt-2"><h2 className="text-[20px] font-semibold text-ink">{t("loop.linkTitle")}</h2><p className="mt-2 text-[15px] leading-6 text-ink-2">{t("loop.linkBody")}</p><Button variant="primary" block className="mt-5" onClick={() => void link()}>{t("loop.linkConfirm")}</Button></div>
-      </Sheet>
-    </>
-  );
-  if (action) return (
-    <>
-      <section data-loop="active" className="mt-4 rounded-card border border-line bg-surface px-4 py-3.5">
-        <div className="flex items-center justify-between gap-2"><p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-3">{t("loop.oneThing")}</p><span className={cx("rounded-full px-2 py-1 text-[11px] font-medium", action.verdict === "on_track" ? "bg-brand-soft text-brand-strong" : action.verdict === "done" ? "bg-sunk text-ink-2" : "bg-warn-soft text-warn-ink")}>{t(`loop.verdict.${action.verdict}` as never)}</span></div>
-        <h2 className="mt-2 text-[17px] font-semibold leading-6 text-ink">{action.title}</h2>
-        {action.unit === "cycle" && action.limit != null && <div className="mt-3"><div className="relative h-2 rounded-full bg-sunk"><span className="absolute inset-y-0 left-0 rounded-full bg-brand" style={{ width: `${Math.max(0, Math.min(100, ((action.spent || 0) / action.limit) * 100))}%` }} /><span className="absolute -top-1 h-4 w-px bg-ink-2" style={{ left: `${Math.max(0, Math.min(100, ((action.days_in || 0) / ((action.days_in || 0) + (action.days_left || 0))) * 100))}%` }} /></div></div>}
-        {action.unit === "day" && action.limit != null && <p className="mt-2 text-[14px] font-medium text-ink">{money(action.limit, lang, { cents: true })} {t("loop.perDay")}</p>}
-        <p className="mt-2 text-[13px] leading-[18px] text-ink-2">{action.line}</p>
-        {action.follow_up_preview && <details className="mt-3 border-t border-line pt-2"><summary className="cursor-pointer list-none text-[13px] font-medium text-ink-2">{t("loop.checkinLook")}</summary><p className="mt-2 text-[12px] leading-4 text-ink-3">{action.follow_up_preview.label}</p><p className="mt-1 text-[13px] leading-[18px] text-ink-2">{action.follow_up_preview.text}</p></details>}
-        <div className="mt-3 flex items-center gap-3"><button type="button" className="text-[13px] font-medium text-ink-2 hover:text-ink" onClick={() => { setValue(String(action.cap ?? action.amount ?? "")); setChange((v) => !v); }}>{t("loop.change")}</button><button type="button" data-loop-drop className="text-[13px] font-medium text-ink-2 hover:text-ink" onClick={() => void drop()}>{t("loop.drop")}</button></div>
-        {change && <div className="mt-2 flex gap-2"><input type="number" min="0" step="1" value={value} onChange={(e) => setValue(e.target.value)} aria-label={t("loop.newAmount")} className="h-9 min-w-0 flex-1 rounded-[9px] border border-line-strong bg-surface px-2 text-[14px] text-ink" /><Button size="sm" variant="primary" onClick={() => void saveChange()}>{t("common.save")}</Button></div>}
-      </section>
-    </>
-  );
-  if (!suggestion) return null;
-  return (
-    <>
-      <section data-loop="suggested" className="mt-4 rounded-card border border-line bg-surface px-4 py-3.5">
-        {check.period && <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-3">{check.period}</p>}
-        <p className="mt-1 text-[14px] leading-5 text-ink">{check.headline}</p>
-        {(check.what_did_it || check.driver_line) && <p className="mt-1 text-[13px] leading-[18px] text-ink-2">{check.what_did_it || check.driver_line}</p>}
-        <History check={check} />{check.history_line && <p className="mt-1 text-[12px] leading-4 text-ink-3">{check.history_line}</p>}
-        <h2 className="mt-3 text-[18px] font-semibold leading-6 tracking-[-0.015em] text-ink">{suggestion.title}</h2><p className="mt-1 text-[13px] leading-[18px] text-ink-2">{suggestion.why}</p>
-        {suggestion.question ? <div className="mt-3"><p className="text-[13px] leading-[18px] text-ink-2">{suggestion.question.text}</p><div className="mt-2 grid grid-cols-2 gap-2">{suggestion.question.answers.map((a) => <button type="button" key={a.label} data-loop-answer={a.pick} onClick={() => void doSet(a.pick === 0 ? undefined : a.pick)} className="min-h-11 rounded-[10px] border border-line-strong bg-surface px-2.5 py-2 text-left text-[13px] leading-4 text-ink hover:border-ink-3"><span className="block font-medium">{a.label}</span><span className="mt-0.5 block text-[11px] text-ink-3">{a.title}</span></button>)}</div></div> : <Button variant="primary" block className="mt-3" data-loop-try onClick={() => void doSet()}>{t("loop.tryCycle")}</Button>}
-        <button type="button" className="mt-2 inline-flex items-center gap-1 text-[12px] font-medium text-ink-3 hover:text-ink" onClick={() => setSheet("other")}>{t("loop.otherWays")}<ChevronDown size={14} aria-hidden /></button>
-      </section>
-      <Sheet open={sheet === "other"} onClose={() => setSheet(null)} label={t("loop.otherWays")}><div className="px-5 pb-7 pt-2"><h2 className="text-[20px] font-semibold text-ink">{t("loop.otherWays")}</h2><div className="mt-4 space-y-5"><SuggestionDetail suggestion={suggestion} onTry={(s) => { setSheet(null); void trySuggestion(s); }} />{suggestion.alternatives?.map((s) => <SuggestionDetail key={s.title} suggestion={s} onTry={(x) => { setSheet(null); void trySuggestion(x); }} />)}</div></div></Sheet>
-    </>
-  );
-}
-
 export function Today() {
   const { home, lang, t, pins, setOverlay, setTab, openCoach, openLesson, minuteOn, setMinuteOn, minuteFocus } = useApp();
   const d = home.data;
@@ -264,7 +145,7 @@ export function Today() {
       <Header d={d} />
       <div className="px-5 pb-8">
         <Hero d={d} />
-        <LoopBlock d={d} />
+        {d.loop && <OneThing variant="today" />}
 
         {(d.persona.partial_view || partial) && (
           <button

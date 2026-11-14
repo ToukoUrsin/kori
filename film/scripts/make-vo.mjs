@@ -23,28 +23,36 @@ const words = (n) => {
 };
 const S = home.safe;
 
-// [scene, gap in seconds before the line (after the scene start or the previous line), text]
+// [scene, gap in seconds before the line (after the scene start or the previous line), text, part B?]
+// Scenes: open, balance, loop, math, proof, teach, host, end (src/Film.tsx). In the scenes with recorded voices
+// (open, loop) the narrator starts after the recording; the film places it.
+// Lines marked PART_B are written for the second cut and are not generated until `--part-b` is given, once the new
+// footage is final. Until then vo.json carries them as `pending` with an estimated length and no audio.
+const PART_B = true;
 const LINES = [
-	['hook', 0.5, `Aino has ${words(Math.floor(S.balance))} euros on her account.`],
-	['hook', 0.5, `But rent, bills and the usual surprises all come before payday.`],
-	['hook', 0.35, `What is really hers to spend is ${words(S.amount)}.`],
-	['hook', 0.6, 'Your balance is not your budget.'],
-	['title', 0.3, 'This is Kori. A voice coach that works on your own bank transactions.'],
-	['math', 0.4, 'The language model never does the math. Gemini only picks the calculation.'],
+	['open', 0.35, 'This is Kori, a money coach for young adults, right inside the bank app.', PART_B],
+	['balance', 0.3, `Aino has ${words(Math.floor(S.balance))} euros on her account.`],
+	['balance', 0.3, `But rent, bills and the usual surprises all come before payday.`],
+	['balance', 0.3, `What is really hers to spend is ${words(S.amount)}.`],
+	['balance', 0.45, 'Your balance is not your budget.'],
+	['loop', 0.35, 'It notices, asks, and sets one thing to try until payday. Then it keeps count.', PART_B],
+	['math', 0.3, 'The AI never does the math. Gemini only picks the calculation.'],
 	['math', 0.3, 'A plain engine runs it on the real transactions.'],
 	['math', 0.3, 'Then every number in the answer is checked. One that does not match never reaches you.'],
 	['proof', 0.4, `Is the number any good? We replayed it on ${words(bt.customers)} customers.`],
 	['proof', 0.35, `Spend what Kori calls safe, and you stay above zero ${words(Math.round(bt.promise.safe_held_pct))} percent of the time.`],
 	['proof', 0.3, `Trust the balance instead: ${words(Math.round(bt.promise.balance_as_budget_held_pct))}.`],
-	['teach', 0.4, 'And it teaches. Money goes in three baskets: fixed musts, surprise musts, and everyday.'],
-	['teach', 0.35, 'Short lessons use your own numbers. You say it back in your own words, and the coach grades it.'],
-	['fit', 0.4, 'It is a mobile web app, made to sit inside S-mobiili. In Finnish and English.'],
-	['fit', 0.35, 'With only a partial view from another bank, it says what it cannot see.'],
-	['end', 0.7, 'Kori. Your balance is not your budget.'],
+	['teach', 0.3, 'And it teaches. Money goes in three baskets: fixed musts, surprise musts, and everyday.'],
+	['teach', 0.3, 'Short lessons use your own numbers. You say it back in your own words, and the coach grades it.'],
+	['teach', 0.3, 'It compares her with people like her, from Statistics Finland.', PART_B],
+	['host', 0.3, 'Here it sits inside a stand-in bank app, the way it would in S-mobiili.', PART_B],
+	['host', 0.3, 'It asks before it reads anything. In Finnish and English.', PART_B],
+	['end', 0.3, 'Kori. Your balance is not your budget.'],
 ];
+const partB = A.includes('--part-b');
 if (A.includes('--print')) {
-	for (const l of LINES) console.log(`${l[0].padEnd(6)} +${l[1]}s  ${l[2]}`);
-	console.log(LINES.reduce((a, l) => a + l[2].length, 0), 'characters');
+	for (const l of LINES) console.log(`${l[0].padEnd(7)} +${l[1]}s ${l[3] ? 'B' : ' '} ${String(l[2].length).padStart(3)}  ${l[2]}`);
+	console.log(LINES.reduce((a, l) => a + l[2].length, 0), 'characters,', LINES.filter((l) => l[3]).reduce((a, l) => a + l[2].length, 0), 'of them in part B lines');
 	process.exit(0);
 }
 
@@ -59,10 +67,25 @@ const key = (t) => {
 };
 const lines = [];
 let scene = null, t = 0;
-for (const [sc, gap, text] of LINES) {
+for (const [sc, gap, text, b] of LINES) {
 	const base = `vo-${key(text)}`;
 	const mp3 = path.join(outDir, `${base}.mp3`), meta = path.join(outDir, `${base}.json`);
 	let m = fs.existsSync(meta) && fs.existsSync(mp3) ? JSON.parse(fs.readFileSync(meta, 'utf8')) : null;
+	if (!m && b && !partB) {
+		// not generated yet: an estimate from the narrator's pace (about 16.5 characters a second at speed 1.05)
+		const ws = text.split(/\s+/), dur = Math.round((text.length / 16.5) * 100) / 100;
+		let acc = 0;
+		const wt = ws.map((w) => {
+			const s0 = (acc / text.length) * dur;
+			acc += w.length + 1;
+			return {w, s: s0, e: Math.min(dur, (acc / text.length) * dur)};
+		});
+		if (sc !== scene) (scene = sc), (t = 0);
+		t += gap;
+		lines.push({scene: sc, at: Math.round(t * 100) / 100, text, file: null, pending: true, dur, words: wt});
+		t += dur;
+		continue;
+	}
 	if (!m) {
 		if (!KEY) throw new Error('ELEVENLABS_API_KEY missing');
 		const r = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voice}/with-timestamps?output_format=mp3_44100_128`, {

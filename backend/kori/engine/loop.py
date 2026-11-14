@@ -355,8 +355,11 @@ def _make(m: Money, kind: str, target: str | None, cap: float | None = None, amo
     elif kind == "set_aside":
         rows = (ci.get("history") or {}).get("cycles") or []
         ok = sum(1 for r in rows if r["within"] and r["difference"] >= float(amount or 0) - 0.005)
-        a["why"] = L(f"Last {w.cycle} left {E(row.get('difference') or 0)} of your everyday money unspent.",
-                     f"Viime {w.cycle_on} arkirahasta jäi käyttämättä {E(row.get('difference') or 0)}.")
+        # the look back already says what last cycle left: the reason to believe the amount is how often it was there
+        a["why"] = (L(f"In {ok} of your last {len(rows)} {w.cycles} at least {E(amount or 0)} was left over.",
+                      f"Viimeisestä {len(rows)} {w.cycles} {ok}:ssa jäi vähintään {E(amount or 0)} yli.") if ok else
+                    L(f"Last {w.cycle} left {E(row.get('difference') or 0)} of your everyday money unspent.",
+                      f"Viime {w.cycle_on} arkirahasta jäi käyttämättä {E(row.get('difference') or 0)}."))
         a["worth"] = {"amount": r2(float(amount or 0) * 12), "of_overshoot": None,
                       "text": L(f"That is {E(float(amount or 0) * 12)} in a year. It is a plan for your own money, not investment advice.",
                                 f"Se on {E(float(amount or 0) * 12)} vuodessa. Tämä on suunnitelma omille rahoillesi, ei sijoitusneuvo.")}

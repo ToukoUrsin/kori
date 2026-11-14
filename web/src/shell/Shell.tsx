@@ -199,7 +199,6 @@ function PersonaSheet() {
             <X size={21} strokeWidth={2} aria-hidden />
           </IconButton>
         </div>
-        <p className="px-5 pb-2 text-[13px] leading-[18px] text-ink-3">{t("persona.demoNote")}</p>
         <div className="scroll-y min-h-0 px-3 pb-[max(18px,var(--safe-b))]">
           <ul>
             {(personas || []).map((p) => {
@@ -256,15 +255,17 @@ function PersonaSheet() {
 }
 
 function ToastHost() {
-  const { toast, hideToast } = useApp();
+  const { toast, hideToast, tab, coachOpen, lessonId } = useApp();
   const reduce = useReducedMotion();
+  // on Today the ask dock sits above the tab bar: the toast clears both, so it never covers the input
+  const aboveDock = tab === "today" && !coachOpen && !lessonId;
   return (
     <AnimatePresence>
       {toast && (
         <motion.div
           key={toast.id}
           role="status"
-          className="pointer-events-none absolute inset-x-0 bottom-[calc(76px+var(--safe-b))] z-[70] flex justify-center px-4"
+          className={cx("pointer-events-none absolute inset-x-0 z-[70] flex justify-center px-4", aboveDock ? "bottom-[calc(176px+var(--safe-b))]" : "bottom-[calc(76px+var(--safe-b))]")}
           initial={reduce ? { opacity: 0 } : { opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, transition: { duration: 0.15 } }}

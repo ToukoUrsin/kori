@@ -7,6 +7,7 @@ import { HoldToTalk } from "../components/ui/HoldToTalk";
 import { Sheet } from "../components/ui/Sheet";
 import { useApp } from "../lib/store";
 import { useCoach, type Turn } from "./CoachProvider";
+import { FiguresSheet } from "./FiguresSheet";
 
 /* ------------------------------------------------------------------ text */
 
@@ -161,9 +162,7 @@ function CoachTurn({ turn, last }: { turn: Turn; last: boolean }) {
               )}
             </button>}
           </div>
-          <Sheet open={figuresOpen} onClose={() => setFiguresOpen(false)} label={t("coach.figuresTitle")} z={60}>
-            <div className="px-5 pb-7 pt-2"><h2 className="text-[20px] font-semibold text-ink">{t("coach.figuresTitle")}</h2><ul className="mt-4 divide-y divide-line border-y border-line">{figures.map((f, i) => <li key={`${f.text}-${i}`} className="flex items-start gap-3 py-3"><span className="num shrink-0 text-[16px] font-semibold text-ink">{f.text}</span><span className="min-w-0 flex-1"><span className="block text-[13px] font-medium leading-[18px] text-ink">{f.label}</span><span className="block text-[12px] leading-4 text-ink-3">{f.source}{f.rounded ? <span className="ml-1 rounded-full bg-sunk px-1.5 py-0.5">{t("coach.rounded")}</span> : null}</span></span></li>)}</ul><p className="mt-4 text-[12px] leading-[17px] text-ink-3">{t("coach.figuresFoot")}</p></div>
-          </Sheet>
+          <FiguresSheet open={figuresOpen} onClose={() => setFiguresOpen(false)} figures={figures} />
           <Collapse open={why}>
             <p className="mt-1 rounded-[10px] bg-brand-soft px-3 py-2.5 text-[13px] leading-[18px] text-brand-strong">{t("coach.checkedWhy")}</p>
           </Collapse>

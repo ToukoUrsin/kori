@@ -1,232 +1,311 @@
 import React from 'react';
 import {Sequence, interpolate, useCurrentFrame} from 'remotion';
-import {Chip, Cross, Eyebrow, H1, Phone, Scene, Tick, phoneWidth} from '../components';
-import {backtest, caps, cue, home, lineAt} from '../data';
-import {C, FPS, MONO, clamp, eur, out, prog, rise} from '../theme';
-import {VOICE_CAP, voiceSegs} from './Voice';
+import {Chip, Cross, Eyebrow, H1, Provenance, Scene, Tick} from '../components';
+import {btMonths, caps, cardOf, cue, home, lineAt} from '../data';
+import {Footage, sceneSec, type Clip} from '../footage';
+import {C, FPS, MONO, clamp, eur, inOut, out, prog, rise} from '../theme';
+import {PH, PX, PY, X0} from './Open';
 
-const S = home.safe;
-const TOOLS = ['safe_to_spend', 'what_if', 'baskets', 'spending', 'compare_with_peers', 'track_record', 'spender_profile', 'balance_forecast'];
+// a beat of a scene: in at `a`, out at `b` (seconds), crossfaded
+const beat = (frame: number, a: number, b = 1e9, d = 0.35) => Math.min(prog(frame, a - 0.1, d), 1 - prog(frame, b - 0.1, d, inOut));
 
-const Box: React.FC<{x: number; w: number; n: string; who: string; does: string; style?: React.CSSProperties; children: React.ReactNode}> = ({x, w, n, who, does, style, children}) => (
-	<div style={{position: 'absolute', left: x, top: 300, width: w, height: 430, background: C.surface, border: `1.5px solid ${C.line}`, borderRadius: 28, padding: '34px 38px', boxSizing: 'border-box', boxShadow: '0 1px 2px oklch(0.22 0.02 160 / 0.05), 0 18px 40px -18px oklch(0.22 0.02 160 / 0.18)', ...style}}>
-		<div style={{display: 'flex', alignItems: 'center', gap: 14}}>
-			<div style={{width: 40, height: 40, borderRadius: 20, background: C.ink, color: C.ground, fontSize: 22, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center'}}>{n}</div>
-			<div style={{fontSize: 26, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: C.ink3}}>{who}</div>
-		</div>
-		<div style={{fontSize: 42, fontWeight: 600, letterSpacing: '-0.03em', marginTop: 16, marginBottom: 22}}>{does}</div>
-		{children}
-	</div>
-);
-const Arrow: React.FC<{x: number; p: number}> = ({x, p}) => (
-	<svg width={60} height={40} viewBox="0 0 60 40" style={{position: 'absolute', left: x, top: 495, opacity: p}}>
+// ---------------------------------------------------------------- 4. why the numbers are right
+// the app's 19 calculations (backend/kori/ai/tools.py); 8 are shown
+const TOOLS = ['safe_to_spend', 'can_i_afford', 'what_if', 'baskets', 'spending', 'balance_forecast', 'compare_with_peers', 'track_record'];
+const TOOL_COUNT = 19;
+// the engine's numbers and the answer as the voice2 recording got them (card "safe", coach text)
+const SAFE = cardOf(caps.voice2, 'safe')!;
+const ANSWER = 'You can safely spend about 319 euros this week. That is about 46 euros a day for your everyday basket.';
+// a wrong number, from the app's own test (backend/tests/test_agent.py, test_wrong_twice_is_withheld)
+const WRONG = {draft: '1,700', retry: '1,300'};
+
+/** The model picks, plain code computes, every number is checked; and what happens to a wrong one, slowly. */
+export const MathScene: React.FC<{dur: number; figures: Clip[]}> = ({dur, figures}) => {
+	const frame = useCurrentFrame();
+	const t2 = lineAt('math', 1) - 0.25, t3 = lineAt('math', 2) - 0.15;
+	const tPick = cue('math', 0, 'picks') - 0.1;
+	const tCheck = cue('math', 2, 'checked') - 0.2, tFail = cue('math', 2, 'one') - 0.15;
+	const X = 96;
+	const A = beat(frame, 0, t2), B = beat(frame, t2, t3), Cc = beat(frame, t3, tFail), D = beat(frame, tFail);
+	const pick = prog(frame, tPick, 0.4);
+	const nums = ['319', '46'];
+	return (
+		<Scene dur={dur}>
+			{/* A: Gemini picks one of the calculations */}
+			<div style={{position: 'absolute', left: X, right: X, top: 150, opacity: A}}>
+				<H1 size={110} style={rise(frame, 0.1, 0.6)}>The AI never does the math.</H1>
+				<div style={{fontSize: 48, fontWeight: 600, letterSpacing: '-0.02em', color: C.ink2, marginTop: 70, ...rise(frame, cue('math', 0, 'gemini') - 0.25, 0.5, 14)}}>
+					Gemini picks one of {TOOL_COUNT} calculations
+				</div>
+				<div style={{display: 'flex', flexWrap: 'wrap', gap: 16, marginTop: 30, maxWidth: 1600, ...rise(frame, cue('math', 0, 'gemini'), 0.5, 14)}}>
+					{TOOLS.map((tool, i) => {
+						const on = i === 0 ? pick : 0;
+						return (
+							<div key={tool} style={{fontFamily: MONO, fontSize: 34, padding: '10px 20px', borderRadius: 14, border: `2px solid ${on > 0.5 ? C.brand : C.line}`, background: on > 0.5 ? C.brand : C.surface, color: on > 0.5 ? 'white' : C.ink2, opacity: i === 0 ? 1 : interpolate(pick, [0, 1], [1, 0.4]), transform: `scale(${1 + 0.08 * Math.sin(Math.PI * on)})`}}>{tool}()</div>
+						);
+					})}
+					<div style={{fontFamily: MONO, fontSize: 34, padding: '10px 6px', color: C.ink3, opacity: interpolate(pick, [0, 1], [1, 0.4])}}>+{TOOL_COUNT - TOOLS.length} more</div>
+				</div>
+			</div>
+
+			{/* B: plain code runs it; the app's own figure sheet, punched in */}
+			<div style={{opacity: B}}>
+				<Sequence from={Math.round(t2 * FPS)} layout="none">
+					<Footage clips={figures} h={PH} x={PX} y={PY} audio={false} />
+				</Sequence>
+				<div style={{position: 'absolute', left: X0, right: 96, top: 170}}>
+					<Eyebrow>Then plain code, no model</Eyebrow>
+					<div style={{fontFamily: MONO, fontSize: 52, fontWeight: 500, color: C.brandStrong, marginTop: 26}}>safe_to_spend()</div>
+					<div style={{marginTop: 26, borderTop: `2px solid ${C.line}`}}>
+						{[
+							['safe until payday', SAFE.amount],
+							['this week', SAFE.this_week],
+							['per day', SAFE.per_day],
+						].map(([k, v], i) => (
+							<div key={k as string} style={{display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', padding: '20px 0', borderBottom: `2px solid ${C.line}`, ...rise(frame, t2 + 0.5 + i * 0.3, 0.45, 12)}}>
+								<span style={{fontSize: 44, fontWeight: 500, color: C.ink2}}>{k}</span>
+								<span style={{fontFamily: MONO, fontSize: 56, fontWeight: 500, color: C.ink}}>{eur(v as number, 2)}</span>
+							</div>
+						))}
+					</div>
+					<div style={{fontSize: 36, fontWeight: 500, color: C.ink3, marginTop: 26, ...rise(frame, t2 + 1.4, 0.45, 10)}}>From her real transactions</div>
+				</div>
+			</div>
+
+			{/* C: every number in the answer is checked */}
+			<div style={{position: 'absolute', left: X, right: X, top: 170, opacity: Cc}}>
+				<Eyebrow>Every number in the answer is checked</Eyebrow>
+				<div style={{fontSize: 68, fontWeight: 600, letterSpacing: '-0.03em', lineHeight: 1.3, marginTop: 40, maxWidth: 1600}}>
+					“
+					{ANSWER.split(/(\d+)/).map((part, i) => {
+						const k = nums.indexOf(part);
+						if (k < 0) return <span key={i}>{part}</span>;
+						const p = prog(frame, tCheck + k * 0.3, 0.35);
+						return (
+							<span key={i} style={{display: 'inline-flex', alignItems: 'center', gap: 10, padding: '0 14px', margin: '0 4px', borderRadius: 14, background: p > 0.05 ? C.brandSoft : C.sunk, color: C.brandStrong}}>
+								{part}
+								<span style={{display: 'inline-flex', width: 50 * p, overflow: 'hidden'}}><Tick size={50} p={p} /></span>
+							</span>
+						);
+					})}
+					”
+				</div>
+				<div style={{display: 'flex', alignItems: 'center', gap: 14, marginTop: 44, ...rise(frame, tCheck + 0.7, 0.45, 10)}}>
+					<Tick size={40} />
+					<span style={{fontSize: 40, fontWeight: 600}}>Both are in the engine’s result. The answer is shown.</span>
+				</div>
+			</div>
+
+			{/* D: a wrong number, step by step, held long enough to read */}
+			<div style={{position: 'absolute', left: X, right: X, top: 150, opacity: D}}>
+				<Eyebrow>And when one does not match · from the app’s tests</Eyebrow>
+				<div style={{display: 'flex', alignItems: 'center', gap: 22, marginTop: 40, fontSize: 60, fontWeight: 600, letterSpacing: '-0.03em', color: C.ink2}}>
+					“You can safely spend about
+					<span style={{display: 'inline-flex', alignItems: 'center', gap: 12, padding: '2px 18px', borderRadius: 14, background: C.negSoft, color: C.neg, textDecoration: prog(frame, tFail + 0.4, 0.3) > 0.5 ? 'line-through' : 'none'}}>
+						€{WRONG.draft}
+						<span style={{display: 'inline-flex', width: 46 * prog(frame, tFail + 0.4, 0.3), overflow: 'hidden'}}><Cross size={46} /></span>
+					</span>
+					until payday.”
+				</div>
+				<div style={{display: 'flex', alignItems: 'center', gap: 20, marginTop: 44}}>
+					<div style={rise(frame, tFail + 0.7, 0.45, 12)}><Chip size={36}>not in any result</Chip></div>
+					<Arrow p={prog(frame, tFail + 0.9, 0.3)} />
+					<div style={rise(frame, tFail + 1.0, 0.45, 12)}><Chip size={36}>rewritten once: €{WRONG.retry}</Chip></div>
+					<Arrow p={prog(frame, tFail + 1.2, 0.3)} />
+					<div style={rise(frame, tFail + 1.3, 0.45, 12)}><Chip size={36} tone="neg">still wrong: answer held back</Chip></div>
+				</div>
+				<div style={{marginTop: 96, ...rise(frame, tFail + 1.6, 0.6, 18)}}>
+					<H1 size={76}>A wrong number is stopped before you hear it.</H1>
+					<div style={{fontSize: 36, fontWeight: 500, color: C.ink3, marginTop: 22}}>She sees the engine’s card with the real figures instead.</div>
+				</div>
+			</div>
+		</Scene>
+	);
+};
+const Arrow: React.FC<{p: number}> = ({p}) => (
+	<svg width={54} height={36} viewBox="0 0 60 40" style={{opacity: p, flex: 'none'}}>
 		<path d="M4 20h44M36 8l14 12-14 12" fill="none" stroke={C.ink3} strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" strokeDasharray="90" strokeDashoffset={90 * (1 - p)} />
 	</svg>
 );
 
-/** The model picks, the engine computes, the check decides. With the answer just heard. */
-export const MathScene: React.FC<{dur: number}> = ({dur}) => {
-	const frame = useCurrentFrame();
-	const t1 = cue('math', 0, 'gemini') - 0.2, t2 = lineAt('math', 1) - 0.1, t3 = lineAt('math', 2) - 0.1;
-	const tCheck = cue('math', 2, 'checked') - 0.25, tFail = cue('math', 2, 'one') - 0.2;
-	const seg = voiceSegs(caps[VOICE_CAP])[0];
-	const sentence = seg.answer.text.split(/(?<=\.)\s/).slice(0, 2).join(' ');
-	const W3 = 536, G = 60, X = 96;
-	const nums = [String(Math.round(S.this_week)), String(Math.round(S.per_day))];
-	const pick = prog(frame, t1 + 0.9, 0.4);
-	return (
-		<Scene dur={dur}>
-			<div style={{position: 'absolute', left: X, top: 84}}>
-				<Eyebrow style={rise(frame, 0.05, 0.5, 14)}>Under the hood</Eyebrow>
-				<H1 size={96} style={{marginTop: 14, ...rise(frame, 0.15, 0.6)}}>The AI never does the math.</H1>
-			</div>
-			<Box x={X} w={W3} n="1" who="Gemini" does="picks the calculation" style={rise(frame, t1, 0.6)}>
-				<div style={{display: 'flex', flexWrap: 'wrap', gap: 10}}>
-					{TOOLS.map((tool, i) => (
-						<div key={tool} style={{fontFamily: MONO, fontSize: 23, padding: '8px 14px', borderRadius: 12, border: `1.5px solid ${i === 0 ? interpolate(pick, [0, 1], [0, 1]) > 0.5 ? C.brand : C.line : C.line}`, background: i === 0 && pick > 0.5 ? C.brand : C.surface, color: i === 0 && pick > 0.5 ? 'white' : C.ink2, opacity: i === 0 ? 1 : interpolate(pick, [0, 1], [1, 0.45])}}>{tool}</div>
-					))}
-					<div style={{fontFamily: MONO, fontSize: 23, padding: '8px 4px', color: C.ink3, opacity: interpolate(pick, [0, 1], [1, 0.45])}}>+5 more</div>
-				</div>
-			</Box>
-			<Arrow x={X + W3} p={prog(frame, t2 - 0.25, 0.5)} />
-			<Box x={X + W3 + G} w={W3} n="2" who="Engine" does="computes it" style={rise(frame, t2, 0.6)}>
-				{[
-					['this_week', S.this_week],
-					['per_day', S.per_day],
-					['safe_to_spend', S.amount],
-				].map(([k, v], i) => (
-					<div key={k as string} style={{display: 'flex', justifyContent: 'space-between', fontFamily: MONO, fontSize: 30, padding: '9px 0', borderBottom: `1.5px solid ${C.line}`, ...rise(frame, t2 + 0.35 + i * 0.18, 0.45, 10)}}>
-						<span style={{color: C.ink3}}>{k}</span>
-						<span style={{color: C.ink, fontWeight: 500}}>{(v as number).toLocaleString('en-GB', {minimumFractionDigits: 2})}</span>
-					</div>
-				))}
-				<div style={{fontSize: 24, color: C.ink3, marginTop: 18, ...rise(frame, t2 + 0.9, 0.45, 10)}}>Plain code on her real transactions. No model.</div>
-			</Box>
-			<Arrow x={X + 2 * W3 + G} p={prog(frame, t3 - 0.25, 0.5)} />
-			<Box x={X + 2 * (W3 + G)} w={W3} n="3" who="Number check" does="checks every number" style={rise(frame, t3, 0.6)}>
-				<div style={{fontSize: 30, lineHeight: 1.42, color: C.ink2, fontWeight: 500}}>
-					{sentence.split(/(\d+)/).map((part, i) => {
-						const k = nums.indexOf(part);
-						if (k < 0) return <span key={i}>{part}</span>;
-						const p = prog(frame, tCheck + k * 0.35, 0.35);
-						return (
-							<span key={i} style={{display: 'inline-flex', alignItems: 'center', gap: 6, padding: '0 10px 0 8px', margin: '0 2px', borderRadius: 10, background: p > 0.05 ? C.brandSoft : C.sunk, color: C.ink, fontWeight: 600, verticalAlign: 'baseline'}}>
-								{part}
-								<span style={{display: 'inline-flex', width: 24 * p, overflow: 'hidden'}}><Tick size={24} p={p} /></span>
-							</span>
-						);
-					})}
-				</div>
-			</Box>
-			{/* and when a number is wrong */}
-			<div style={{position: 'absolute', left: X, right: X, top: 790, display: 'flex', alignItems: 'center', gap: 22, ...rise(frame, tFail, 0.6)}}>
-				<div style={{fontSize: 34, fontWeight: 500, color: C.ink2, display: 'flex', alignItems: 'center', gap: 12}}>
-					“…about
-					<span style={{display: 'inline-flex', alignItems: 'center', gap: 8, padding: '2px 12px', borderRadius: 10, background: C.negSoft, color: C.neg, fontWeight: 600, textDecoration: prog(frame, tFail + 0.5, 0.3) > 0.5 ? 'line-through' : 'none'}}>
-						350 <Cross size={26} />
-					</span>
-					euros this week.”
-				</div>
-				<div style={{flex: 1, height: 2, background: C.line}} />
-				<div style={{...rise(frame, tFail + 0.7, 0.5, 12)}}><Chip size={28}>not in the result</Chip></div>
-				<div style={{...rise(frame, tFail + 1.1, 0.5, 12)}}><Chip size={28}>rewritten once</Chip></div>
-				<div style={{...rise(frame, tFail + 1.5, 0.5, 12)}}><Chip size={28} tone="neg">still wrong: answer held back</Chip></div>
-			</div>
-		</Scene>
-	);
+// ---------------------------------------------------------------- 5. the proof: the one big moment
+const MONTH = (k: string) => new Date(k + '-01T00:00:00Z').toLocaleString('en-GB', {month: 'short', timeZone: 'UTC'});
+const M = btMonths.months;
+const fmt = (n: number) => Math.round(n).toLocaleString('en-GB');
+/** a running total through the months: at p ∈ [0, 1] across the eleven months, value `key` (eased inside each month) */
+const through = (p: number, key: 'cases_total' | 'customers_total' | 'safe_held_pct_total' | 'balance_held_pct_total') => {
+	const x = p * M.length;
+	const i = Math.min(M.length - 1, Math.floor(x));
+	const prev = i === 0 ? 0 : M[i - 1][key];
+	return prev + (M[i][key] - prev) * Math.min(1, x - i);
 };
 
-const PCT_W = 1010;
-const Bar: React.FC<{y: number; label: string; pct: number; color: string; at: number; land: number; strong?: boolean}> = ({y, label, pct, color, at, land, strong}) => {
-	const frame = useCurrentFrame();
-	const p = interpolate(frame, [at * FPS, land * FPS], [0, 1], {...clamp, easing: out});
-	return (
-		<div style={{position: 'absolute', left: 0, top: y, width: PCT_W, ...rise(frame, at - 0.2, 0.5, 16)}}>
-			<div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'baseline'}}>
-				<div style={{fontSize: 38, fontWeight: 600, letterSpacing: '-0.02em', color: strong ? C.ink : C.ink2}}>{label}</div>
-				<div style={{fontSize: strong ? 120 : 84, fontWeight: 600, letterSpacing: '-0.045em', lineHeight: 1, color: strong ? C.brand : C.ink3, fontVariantNumeric: 'tabular-nums'}}>{(pct * p).toFixed(1)}%</div>
-			</div>
-			<div style={{marginTop: 14, height: 36, borderRadius: 12, background: C.sunk, overflow: 'hidden', border: `1.5px solid ${C.line}`}}>
-				<div style={{width: `${pct * p}%`, height: '100%', background: color, borderRadius: 10}} />
-			</div>
-		</div>
-	);
-};
-
-/** Was "safe to spend" actually safe? The replay on every customer, and the same question asked in the app. */
+const BAR_W = 1480;
+/** Was "safe to spend" actually safe? The replay of every customer, month by month, as a counter and two bars. */
 export const Proof: React.FC<{dur: number}> = ({dur}) => {
 	const frame = useCurrentFrame();
-	const cap = caps.track;
-	const PH = 900;
-	const x0 = 150 + phoneWidth(PH) + 110;
-	const from = 7.4;
-	const rate = Math.min(1, (cap.seconds - from - 0.3) / (dur / FPS));
+	const t = frame / FPS;
+	// the counter runs through the eleven months while the narrator says "we replayed it on 4,850 customers"
+	const c0 = cue('proof', 0, 'replayed') - 0.1, c1 = cue('proof', 0, 'customers') + 0.35;
+	const cp = interpolate(t, [c0, c1], [0, 1], {...clamp, easing: inOut});
+	const mi = Math.min(M.length - 1, Math.floor(cp * M.length * 0.999));
+	// the bars race through the same months; the big numbers land on the spoken words
+	const r0 = lineAt('proof', 1) + 0.1, tSafe = cue('proof', 1, 'ninety'), tBal = cue('proof', 2, 'twenty');
+	const rp = interpolate(t, [r0, tSafe], [0, 1], {...clamp, easing: inOut});
+	const up = prog(frame, r0 - 0.5, 0.7, inOut); // the counters move up out of the bars' way
+	const safeP = rp === 0 ? 0 : through(rp, 'safe_held_pct_total') * interpolate(rp, [0, 0.12], [0, 1], clamp);
+	const balP = rp === 0 ? 0 : through(rp, 'balance_held_pct_total') * interpolate(rp, [0, 0.12], [0, 1], clamp);
+	const land = (at: number) => ({p: prog(frame, at - 0.05, 0.35), pop: interpolate(t, [at - 0.05, at + 0.12, at + 0.4], [0.6, 1.08, 1], {...clamp, easing: out})});
+	const s = land(tSafe), b = land(tBal);
+	const big = {fontSize: 160, fontWeight: 600, letterSpacing: '-0.05em', lineHeight: 1, fontVariantNumeric: 'tabular-nums' as const};
 	return (
 		<Scene dur={dur}>
-			<div style={{position: 'absolute', left: 150, top: 50, ...rise(frame, 0.05, 0.7, 40)}}>
-				<Phone h={PH} cap={cap} from={from} rate={rate} />
+			<div style={{position: 'absolute', left: 0, right: 0, top: 70, textAlign: 'center', ...rise(frame, 0.1, 0.5, 14)}}>
+				<Provenance style={{justifyContent: 'center'}}>Backtest on history the coach could not see</Provenance>
+				<H1 size={96} style={{marginTop: 20, opacity: 1 - up}}>Is the number any good?</H1>
 			</div>
-			<div style={{position: 'absolute', left: x0, top: 96, width: PCT_W}}>
-				<Eyebrow style={rise(frame, 0.1, 0.5, 14)}>Backtest · {backtest.customers.toLocaleString('en-GB')} customers · {backtest.cases.toLocaleString('en-GB')} replays</Eyebrow>
-				<H1 size={84} style={{marginTop: 16, ...rise(frame, 0.2, 0.6)}}>Is “safe to spend”<br />really safe?</H1>
-				<div style={{position: 'relative', marginTop: 56}}>
-					<Bar y={0} label="Spend what Kori calls safe" pct={backtest.promise.safe_held_pct} color={C.brand} at={lineAt('proof', 1)} land={cue('proof', 1, 'ninety') + 0.5} strong />
-					<Bar y={250} label="Treat the balance as the budget" pct={backtest.promise.balance_as_budget_held_pct} color={C.cushion} at={lineAt('proof', 2)} land={cue('proof', 2, 'twenty') + 0.5} />
+			{/* the counter */}
+			<div style={{position: 'absolute', left: 0, right: 0, top: interpolate(up, [0, 1], [330, 150]), display: 'flex', justifyContent: 'center', gap: interpolate(up, [0, 1], [140, 70]), transform: `scale(${interpolate(up, [0, 1], [1, 0.62])})`, transformOrigin: '50% 0', opacity: prog(frame, c0 - 0.3, 0.4)}}>
+				<Counter n={cp === 0 ? 0 : through(cp, 'cases_total')} label="past dates replayed" />
+				<Counter n={cp === 0 ? 0 : through(cp, 'customers_total')} label="customers" />
+			</div>
+			{/* the months */}
+			<div style={{position: 'absolute', left: 0, right: 0, top: interpolate(up, [0, 1], [640, 360]), display: 'flex', justifyContent: 'center', gap: 14, opacity: prog(frame, c0 - 0.3, 0.4)}}>
+				{M.map((m, i) => {
+					const on = cp > 0 && i <= mi;
+					const now = i === mi && cp > 0 && cp < 1;
+					return (
+						<div key={m.month} style={{width: 108, textAlign: 'center', fontSize: 32, fontWeight: 600, color: on ? (now ? C.brand : C.ink) : C.lineStrong, borderTop: `6px solid ${on ? C.brand : C.line}`, paddingTop: 10}}>
+							{MONTH(m.month)}
+							{i === 0 || m.month.endsWith('-01') ? <div style={{fontSize: 28, fontWeight: 500, color: C.ink3}}>{m.month.slice(0, 4)}</div> : null}
+						</div>
+					);
+				})}
+			</div>
+			{/* the two bars */}
+			<div style={{position: 'absolute', left: (1920 - BAR_W) / 2, top: 530, width: BAR_W, opacity: up}}>
+				<Race y={0} label="Spend what Kori says is safe" pct={safeP} color={C.brand} strong />
+				<Race y={210} label="Spend your balance" pct={balP} color={C.cushion} />
+				<div style={{position: 'absolute', right: 0, top: -28, textAlign: 'right', opacity: s.p, transform: `scale(${s.pop})`, transformOrigin: '100% 50%'}}>
+					<div style={{...big, color: C.brand}}>{Math.round(btMonths.promise.safe_held_pct)} %</div>
 				</div>
-				<div style={{position: 'absolute', top: 760, fontSize: 30, lineHeight: 1.35, color: C.ink3, ...rise(frame, lineAt('proof', 1) + 0.6, 0.6, 14)}}>
-					Share of cases where the account stayed above zero until the next pay arrived.<br />Anyone can ask the app the same thing: “Was this number right before?”
+				<div style={{position: 'absolute', right: 0, top: 182, textAlign: 'right', opacity: b.p, transform: `scale(${b.pop})`, transformOrigin: '100% 50%'}}>
+					<div style={{...big, color: C.ink3}}>{Math.round(btMonths.promise.balance_as_budget_held_pct)} %</div>
 				</div>
+			</div>
+			<div style={{position: 'absolute', left: 0, right: 0, top: 900, textAlign: 'center', fontSize: 32, color: C.ink3, opacity: prog(frame, tSafe + 0.6, 0.6)}}>
+				Stayed above zero until the next pay: {btMonths.promise.safe_held_pct} % vs {btMonths.promise.balance_as_budget_held_pct} % of {fmt(btMonths.promise.cases)} cases
 			</div>
 		</Scene>
 	);
 };
+const Counter: React.FC<{n: number; label: string}> = ({n, label}) => (
+	<div style={{textAlign: 'center'}}>
+		<div style={{fontSize: 190, fontWeight: 600, letterSpacing: '-0.05em', lineHeight: 1, fontVariantNumeric: 'tabular-nums'}}>{fmt(n)}</div>
+		<div style={{fontSize: 46, fontWeight: 500, color: C.ink2, marginTop: 10}}>{label}</div>
+	</div>
+);
+const Race: React.FC<{y: number; label: string; pct: number; color: string; strong?: boolean}> = ({y, label, pct, color, strong}) => (
+	<div style={{position: 'absolute', left: 0, top: y, width: BAR_W - 420}}>
+		<div style={{fontSize: 48, fontWeight: 600, letterSpacing: '-0.02em', color: strong ? C.ink : C.ink2}}>{label}</div>
+		<div style={{marginTop: 18, height: 60, borderRadius: 16, background: C.sunk, overflow: 'hidden', border: `2px solid ${C.line}`}}>
+			<div style={{width: `${pct}%`, height: '100%', background: color, borderRadius: 14}} />
+		</div>
+	</div>
+);
 
+// ---------------------------------------------------------------- 6. it teaches
 const BASKETS = [
-	{key: 'fixed', name: 'Fixed musts', what: 'Rent, housing, utilities. Same every month.', color: C.fixed, soft: C.fixedSoft},
-	{key: 'surprise', name: 'Surprise musts', what: 'The dentist. The washing machine.', color: C.surprise, soft: C.surpriseSoft},
-	{key: 'everyday', name: 'Everyday', what: 'Food, coffees, rides, fun. The one you steer.', color: C.everyday, soft: C.everydaySoft},
+	{key: 'fixed', name: 'Fixed musts', what: 'Rent, bills. Same every month.', color: C.fixed, soft: C.fixedSoft},
+	{key: 'surprise', name: 'Surprise musts', what: 'The dentist, a broken phone.', color: C.surprise, soft: C.surpriseSoft},
+	{key: 'everyday', name: 'Everyday', what: 'Food, coffee, fun. The one she steers.', color: C.everyday, soft: C.everydaySoft},
 ];
-/** It teaches: the three baskets, a lesson on your own numbers, say it back, graded. */
-export const Teach: React.FC<{dur: number}> = ({dur}) => {
+/** Baskets, a lesson she has to say back, and how she compares with people like her. Footage left, beats right. */
+export const Teach: React.FC<{dur: number; clips: Clip[]}> = ({dur, clips}) => {
 	const frame = useCurrentFrame();
-	const cap = caps.lesson;
-	const PH = 900;
-	const x0 = 150 + phoneWidth(PH) + 110;
-	const rate = (cap.seconds - 1.2) / (dur / FPS);
+	const t2 = lineAt('teach', 1) - 0.2, t3 = lineAt('teach', 2) - 0.2;
 	const at = [cue('teach', 0, 'fixed'), cue('teach', 0, 'surprise'), cue('teach', 0, 'everyday')];
 	const steps = [
-		{t: lineAt('teach', 1), label: 'A lesson on your own numbers'},
-		{t: cue('teach', 1, 'say'), label: 'Say it back in your own words'},
-		{t: cue('teach', 1, 'coach'), label: 'The coach grades it'},
+		{t: lineAt('teach', 1), label: 'A short lesson on her own numbers'},
+		{t: cue('teach', 1, 'say'), label: 'She says it back in her own words'},
+		{t: cue('teach', 1, 'grades'), label: 'Graded honestly: “Not yet” is allowed'},
 	];
 	return (
 		<Scene dur={dur}>
-			<div style={{position: 'absolute', left: 150, top: 50, ...rise(frame, 0.05, 0.7, 40)}}>
-				<Phone h={PH} cap={cap} from={1.0} rate={rate} />
-			</div>
-			<div style={{position: 'absolute', left: x0, right: 96, top: 96}}>
-				<Eyebrow style={rise(frame, 0.1, 0.5, 14)}>Financial literacy</Eyebrow>
-				<H1 size={84} style={{marginTop: 16, ...rise(frame, 0.2, 0.6)}}>It teaches,<br />in three baskets.</H1>
-				<div style={{display: 'flex', gap: 22, marginTop: 50}}>
-					{BASKETS.map((b, i) => {
-						const amount = home.baskets.baskets.find((x) => x.key === b.key)?.usual ?? 0;
+			<Footage clips={clips} h={PH} x={PX} y={PY} />
+			<div style={{position: 'absolute', left: X0, right: 96, top: 84, opacity: beat(frame, 0, t2)}}>
+				<Eyebrow>It teaches</Eyebrow>
+				<H1 size={80} style={{marginTop: 16}}>Three baskets.</H1>
+				<div style={{display: 'flex', flexDirection: 'column', gap: 20, marginTop: 40}}>
+					{BASKETS.map((bk, i) => {
+						const amount = home.baskets.baskets.find((x) => x.key === bk.key)?.amount ?? 0;
 						return (
-							<div key={b.key} style={{flex: 1, height: 262, background: b.soft, borderRadius: 24, padding: '26px 28px', boxSizing: 'border-box', borderTop: `10px solid ${b.color}`, ...rise(frame, at[i] - 0.15, 0.55, 26)}}>
-								<div style={{fontSize: 38, fontWeight: 600, letterSpacing: '-0.025em'}}>{b.name}</div>
-								<div style={{fontSize: 25, lineHeight: 1.3, color: C.ink2, marginTop: 10, height: 66}}>{b.what}</div>
-								<div style={{fontSize: 40, fontWeight: 600, letterSpacing: '-0.03em', marginTop: 16, fontVariantNumeric: 'tabular-nums'}}>
-									{eur(amount)}
-									<span style={{fontSize: 24, fontWeight: 500, color: C.ink3, letterSpacing: 0}}> a month</span>
+							<div key={bk.key} style={{display: 'flex', alignItems: 'center', gap: 30, background: bk.soft, borderRadius: 24, padding: '22px 32px', borderLeft: `12px solid ${bk.color}`, ...rise(frame, at[i] - 0.2, 0.5, 20)}}>
+								<div style={{flex: 1}}>
+									<div style={{fontSize: 48, fontWeight: 600, letterSpacing: '-0.025em'}}>{bk.name}</div>
+									<div style={{fontSize: 32, color: C.ink2, marginTop: 4}}>{bk.what}</div>
+								</div>
+								<div style={{textAlign: 'right'}}>
+									<div style={{fontSize: 52, fontWeight: 600, letterSpacing: '-0.03em', fontVariantNumeric: 'tabular-nums'}}>{eur(amount)}</div>
+									<div style={{fontSize: 28, color: C.ink3}}>this month</div>
 								</div>
 							</div>
 						);
 					})}
 				</div>
-				<div style={{marginTop: 46, display: 'flex', flexDirection: 'column', gap: 16}}>
-					{steps.map((s, i) => {
-						const p = prog(frame, s.t - 0.1, 0.4);
+			</div>
+			<div style={{position: 'absolute', left: X0, right: 96, top: 84, opacity: beat(frame, t2, t3)}}>
+				<Eyebrow>Lessons</Eyebrow>
+				<H1 size={80} style={{marginTop: 16}}>Say it back.<br />Graded honestly.</H1>
+				<div style={{display: 'flex', flexDirection: 'column', gap: 26, marginTop: 56}}>
+					{steps.map((st, i) => {
+						const p = prog(frame, st.t - 0.1, 0.4);
 						return (
-							<div key={i} style={{display: 'flex', alignItems: 'center', gap: 18, opacity: interpolate(p, [0, 1], [0.3, 1])}}>
-								<Tick size={38} p={p} />
-								<div style={{fontSize: 38, fontWeight: 600, letterSpacing: '-0.02em'}}>{s.label}</div>
+							<div key={i} style={{display: 'flex', alignItems: 'center', gap: 20, opacity: interpolate(p, [0, 1], [0.3, 1])}}>
+								<Tick size={46} p={p} />
+								<div style={{fontSize: 46, fontWeight: 600, letterSpacing: '-0.02em'}}>{st.label}</div>
 							</div>
 						);
 					})}
+				</div>
+			</div>
+			<div style={{position: 'absolute', left: X0, right: 96, top: 84, opacity: beat(frame, t3)}}>
+				<Eyebrow>People like her</Eyebrow>
+				<H1 size={80} style={{marginTop: 16}}>Compared with<br />people like her.</H1>
+				<div style={{display: 'flex', gap: 16, marginTop: 50, flexWrap: 'wrap', ...rise(frame, cue('teach', 2, 'statistics') - 0.2, 0.5, 14)}}>
+					<Chip size={40} tone="brand">Statistics Finland data</Chip>
+					<Chip size={40} mono>compare_with_peers()</Chip>
 				</div>
 			</div>
 		</Scene>
 	);
 };
 
-/** Where it lives: a mobile web view, in Finnish, honest about a partial view. */
-export const Fit: React.FC<{dur: number}> = ({dur}) => {
+// ---------------------------------------------------------------- 7. inside the bank app
+/** The host app: footage left; the steps (from the slot's beats) light up as they are seen. */
+export const Host: React.FC<{dur: number; clips: Clip[]; beats: {cap: string; at: number; label: string}[]}> = ({dur, clips, beats}) => {
 	const frame = useCurrentFrame();
-	const PH = 1040;
-	const pw = phoneWidth(PH);
-	const gap = (1920 - 2 * 110 - 3 * pw) / 2;
-	const items = [
-		{at: 0.15, label: 'Voice or text, in a mobile web view', el: (d: number) => <Phone h={PH} cap={caps.chat} from={1.2} rate={(caps.chat.seconds - 1.6) / (d / FPS)} />},
-		{at: cue('fit', 0, 'finnish') - 0.5, label: 'Finnish and English', el: () => <Phone h={PH} still="cap/still-fi.png" />},
-		{at: lineAt('fit', 1) - 0.2, label: 'Honest about a partial view (PSD2)', el: () => <Phone h={PH} still="cap/still-jari.png" />},
-	];
+	const t = frame / FPS;
+	const at = beats.map((b) => sceneSec(clips, b.cap, b.at) ?? 1e9);
 	return (
 		<Scene dur={dur}>
-			<div style={{position: 'absolute', left: 110, top: 70}}>
-				<Eyebrow style={rise(frame, 0.05, 0.5, 14)}>Mobile web · embeddable</Eyebrow>
-				<H1 size={84} style={{marginTop: 12, ...rise(frame, 0.15, 0.6)}}>Made to sit inside S-mobiili.</H1>
+			<Footage clips={clips} h={PH} x={PX} y={PY} />
+			<div style={{position: 'absolute', left: X0, right: 96, top: 84}}>
+				<Provenance live style={rise(frame, 0.05, 0.5, 12)}>Recorded live · real speed</Provenance>
+				<H1 size={84} style={{marginTop: 24, ...rise(frame, 0.15, 0.6)}}>Made to sit inside S-mobiili.</H1>
+				<div style={{display: 'flex', flexDirection: 'column', gap: 26, marginTop: 64}}>
+					{beats.map((b, i) => {
+						const on = interpolate(t, [at[i] - 0.1, at[i] + 0.3], [0, 1], clamp);
+						const now = on > 0 && (i === beats.length - 1 || t < at[i + 1] - 0.1);
+						return (
+							<div key={i} style={{display: 'flex', alignItems: 'center', gap: 22, opacity: interpolate(on, [0, 1], [0.3, 1])}}>
+								<Tick size={46} p={on} />
+								<div style={{fontSize: now ? 52 : 46, fontWeight: 600, letterSpacing: '-0.025em', color: now ? C.ink : C.ink2}}>{b.label}</div>
+							</div>
+						);
+					})}
+				</div>
 			</div>
-			{items.map((it, i) => {
-				const p = prog(frame, it.at, 0.9);
-				const start = Math.max(0, Math.round(it.at * FPS));
-				return (
-					<div key={i} style={{position: 'absolute', left: 110 + i * (pw + gap), top: 268, width: pw, opacity: Math.min(1, p * 1.4), transform: `translateY(${(1 - p) * 160}px)`}}>
-						<div style={{fontSize: 30, fontWeight: 600, letterSpacing: '-0.015em', color: C.ink2, textAlign: 'center', marginBottom: 20, whiteSpace: 'nowrap'}}>{it.label}</div>
-						<Sequence from={start} layout="none">
-							{it.el(dur - start)}
-						</Sequence>
-					</div>
-				);
-			})}
 		</Scene>
 	);
 };

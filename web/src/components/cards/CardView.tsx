@@ -18,11 +18,11 @@ import type {
   TrackData,
   WhatIfData,
 } from "../../lib/types";
+import { CheckinBody, type CheckinCardData } from "../loop/CheckIn";
+import { OneThing, type ActionCardData } from "../loop/OneThing";
 import { cx } from "../ui/bits";
 import {
   BasketsBody,
-  CheckinBody,
-  ActionBody,
   AffordBody,
   CalculateBody,
   BreakdownBody,
@@ -50,9 +50,9 @@ function Body({ card, open }: { card: Card; open: boolean }) {
     case "baskets":
       return <BasketsBody d={card.data as BasketsData} />;
     case "checkin":
-      return <CheckinBody d={card.data as any} />;
+      return <CheckinBody d={card.data as CheckinCardData} />;
     case "action":
-      return <ActionBody d={card.data as any} />;
+      return <OneThing variant="card" card={card.data as ActionCardData} shownTitle={card.title} />;
     case "afford":
       return <AffordBody d={card.data as AffordData} />;
     case "slips":
@@ -139,7 +139,7 @@ export function CardView({ card, pinned, bare, defaultOpen = false, className }:
   return (
     <article className={cx(!bare && "rounded-card border border-line bg-surface px-4 pt-3.5", bare ? "pb-1" : expandable || canPin ? "pb-1.5" : "pb-4", className)}>
       <header className={cx("mb-3", bare && "pr-10")}>
-        <h3 className={cx("font-semibold tracking-[-0.01em] text-ink", bare ? "text-[18px] leading-6" : "text-[15px] leading-5")}>{card.title}</h3>
+        <h3 className={cx("font-semibold tracking-[-0.01em] text-ink first-letter:uppercase", bare ? "text-[18px] leading-6" : "text-[15px] leading-5")}>{card.title}</h3>
         {card.subtitle && <p className="mt-0.5 text-[13px] leading-[18px] text-ink-3">{card.subtitle}</p>}
       </header>
       <Body card={card} open={open} />

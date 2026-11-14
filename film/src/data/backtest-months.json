@@ -1,0 +1,136 @@
+{
+ "source": "backend/scripts/backtest.py (one_customer, summarise), every customer, per as-of month",
+ "matches": "docs/backtest.json",
+ "cases": 106553,
+ "customers": 4850,
+ "promise": {
+  "cases": 89619,
+  "safe_held_pct": 95.9,
+  "safe_held_when_pay_on_time_pct": 98.4,
+  "safe_held_when_pay_late_pct": 87.0,
+  "balance_as_budget_held_pct": 28.6
+ },
+ "months": [
+  {
+   "month": "2025-10",
+   "cases": 9687,
+   "cases_total": 9687,
+   "customers_total": 4844,
+   "promise_cases_total": 8206,
+   "safe_held_pct_month": 95.3,
+   "balance_held_pct_month": 27.1,
+   "safe_held_pct_total": 95.3,
+   "balance_held_pct_total": 27.1
+  },
+  {
+   "month": "2025-11",
+   "cases": 9688,
+   "cases_total": 19375,
+   "customers_total": 4845,
+   "promise_cases_total": 16509,
+   "safe_held_pct_month": 95.4,
+   "balance_held_pct_month": 27.4,
+   "safe_held_pct_total": 95.3,
+   "balance_held_pct_total": 27.2
+  },
+  {
+   "month": "2025-12",
+   "cases": 9688,
+   "cases_total": 29063,
+   "customers_total": 4846,
+   "promise_cases_total": 24718,
+   "safe_held_pct_month": 95.3,
+   "balance_held_pct_month": 27.6,
+   "safe_held_pct_total": 95.3,
+   "balance_held_pct_total": 27.4
+  },
+  {
+   "month": "2026-01",
+   "cases": 9688,
+   "cases_total": 38751,
+   "customers_total": 4848,
+   "promise_cases_total": 32932,
+   "safe_held_pct_month": 95.8,
+   "balance_held_pct_month": 28.2,
+   "safe_held_pct_total": 95.4,
+   "balance_held_pct_total": 27.6
+  },
+  {
+   "month": "2026-02",
+   "cases": 9690,
+   "cases_total": 48441,
+   "customers_total": 4849,
+   "promise_cases_total": 41039,
+   "safe_held_pct_month": 96.2,
+   "balance_held_pct_month": 27.8,
+   "safe_held_pct_total": 95.6,
+   "balance_held_pct_total": 27.6
+  },
+  {
+   "month": "2026-03",
+   "cases": 9692,
+   "cases_total": 58133,
+   "customers_total": 4849,
+   "promise_cases_total": 49229,
+   "safe_held_pct_month": 96.3,
+   "balance_held_pct_month": 28.7,
+   "safe_held_pct_total": 95.7,
+   "balance_held_pct_total": 27.8
+  },
+  {
+   "month": "2026-04",
+   "cases": 9692,
+   "cases_total": 67825,
+   "customers_total": 4849,
+   "promise_cases_total": 57289,
+   "safe_held_pct_month": 96.1,
+   "balance_held_pct_month": 28.9,
+   "safe_held_pct_total": 95.8,
+   "balance_held_pct_total": 27.9
+  },
+  {
+   "month": "2026-05",
+   "cases": 9690,
+   "cases_total": 77515,
+   "customers_total": 4849,
+   "promise_cases_total": 65367,
+   "safe_held_pct_month": 96.0,
+   "balance_held_pct_month": 29.0,
+   "safe_held_pct_total": 95.8,
+   "balance_held_pct_total": 28.1
+  },
+  {
+   "month": "2026-06",
+   "cases": 9690,
+   "cases_total": 87205,
+   "customers_total": 4849,
+   "promise_cases_total": 73475,
+   "safe_held_pct_month": 96.4,
+   "balance_held_pct_month": 30.1,
+   "safe_held_pct_total": 95.9,
+   "balance_held_pct_total": 28.3
+  },
+  {
+   "month": "2026-07",
+   "cases": 9683,
+   "cases_total": 96888,
+   "customers_total": 4850,
+   "promise_cases_total": 81482,
+   "safe_held_pct_month": 96.3,
+   "balance_held_pct_month": 29.1,
+   "safe_held_pct_total": 95.9,
+   "balance_held_pct_total": 28.4
+  },
+  {
+   "month": "2026-08",
+   "cases": 9665,
+   "cases_total": 106553,
+   "customers_total": 4850,
+   "promise_cases_total": 89619,
+   "safe_held_pct_month": 96.2,
+   "balance_held_pct_month": 30.6,
+   "safe_held_pct_total": 95.9,
+   "balance_held_pct_total": 28.6
+  }
+ ]
+}

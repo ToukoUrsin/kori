@@ -1,6 +1,6 @@
 import React from 'react';
 import {Img, OffthreadVideo, interpolate, staticFile, useCurrentFrame} from 'remotion';
-import {C, FPS, MONO, SANS, clamp, out, prog} from './theme';
+import {C, FPS, MONO, SANS, clamp, inOut, out, prog} from './theme';
 import type {Cap} from './data';
 
 /** The Kori mark: three bars (the same as in the app). */
@@ -17,7 +17,7 @@ export const Mark: React.FC<{size: number; color?: string; levels?: number[]}> =
 };
 
 export const Eyebrow: React.FC<{children: React.ReactNode; color?: string; style?: React.CSSProperties}> = ({children, color = C.ink3, style}) => (
-	<div style={{fontFamily: SANS, fontSize: 26, fontWeight: 600, letterSpacing: '0.09em', textTransform: 'uppercase', color, ...style}}>{children}</div>
+	<div style={{fontFamily: SANS, fontSize: 32, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color, ...style}}>{children}</div>
 );
 export const H1: React.FC<{children: React.ReactNode; size?: number; style?: React.CSSProperties}> = ({children, size = 84, style}) => (
 	<div style={{fontFamily: SANS, fontSize: size, fontWeight: 600, letterSpacing: '-0.035em', lineHeight: 1.04, color: C.ink, ...style}}>{children}</div>
@@ -29,7 +29,22 @@ const phoneW = (h: number) => {
 };
 export const phoneWidth = (h: number) => phoneW(h).w;
 
-/** A phone showing a recording (or a still). Lives inside a <Sequence>: frame 0 is second `from` of the recording. */
+export type Zoom = {at: number; z: number; x?: number; y: number};
+const ZOOM_S = 0.4;
+const lerp = (a: number, b: number, p: number) => a + (b - a) * p;
+/** Where the camera inside the phone is at recording second `t`: a 0.4 s ease to each keyframe. x, y are app pixels (390 × 844). */
+export const zoomAt = (zs: Zoom[] | undefined, t: number) => {
+	let st = {z: 1, x: 195, y: 422};
+	for (const k of zs ?? []) {
+		if (t < k.at) break;
+		const p = interpolate(t, [k.at, k.at + ZOOM_S], [0, 1], {...clamp, easing: inOut});
+		st = {z: lerp(st.z, k.z, p), x: lerp(st.x, k.x ?? 195, p), y: lerp(st.y, k.y, p)};
+	}
+	return st;
+};
+
+/** A phone showing a recording (or a still). Lives inside a <Sequence>: frame 0 is second `from` of the recording.
+ *  `zoom` punches in on a part of the screen (keyframes in the recording's seconds). */
 export const Phone: React.FC<{
 	h: number;
 	cap?: Cap;
@@ -37,33 +52,62 @@ export const Phone: React.FC<{
 	from?: number;
 	rate?: number;
 	taps?: boolean;
+	zoom?: Zoom[];
 	style?: React.CSSProperties;
-}> = ({h, cap, still, from = 0, rate = 1, taps = true, style}) => {
+}> = ({h, cap, still, from = 0, rate = 1, taps = true, zoom, style}) => {
 	const frame = useCurrentFrame();
 	const {b, w} = phoneW(h);
 	const sw = w - 2 * b, sh = h - 2 * b;
 	const k = sw / 390;
 	const t = from + (frame / FPS) * rate;
 	const r = Math.round(h * 0.062);
+	const zm = zoomAt(zoom, t);
+	const ox = Math.min(0, Math.max(sw - zm.z * sw, sw / 2 - zm.z * zm.x * k));
+	const oy = Math.min(0, Math.max(sh - zm.z * sh, sh / 2 - zm.z * zm.y * k));
 	return (
 		<div style={{position: 'relative', width: w, height: h, borderRadius: r, background: 'oklch(0.18 0.012 160)', boxShadow: '0 2px 4px oklch(0.22 0.02 160 / 0.10), 0 40px 80px -24px oklch(0.22 0.02 160 / 0.32)', ...style}}>
 			<div style={{position: 'absolute', left: b, top: b, width: sw, height: sh, borderRadius: r - b, overflow: 'hidden', background: C.ground}}>
-				{cap ? (
-					<OffthreadVideo src={staticFile(cap.video)} trimBefore={Math.round(from * FPS)} playbackRate={rate} muted style={{width: sw, height: sh, objectFit: 'cover', objectPosition: 'top'}} />
-				) : still ? (
-					<Img src={staticFile(still)} style={{width: sw, height: sh, objectFit: 'cover', objectPosition: 'top'}} />
-				) : null}
-				{cap && taps
-					? cap.events
-							.filter((e) => e.kind === 'tap' && e.box && t >= e.at - 0.05 && t < e.at + 0.5 * rate)
-							.map((e, i) => {
-								const p = (t - e.at) / (0.5 * rate);
-								const cx = (e.box!.x + e.box!.width / 2) * k, cy = (e.box!.y + e.box!.height / 2) * k;
-								const rad = (16 + 22 * Math.min(1, Math.max(0, p))) * k;
-								return <div key={i} style={{position: 'absolute', left: cx - rad, top: cy - rad, width: rad * 2, height: rad * 2, borderRadius: rad, background: 'oklch(0.22 0.02 160 / 0.32)', opacity: 1 - Math.max(0, p)}} />;
-							})
-					: null}
+				<div style={{position: 'absolute', left: 0, top: 0, width: sw, height: sh, transformOrigin: '0 0', transform: `translate(${ox}px, ${oy}px) scale(${zm.z})`}}>
+					{cap ? (
+						<OffthreadVideo src={staticFile(cap.video)} trimBefore={Math.round(from * FPS)} playbackRate={rate} muted style={{width: sw, height: sh, objectFit: 'cover', objectPosition: 'top'}} />
+					) : still ? (
+						<Img src={staticFile(still)} style={{width: sw, height: sh, objectFit: 'cover', objectPosition: 'top'}} />
+					) : null}
+					{cap && taps
+						? cap.events
+								.filter((e) => e.kind === 'tap' && e.box && t >= e.at - 0.05 && t < e.at + 0.5 * rate)
+								.map((e, i) => {
+									const p = (t - e.at) / (0.5 * rate);
+									const cx = (e.box!.x + e.box!.width / 2) * k, cy = (e.box!.y + e.box!.height / 2) * k;
+									const rad = (16 + 22 * Math.min(1, Math.max(0, p))) * k;
+									return <div key={i} style={{position: 'absolute', left: cx - rad, top: cy - rad, width: rad * 2, height: rad * 2, borderRadius: rad, background: 'oklch(0.22 0.02 160 / 0.32)', opacity: 1 - Math.max(0, p)}} />;
+								})
+						: null}
+				</div>
 			</div>
+		</div>
+	);
+};
+
+/** Where a scene's pictures come from, said once at the top ("Recorded live · real speed"). */
+export const Provenance: React.FC<{children: React.ReactNode; live?: boolean; style?: React.CSSProperties}> = ({children, live, style}) => {
+	const frame = useCurrentFrame();
+	return (
+		<div style={{display: 'flex', alignItems: 'center', gap: 14, ...style}}>
+			{live ? <div style={{width: 16, height: 16, borderRadius: 9, background: C.neg, opacity: 0.55 + 0.45 * Math.abs(Math.sin((frame / FPS) * 2.4))}} /> : null}
+			<Eyebrow>{children}</Eyebrow>
+		</div>
+	);
+};
+
+/** The mark on a cut: how long a wait was taken out. */
+export const WaitCut: React.FC<{seconds: number; style?: React.CSSProperties}> = ({seconds, style}) => {
+	const frame = useCurrentFrame();
+	const op = Math.min(interpolate(frame, [0, 5], [0, 1], clamp), interpolate(frame, [48, 58], [1, 0], clamp));
+	return (
+		<div style={{display: 'inline-flex', alignItems: 'center', gap: 12, fontFamily: SANS, fontSize: 32, fontWeight: 600, color: C.ink, background: C.surface, border: `1.5px solid ${C.lineStrong}`, borderRadius: 999, padding: '8px 22px 8px 16px', boxShadow: '0 10px 28px -12px oklch(0.22 0.02 160 / 0.35)', opacity: op, transform: `translateY(${(1 - op) * -10}px)`, whiteSpace: 'nowrap', ...style}}>
+			<svg width={30} height={30} viewBox="0 0 24 24"><path d="M5 6l6 6-6 6M13 6l6 6-6 6" fill="none" stroke={C.ink2} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" /></svg>
+			{Math.round(seconds)} s wait cut
 		</div>
 	);
 };
@@ -79,7 +123,7 @@ export const Spoken: React.FC<{words: {w: string; s: number; e: number}[]; t: nu
 	</div>
 );
 
-export const Chip: React.FC<{children: React.ReactNode; tone?: 'plain' | 'brand' | 'neg'; mono?: boolean; size?: number; style?: React.CSSProperties}> = ({children, tone = 'plain', mono, size = 26, style}) => {
+export const Chip: React.FC<{children: React.ReactNode; tone?: 'plain' | 'brand' | 'neg'; mono?: boolean; size?: number; style?: React.CSSProperties}> = ({children, tone = 'plain', mono, size = 32, style}) => {
 	const t = tone === 'brand' ? {bg: C.brandSoft, fg: C.brandStrong, bd: C.brandLine} : tone === 'neg' ? {bg: C.negSoft, fg: C.neg, bd: 'oklch(0.86 0.06 27)'} : {bg: C.surface, fg: C.ink2, bd: C.line};
 	return (
 		<div style={{display: 'inline-flex', alignItems: 'center', gap: 10, fontFamily: mono ? MONO : SANS, fontSize: size, fontWeight: 500, color: t.fg, background: t.bg, border: `1.5px solid ${t.bd}`, borderRadius: 999, padding: `${Math.round(size * 0.32)}px ${Math.round(size * 0.7)}px`, whiteSpace: 'nowrap', ...style}}>{children}</div>

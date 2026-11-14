@@ -136,12 +136,12 @@ export const api = {
   teachback: (id: string, customer: string, lang: Lang, answer: string) =>
     send<TeachBack>("POST", `/api/lessons/${encodeURIComponent(id)}/teachback`, { customer, lang, answer }),
   lessonDone: (id: string, customer: string) => send<{ ok: boolean }>("POST", `/api/lessons/${encodeURIComponent(id)}/done`, { customer }),
-  action: (customer: string, lang: Lang) => get<{ active: LoopData["action"]; suggestion: LoopData["suggestion"]; check_in: LoopData["check_in"]; safe: Home["safe"]; note?: string }>("/api/action", { customer, lang }),
+  action: (customer: string, lang: Lang) => get<{ active: LoopData["action"]; suggestion: LoopData["suggestion"]; check_in: LoopData["check_in"]; safe?: Partial<Home["safe"]>; note?: string }>("/api/action", { customer, lang }),
   setAction: (body: { customer: string; lang: Lang; accept_suggestion?: boolean; pick?: number; kind?: string; target?: string; cap?: number; amount?: number }) =>
-    send<{ active: LoopData["action"]; suggestion: LoopData["suggestion"]; check_in: LoopData["check_in"]; safe: Home["safe"]; note?: string }>("POST", "/api/action", body),
+    send<{ active: LoopData["action"]; suggestion: LoopData["suggestion"]; check_in: LoopData["check_in"]; safe?: Partial<Home["safe"]>; note?: string }>("POST", "/api/action", body),
   updateAction: (body: { customer: string; lang: Lang; cap?: number; amount?: number }) =>
-    send<{ active: LoopData["action"]; suggestion: LoopData["suggestion"]; check_in: LoopData["check_in"]; safe: Home["safe"]; note?: string }>("PUT", "/api/action", body),
-  clearAction: (customer: string, lang: Lang) => send<{ cleared: boolean; previous?: string; active: null; suggestion: LoopData["suggestion"]; check_in: LoopData["check_in"]; safe: Home["safe"]; note?: string }>("DELETE", "/api/action?customer=" + encodeURIComponent(customer) + "&lang=" + encodeURIComponent(lang)),
+    send<{ active: LoopData["action"]; suggestion: LoopData["suggestion"]; check_in: LoopData["check_in"]; safe?: Partial<Home["safe"]>; note?: string }>("PUT", "/api/action", body),
+  clearAction: (customer: string, lang: Lang) => send<{ cleared: boolean; previous?: string; active: null; suggestion: LoopData["suggestion"]; check_in: LoopData["check_in"]; safe?: Partial<Home["safe"]>; note?: string }>("DELETE", "/api/action?customer=" + encodeURIComponent(customer) + "&lang=" + encodeURIComponent(lang)),
   consent: (customer: string, lang: Lang, otherBank: boolean) => send<unknown>("PUT", "/api/consent", { customer, lang, other_bank: otherBank }),
   sortBaskets: (customer: string, lang: Lang, picks: Record<number, string>) => send<LessonSortResult>("POST", "/api/lessons/baskets/sort", { customer, lang, picks }),
   pins: (customer: string, lang: Lang) => get<Card[]>("/api/pins", { customer, lang }),

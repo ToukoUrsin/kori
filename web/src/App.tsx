@@ -43,13 +43,16 @@ function Stage() {
   );
 }
 
+/** Before the bank app has said who the customer is. The language comes from the frame's own address. */
 function EmbedWaiting() {
+  const fi = new URLSearchParams(window.location.search).get("lang")?.toLowerCase().startsWith("fi");
   return (
     <div className="flex h-full w-full items-center justify-center bg-ground px-8 text-center">
       <div className="max-w-[280px]">
-        <p className="text-[17px] font-semibold leading-6 text-ink">Waiting for permission</p>
-        <p className="mt-2 text-[14px] leading-5 text-ink-2">Kori is waiting for the host app to allow transaction access.</p>
-        <p className="mt-1 text-[13px] leading-5 text-ink-3">Odotetaan isäntäsovelluksen lupaa tapahtumien käyttöön.</p>
+        <p className="text-[17px] font-semibold leading-6 text-ink">{fi ? "Odotetaan lupaa" : "Waiting for permission"}</p>
+        <p className="mt-2 text-[15px] leading-[22px] text-ink-2">
+          {fi ? "Kori avautuu, kun pankkisovelluksesi antaa sille luvan lukea tätä tiliä." : "Kori opens when your bank app allows it to read this account."}
+        </p>
       </div>
     </div>
   );
