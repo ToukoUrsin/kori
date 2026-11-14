@@ -33,9 +33,9 @@ Everything hangs on S-Pankki's three baskets:
 3. **Everyday**: what slips through your fingers (coffees, lunches, taxis, small online buys).
 
 Each basket gets a different kind of attention: decide fixed costs once, reserve for surprises every month, steer
-everyday spending every day. The app has up to eight one-minute lessons, picked for the user and built from their own numbers. The first starts
+everyday spending every day. The app has five to eight one-minute lessons, the ones this user's payments can teach, built from their own numbers. The first starts
 with sorting six of their own payments into the baskets. Each ends with one question to answer in your own words,
-which Gemini grades honestly against the concept: "not yet" comes with a hint and another try.
+which is graded on the idea, not the wording (Gemini reads it, and a deterministic idea check in `backend/kori/ai/teachback.py` backs it up, so a known misconception never passes): "not yet" comes with a hint and another try.
 
 ## Ask anything: the chat that builds its own screen
 
@@ -67,7 +67,7 @@ demo builds sample receipts from the real catalogue that add up to each real sup
 Measured on the live site: the four questions the chat suggests open in 1 to 2 seconds. Their code and screen were
 approved once (kept views, `docs/LAB.md`); asking one runs the code again on your data, so the numbers are computed
 now and checked, and the screen is the same on every take. A question in your own words is built fresh: the written
-answer is there in 3 to 8 seconds and the finished screen in 9 to 17. A ten-year model built fresh takes about 30. The answer is fast because the code that
+answer is there in about 5 seconds and the finished screen in about 12 (median of 58 fresh questions on the live site: 11.8 s). A ten-year model built fresh takes about 30. The answer is fast because the code that
 computes the figures also writes the sentence, so no second round with a model is needed.
 
 ## Why the numbers can be trusted
@@ -180,7 +180,7 @@ PYTHONPATH=. uv run uvicorn kori.app:app --port 8811
 cd ../web && pnpm install && pnpm dev      # http://localhost:8812
 ```
 
-Tests (209: engine arithmetic, number check, API, the sandbox, the shop and swap rules, the demo customers in both languages):
+Tests (247: engine arithmetic, number check, API, the sandbox, the shop and swap rules, the demo customers in both languages):
 
 ```bash
 cd backend && PYTHONPATH=. uv run pytest -q

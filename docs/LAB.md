@@ -128,6 +128,7 @@ tx        # pandas DataFrame, this customer's transactions up to today. Columns:
           # ts (datetime), date, month ("2026-09"), amount (negative = money out), balance (after the payment),
           # type, category, kind, merchant, basket ("fixed" | "everyday" | "surprise" | None), is_spend, spend (positive euros, 0 for non-spend)
 today     # datetime.date
+last6, last12   # the last 6 and 12 complete calendar months ("2026-03", ...): tx[tx.month.isin(last12)] is "the last 12 months" in every answer
 me        # {"name", "age", "area", "lang"}
 pd, np, duckdb, math, json, datetime
 
@@ -136,10 +137,12 @@ table(name, rows_or_dataframe, label="")     # put a table on the ledger (at mos
 show(products)                               # put products (from shop/web calls) on the ledger
 say(text)                                    # the written answer, when this cell can already give it
 eur(x, cents=False)                          # money the way this customer reads it: €1,357 or 1 357 €
+num(x, digits=1)                             # any other number the way they read it: 2.2 or 2,2
 
 kori.safe_to_spend()   kori.usual_month()   kori.forecast(pace="safe"|"usual")   kori.bills()
 kori.replay()          kori.afford(amount, label="")   kori.what_if(changes)      kori.goal(amount, months=None, by=None)
 kori.peers(kind=None)  kori.baskets(month=None)
+kori.last_cycle()      kori.income()        kori.profile()    # what the home screen, the pay-cycle card and the Learn tab already say
 kori.afford_range()    # the limits behind "what can I afford?": comfortable_up_to, tight_up_to, possible_up_to (the engine's own verdicts)
                                              # the engine behind the home screen; its safe-to-spend number is the backtested one
 
@@ -155,6 +158,13 @@ market.history(symbol, years=10)              # monthly closes of an index or fu
 ```
 
 `kori`, `shop`, `web` and `market` are the **door**: the only way out of the sandbox. Each call is a line on the kernel's pipe that the host answers; the host runs the allow-listed function, logs it (a `call` event) and writes the result back. Code in the sandbox never holds a socket or a key.
+
+### What keeps the chat and the cards in step
+
+- **The app's own sentences are in the prompt.** Each turn the analyst is given what this customer's screens say right now (safe to spend, last pay cycle, usual month, income, spender profile), each with the `kori.*` call it came from, and is told to build on those figures instead of working the same thing out again from `tx`.
+- **A zero is checked twice.** If a cell's answer states a zero, or most of what it emitted is zero, nothing is shown. The analyst gets the exact `type`, `category` and `kind` values on the account and either fixes the filter or says in words that there was none.
+- **A note to itself is never the answer.** A reply with no `ANSWER:` after a failed cell, or with sandbox names in it, is sent back to the analyst, not to the customer.
+- **One window per phrase.** "The last 12 months" is `last12`, "a usual month" is `last6` and `kori.usual_month()`.
 
 ## 6. Models
 
