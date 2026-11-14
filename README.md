@@ -55,7 +55,7 @@ with a sandbox of its own (the contract is in `docs/LAB.md`):
 |---|---|
 | "Can my grocery shopping be cheaper?" | Each brand you buy next to the S Group own-brand product that is the same thing, with real pictures and Prisma prices, a switch on every row, and what a usual month then leaves. For the demo customer: €69 a month, €828 a year. |
 | "Is there a cheaper oat drink than the one I buy?" | Your carton (€2.05) and three real cheaper ones to pick from (the cheapest €1.15). |
-| "I need a new laptop. What can I afford?" | A price picker against your payday, then laptops on sale today at Prisma.fi and Verkkokauppa.com. |
+| "I need a new laptop. What can I afford?" | Two limits from the engine (up to €287 keeps the usual pace, up to €715 is tight), a price picker against your payday, then laptops on sale today at Prisma.fi and Verkkokauppa.com. |
 | "What if I save €150 a month for ten years?" | 4,000 outcomes with one of S-Pankki's own funds and its real fee, as a range you can drag. An illustration, not investment advice. |
 | "When do I spend the most on eating out?" | Your week by day and hour, built for this question. |
 
@@ -64,8 +64,9 @@ live web-shop results, 15 fund and saving facts read from s-pankki.fi, each with
 to fill a gap. One thing is sample data and says so: receipt lines. A bank sees the store total, not the lines, so the
 demo builds sample receipts from the real catalogue that add up to each real supermarket payment.
 
-Measured on the live site: groceries, the oat drink and the laptop answer in 12 to 18 seconds, the ten-year model in
-about 40.
+Measured on the live site: for groceries, the oat drink and the laptop the written answer is there in 3 to 8 seconds
+and the finished screen in 9 to 17. The ten-year model takes about 30. The answer is fast because the code that
+computes the figures also writes the sentence, so no second round with a model is needed.
 
 ## Why the numbers can be trusted
 
