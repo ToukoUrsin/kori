@@ -1,6 +1,6 @@
 # Kori film plan (max 1:55)
 
-For Touko to film. Everything below was run on the live site on Sat 14.11 at 19:40.
+For Touko to film. Everything below was run on the live site on Sat 14.11 at 19:25.
 
 ## The story
 
