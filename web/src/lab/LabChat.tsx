@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
-import { ArrowLeft, ArrowUp, Check, ChevronRight, CircleAlert, Code2, ExternalLink, Globe2, Loader2, Menu, Mic, ShieldCheck, Sparkles, SquarePen, X } from "lucide-react";
+import { ArrowLeft, ArrowUp, Check, ChevronRight, CircleAlert, Code2, ExternalLink, Globe2, Loader2, Menu, Mic, ShieldCheck, Sparkles, Square, SquarePen, X } from "lucide-react";
+import { api } from "../lib/api";
+import { RecError, useRecorder } from "../lib/useRecorder";
 import { playMock } from "./dev/mock";
 import stubFrame from "./dev/stub-frame.html?raw";
 import { strings, type LabLang, type LabStrings } from "./strings";
@@ -283,6 +285,26 @@ export default function LabChat({ onVoice }: { onVoice?: () => void } = {}) {
   };
   const talk = () => { if (onVoice) onVoice(); else setVoiceNote(copy.voiceUnavailable); };
 
+  /* Speaking a question: tap, talk, tap. ElevenLabs writes it down and it is asked like a typed one. */
+  const { recording, start: recStart, stop: recStop } = useRecorder();
+  const [hearing, setHearing] = useState(false);
+  const [micNote, setMicNote] = useState("");
+  const mic = async () => {
+    setMicNote("");
+    if (hearing) return;
+    if (!recording) {
+      try { await recStart(); } catch (e) { setMicNote(e instanceof RecError && e.kind === "denied" ? copy.micDenied : copy.micNone); }
+      return;
+    }
+    const blob = await recStop();
+    if (!blob) { setMicNote(copy.micEmpty); return; }
+    setHearing(true);
+    try {
+      const said = await api.stt(blob, lang);
+      if (said) void runQuestion(said); else setMicNote(copy.micEmpty);
+    } catch { setMicNote(copy.micDown); } finally { setHearing(false); }
+  };
+
   useEffect(() => {                        // the input grows with what is typed, up to a few lines
     const el = inputRef.current;
     if (!el) return;
@@ -317,9 +339,12 @@ export default function LabChat({ onVoice }: { onVoice?: () => void } = {}) {
       {turns.length === 0 && <div className="kc-starters">{starters.slice(0, 4).map((starter) => <button type="button" key={starter} onClick={() => void runQuestion(starter)}>{starter}</button>)}</div>}
       <form className="kc-composer" onSubmit={submit}>
         <div className="kc-pill">
-          <textarea ref={inputRef} value={draft} onChange={(e) => setDraft(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void runQuestion(draft); } }} placeholder={copy.ask} rows={1} aria-label={copy.ask} />
-          <button className="kc-send" type="submit" aria-label={copy.send} disabled={!draft.trim() || busy}><ArrowUp size={18} strokeWidth={2.4} /></button>
+          <textarea ref={inputRef} value={draft} onChange={(e) => { setDraft(e.target.value); if (micNote) setMicNote(""); }} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void runQuestion(draft); } }} placeholder={recording ? copy.listening : hearing ? copy.writingDown : copy.ask} rows={1} aria-label={copy.ask} readOnly={recording || hearing} />
+          {draft.trim() || busy
+            ? <button className="kc-send" type="submit" aria-label={copy.send} disabled={!draft.trim() || busy}><ArrowUp size={18} strokeWidth={2.4} /></button>
+            : <button className={`kc-send kc-mic ${recording ? "on" : ""}`} type="button" aria-label={recording ? copy.micStop : copy.mic} aria-pressed={recording} disabled={hearing} onClick={() => void mic()}>{recording ? <Square size={13} fill="currentColor" strokeWidth={0} /> : hearing ? <Loader2 size={18} className="kc-spin" /> : <Mic size={18} strokeWidth={2} />}</button>}
         </div>
+        {micNote && <div className="kc-micnote" role="status">{micNote}</div>}
       </form>
     </div></div>;
   }

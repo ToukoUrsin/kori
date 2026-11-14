@@ -2,7 +2,7 @@
 
 Status: live at `/lab` since 14.11.2026. This file is the contract between the parts. If you change a shape here, change it here first.
 
-**What the customer sees.** A plain chat: one phone-width column, the question, dots while the agent works, then the answer and the view it built. No code, no sandbox wording. Adding `&dev=1` to the link shows the same chat with the work: the code of each run, each call through the door, timings and the check line. The stream can be picked up after a dropped connection (`turn` + `after`).
+**What the customer sees.** A plain chat: one phone-width column, the question, dots while the agent works, then the answer and the view it built. No code, no sandbox wording. Adding `&dev=1` to the link shows the same chat with the work: the code of each run, each call through the door, timings and the check line. The stream can be picked up after a dropped connection (`turn` + `after`). The input has a microphone: tap, talk, tap, and ElevenLabs speech-to-text (`POST /api/stt`) writes the question down.
 
 **Every turn is kept.** One JSON line per finished turn in `STATE_DIR/lab_turns.jsonl`: question, answer, every event, the code of each run and the fragment the designer wrote.
 

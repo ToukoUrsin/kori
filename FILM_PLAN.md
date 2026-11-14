@@ -28,6 +28,8 @@ Demo customer in every shot: Elli. All links below already open as her.
 
 About 190 words of voiceover plus Kori's own 14 seconds.
 
+Option for the grocery shot: instead of tapping the question, tap the microphone in the input, say "Can my grocery shopping be cheaper?", and tap again. It is written down and asked (uses a few ElevenLabs credits).
+
 ## Links, device, reset
 
 | Shot | Link | Device | Back to the start |

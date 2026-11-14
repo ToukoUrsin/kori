@@ -119,6 +119,8 @@ before?" and see the months it held, the months it did not, and the reason for e
   highlighted as they are said. Speech is cached, so a sentence is never paid for twice.
 - If no live line is free, the app falls back to hold-to-talk (ElevenLabs speech-to-text in, speech out), and then
   to plain text.
+- In the chat at `/lab` the question can be spoken: tap the microphone, talk, tap again. ElevenLabs writes it down
+  (`scribe_v2`, English and Finnish) and it is asked like a typed one.
 
 **Gemini** (`gemini-4-hydrogen`, function calling through `google-genai`):
 

@@ -65,7 +65,7 @@ Gemini picks which calculation to run and explains the result. Our own engine co
 
 ## How we used ElevenLabs and Gemini
 
-- ElevenLabs Agents do the listening, turn-taking and speaking. The agent's brain is our own server (custom LLM), so the voice runs through the same engine and number check. It can't say a number the engine didn't produce.
+- ElevenLabs Agents do the listening, turn-taking and speaking. The agent's brain is our own server (custom LLM), so the voice runs through the same engine and number check. It can't say a number the engine didn't produce. In the chat you can speak the question too.
 - Gemini function calling picks from 22 tools, writes the answers in two languages and grades the say-it-back answers.
 - In the chat, Gemini (gemini-4-hydrogen) writes and runs Python on the customer's transactions and searches the web with Google Search. A larger Gemini (gemini-4-carbon) builds the heavy models. Claude (claude-fable-5-2) builds the screen.
 

@@ -31,6 +31,14 @@ type Strings = {
   noWork: string;
   noSources: string;
   voiceUnavailable: string;
+  mic: string;
+  micStop: string;
+  listening: string;
+  writingDown: string;
+  micDenied: string;
+  micNone: string;
+  micEmpty: string;
+  micDown: string;
   tryAgain: string;
   starter: string[];
 };
@@ -67,6 +75,14 @@ export const strings: Record<LabLang, Strings> = {
     noWork: "No work to show yet.",
     noSources: "No external sources for this answer.",
     voiceUnavailable: "Voice is available from the main coach. Keep typing here for now.",
+    mic: "Speak",
+    micStop: "Done",
+    listening: "Listening…",
+    writingDown: "Writing it down…",
+    micDenied: "The microphone is blocked for this page. Typing works the same.",
+    micNone: "No microphone found. Typing works the same.",
+    micEmpty: "I didn't catch that. Try again, or type.",
+    micDown: "Speech isn't available right now. Typing works the same.",
     tryAgain: "Try again",
     starter: [
       "Where does my money go on weekends?",
@@ -107,6 +123,14 @@ export const strings: Record<LabLang, Strings> = {
     noWork: "Työtä ei ole vielä näytettäväksi.",
     noSources: "Tässä vastauksessa ei ole ulkoisia lähteitä.",
     voiceUnavailable: "Ääni löytyy päävalmentajasta. Jatka toistaiseksi kirjoittamalla.",
+    mic: "Puhu",
+    micStop: "Valmis",
+    listening: "Kuuntelen…",
+    writingDown: "Kirjoitan ylös…",
+    micDenied: "Mikrofoni on estetty tältä sivulta. Kirjoittaminen toimii samalla tavalla.",
+    micNone: "Mikrofonia ei löytynyt. Kirjoittaminen toimii samalla tavalla.",
+    micEmpty: "En saanut selvää. Yritä uudelleen tai kirjoita.",
+    micDown: "Puhe ei ole juuri nyt käytettävissä. Kirjoittaminen toimii samalla tavalla.",
     tryAgain: "Yritä uudelleen",
     starter: [
       "Mihin rahani menevät viikonloppuisin?",
