@@ -7,7 +7,7 @@ Your balance is not your budget. Kori is a coach in your bank app: it says what'
 
 **Challenge:** S-Pankki, Personal Economic Trainer. **Tech challenges:** ElevenLabs, Gemini API.
 
-**Demo:** https://kori-coach.fly.dev (the chat: https://kori-coach.fly.dev/lab?customer=CUST01885, inside a stand-in bank app: https://kori-coach.fly.dev/host)
+**Demo:** https://kori-coach.fly.dev
 **Source:** https://github.com/ToukoUrsin/kori
 **Video:** https://kori-coach.fly.dev/film
 
@@ -15,66 +15,40 @@ Your balance is not your budget. Kori is a coach in your bank app: it says what'
 
 ## Your balance is not your budget
 
-Aino has €2,620 on her account. How much of it is hers to spend? €1,094, or €46 a day until payday. The rest is spoken for: bills that haven't landed yet, a reserve for surprises, a small cushion.
+Elli has €2,764 in her account. €1,357 of it is hers to spend before payday: €57 a day. The rest is bills that haven't landed yet and a reserve for surprises. On her phone that is one screen: the number, what is set aside, and one thing to try before payday.
 
-Kori is a coach you talk to. Ask out loud "can I afford a 650 euro phone this month?" and it answers in a few seconds, in English or Finnish: "Yes, but your pace drops from 46 to 19 euros a day until payday."
+We tested that number on S-Pankki's challenge data: 106,553 past days from 4,850 customers, with the days ahead hidden from Kori. Spend exactly what it says and you stay above zero 95.9% of the time. Spend the balance instead: 28.6%. In the app Elli replays it on her own past paydays, and it held on 17 of 18.
 
 ## Ask anything, and it builds the screen
 
-A bank app answers the questions somebody built a screen for. Kori answers the ones you actually have.
+Elli asks "can my grocery shopping be cheaper?" Kori writes code, runs it on her own data and builds a screen for that one answer: every brand on her receipts next to the S Group own-brand product that is the same thing, with real pictures and Prisma prices. €69 a month, €828 a year. She keeps her own coffee, and the total updates.
 
-Elli asks "can my grocery shopping be cheaper?" Kori writes code, runs it on her own payments, and builds a screen for that one answer: every brand she buys next to the S Group own-brand product that is the same thing, with real pictures and Prisma prices. €69 a month, €828 a year. She switches her coffee back and the numbers follow.
+This one needs a bank in the same group as the shop. The receipt lines are sample data in the demo; S-mobiili already has the real ones in Omat ostot.
 
-- "I need a new laptop. What can I afford?" A price picker against her payday, then laptops on sale today at Prisma.fi and Verkkokauppa.com.
-- "What if I save €150 a month for ten years?" 4,000 outcomes with one of S-Pankki's own funds and its real fee. An illustration, not investment advice.
-- Or any other question.
+- "I need a new laptop. What can I afford?" €287 without changing anything, €715 if she cuts back. Then laptops on sale today at Prisma.fi and Verkkokauppa.com.
+- "What if I save €150 a month for ten years?" She puts in €18,000 and the middle outcome is about €22,000, with a weak and a strong decade beside it. One of S-Pankki's own funds, with its real fee. An illustration, not investment advice.
 
-No number is guessed. Gemini writes the code, it runs in a locked sandbox on that one customer's data, Claude builds the screen from what the code produced, and a check flags any figure that didn't come from a run. Add &dev=1 to the chat link to see the code.
+She can type it or say it, and the answer comes in 3 to 8 seconds.
 
-Only this bank can do the grocery one: it is the same group as the shop.
+## It coaches and teaches
 
-## It coaches, one pay cycle at a time
-
-Every payday Kori looks back at the cycle that just ended and says what did it: a habit, or one big purchase. Then it asks the one question only you can answer, and offers exactly one thing to try.
-
-- Kori speaks first. Start a voice session and it opens with what it noticed and the one question.
-- Aino went €888 over, and groceries did most of it. "Was that unusual, or the new normal?" She says "it was unusual", and that sets the limit: groceries under €520 until payday.
-- The home screen keeps count from your real transactions. There is only ever one thing.
-
-## Does the number hold?
-
-We tested it on history it wasn't allowed to see: 106,553 past days across 4,850 customers, 89,619 of them with something safe to spend.
-
-- Spend exactly what Kori says and you stay above zero 95.9% of the time.
-- Treat your balance as your budget: 28.6%.
-- People who really stayed within the number went below zero 2.8% of the time. People who went over: 25.9%.
-
-Ask "was this number right before?" and it replays your own past months, shows which ones held, and says what broke the others.
-
-## It teaches, it doesn't just answer
-
-Everything is built on S-Pankki's three baskets: fixed musts, surprise musts, and the everyday money that slips through your fingers.
-
-- Up to eight one-minute lessons, made from your own numbers. The first starts with sorting six of your own payments into the baskets. Each ends with you saying the idea back in your own words. Kori grades it honestly: "not yet" comes with a hint and another try.
-- A spoken money minute: where you stand today and what to watch before payday.
-- How you compare with at least 30 people like you, and with Statistics Finland's household survey.
-
-## The AI never does the math
-
-Gemini picks which calculation to run and explains the result. Our own engine computes every number from the transactions. Before you see or hear an answer, a check confirms every figure in it came from the engine. If one didn't, Gemini gets one rewrite. If it's still wrong, the answer is held back and you get the engine's own card.
-
-## How we used ElevenLabs and Gemini
-
-- ElevenLabs Agents do the listening, turn-taking and speaking. The agent's brain is our own server (custom LLM), so the voice runs through the same engine and number check. It can't say a number the engine didn't produce. The chat takes spoken questions too.
-- Gemini function calling picks from 22 tools, writes the answers in two languages and grades the say-it-back answers.
-- In the chat, Gemini (gemini-4-hydrogen) writes and runs Python on the customer's transactions and searches the web with Google Search. A larger Gemini (gemini-4-carbon) builds the heavy models. Claude (claude-opus-5-5) builds the screen.
+- Went over? On payday Kori says why: a habit, or one big purchase. In voice, Kori speaks first. Elli hears that one €293 purchase put her €141 over, and then one question: "Will something like it come again within a year?" Her answer decides the one thing Kori suggests.
+- Up to eight one-minute lessons on S-Pankki's three baskets (fixed musts, surprise musts, everyday money), made from your own payments. Each ends with you saying the idea back in your own words. "Not yet" comes with a hint and another try.
 
 ## Ready for S-mobiili
 
-- Open /host: Kori inside a stand-in bank app. The host asks for consent, opens Kori in a web view, and gets the safe-to-spend number back for its own home screen. Ten small messages, in docs/INTEGRATION.md.
-- The engine runs next to the data. Only the question and the numbers needed for the answer go to the model.
-- Works with a partial view: when the salary sits in another bank, Kori says what it can't see and refuses to guess.
-- Says it's an AI. No investment or credit advice.
-- 199 automated tests, and fallbacks when voice isn't available.
+- https://kori-coach.fly.dev/host shows Kori inside a stand-in bank app. The host asks for consent, opens Kori in a web view and gets the safe-to-spend number back for its own home screen.
+- The code runs inside the bank, next to the data. The model gets the question and what the calculations return.
+- When the salary goes to another bank, Kori says what it can't see and doesn't guess.
+- It says it's an AI and gives no investment or credit advice.
 
-Open the link on your phone and ask it anything.
+## How it's built
+
+Every figure is calculated by code and checked before you see or hear it.
+
+- Gemini (gemini-4-hydrogen) writes and runs the code in the chat and searches the web with Google Search. A larger one (gemini-4-carbon) runs the ten-year model. In the coach, Gemini chooses which of 22 calculations to run (function calling) and grades the lessons.
+- ElevenLabs Agents run the voice conversation with our own server as the brain, so the voice goes through the same check. Spoken questions in the chat are written down by ElevenLabs too.
+- Claude only draws: each screen is built from what Gemini's code produced.
+- 199 automated tests.
+
+Open it on your phone and ask anything.
