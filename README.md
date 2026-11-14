@@ -170,7 +170,7 @@ FastAPI  <----- custom LLM ----- ElevenLabs agent (speech-to-text, turn-taking, 
 ```bash
 scripts/fetch_data.sh                      # downloads S-Pankki's synthetic dataset and builds Parquet files
 cd backend
-export GEMINI_API_KEY=...                  # required for chat
+export JUNCTION_GEMINI_API_KEY=...         # required for chat
 export ELEVENLABS_API_KEY=...              # optional: voice
 export KORI_ANTHROPIC_API_KEY=...          # optional: Claude builds the chat's screens (Gemini stands in without it)
 PYTHONPATH=. uv run uvicorn kori.app:app --port 8811

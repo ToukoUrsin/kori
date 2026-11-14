@@ -38,7 +38,7 @@ _clients: dict[str, genai.Client] = {}
 def client(key: str | None = None) -> genai.Client:
     key = key or config.gemini_key()
     if not key:
-        raise RuntimeError("no Gemini API key (JUNCTION_GEMINI_API_KEY or GEMINI_API_KEY)")
+        raise RuntimeError("no Gemini API key (JUNCTION_GEMINI_API_KEY)")
     if key not in _clients:
         _clients[key] = genai.Client(api_key=key)
     return _clients[key]

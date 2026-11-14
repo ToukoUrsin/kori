@@ -27,12 +27,11 @@ GEMINI_MODEL_BACKGROUND = os.environ.get("KORI_GEMINI_MODEL_BACKGROUND", "gemini
 
 
 def gemini_key() -> str | None:
-    return os.environ.get("JUNCTION_GEMINI_API_KEY") or os.environ.get("GEMINI_API_KEY")
+    return os.environ.get("JUNCTION_GEMINI_API_KEY")
 
 
 def gemini_fallback_key() -> str | None:
-    a, b = os.environ.get("JUNCTION_GEMINI_API_KEY"), os.environ.get("GEMINI_API_KEY")
-    return b if a and b and a != b else None
+    return None  # only the Junction key is used; there is no second key to fall back to
 
 
 # The chat's designer (the model that writes the interface for one answer) is Claude. The deployed app uses its own key;
