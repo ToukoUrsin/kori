@@ -30,6 +30,7 @@ Emit = Callable[[str, dict], Awaitable[None]]
 
 MAX_STEPS = 6
 MAX_HISTORY_TURNS = 12
+CARRY_TURNS = 3            # a follow-up may repeat figures from this many earlier turns' calculations
 
 _clients: dict[str, genai.Client] = {}
 
@@ -86,6 +87,7 @@ class Session:
     log: list[dict] = field(default_factory=list)        # plain transcript for the UI
     voice_task: asyncio.Task | None = None                # the voice turn being worked on, if any
     voice_last: tuple = ("", 0.0)                         # (what the user said, when) for the last voice turn
+    recent: list[list[dict]] = field(default_factory=list)  # per turn: [{tool, result}], what the model still has in view
 
     def history(self) -> list:
         out = []
@@ -225,6 +227,12 @@ async def run_turn(sess: Session, text: str, mode: str, emit: Emit) -> dict:
     cfg = _config(m, mode, st.get("action"))
     turn: list = [types.Content(role="user", parts=[types.Part(text=text)])]
     allowed: set[float] = grounding.collect(text)
+    # A follow-up may repeat a figure the engine computed a turn or two ago: the model still has that result in view,
+    # so it counts as checked. Results from before the plan or the one thing changed are dropped (see below).
+    earlier = [x for t in sess.recent[-CARRY_TURNS:] for x in t]
+    for x in earlier:
+        grounding.collect(x["result"], allowed)
+    changed = False
     used: list[str] = []
     cards: list[dict] = []
     results: list[dict] = []
@@ -269,6 +277,7 @@ async def run_turn(sess: Session, text: str, mode: str, emit: Emit) -> dict:
                     await emit("card", {"card": c})
                 for e in out.effects:
                     if e["type"] == "plan_changed":
+                        changed = True
                         S.save(sess.device, sess.customer_id, st)
                         m = Money(sess.customer_id, prefs=S.prefs_of(st, sess.lang))
                         cfg = _config(m, mode, st.get("action"))
@@ -278,6 +287,7 @@ async def run_turn(sess: Session, text: str, mode: str, emit: Emit) -> dict:
                         cards.append(fresh.cards[0])
                         await emit("card", {"card": fresh.cards[0]})
                     elif e["type"] in ("action_set", "action_cleared"):
+                        changed = True
                         S.save(sess.device, sess.customer_id, st)
                         m = Money(sess.customer_id, prefs=S.prefs_of(st, sess.lang))
                         cfg = _config(m, mode, st.get("action"))
@@ -326,6 +336,8 @@ async def run_turn(sess: Session, text: str, mode: str, emit: Emit) -> dict:
     elif final_content is None:
         turn.append(types.Content(role="model", parts=[types.Part(text=final)]))
     sess.turns.append(turn)
+    mine = [{"tool": t, "result": r} for t, r in zip(used, results)]
+    sess.recent = ([] if changed else sess.recent[-CARRY_TURNS:]) + [mine]
     sess.log.append({"role": "user", "text": text})
     sess.log.append({"role": "coach", "text": final, "cards": [c["id"] for c in cards]})
     await emit("text", {"text": final})
@@ -334,7 +346,7 @@ async def run_turn(sess: Session, text: str, mode: str, emit: Emit) -> dict:
             "checked": len(grounding.numbers_in_text(final, sess.lang)),
             "followups": T.followups(used, sess.lang), "tools": used, "ms": int((time.time() - t0) * 1000),
             "consistency": consistency,
-            "figures": grounding.figures(final, [{"tool": t, "result": r} for t, r in zip(used, results)], sess.lang)}
+            "figures": grounding.figures(final, mine + earlier, sess.lang)}
     await emit("done", done)
     return {"text": final, "cards": cards, **done}
 

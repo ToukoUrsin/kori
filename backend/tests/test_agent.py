@@ -71,6 +71,29 @@ def test_withheld_in_finnish(monkeypatch):
     assert out["withheld"] and out["text"] == agent.WITHHELD["fi"][1]
 
 
+def test_follow_up_may_repeat_an_earlier_figure_but_not_invent_one(monkeypatch):
+    """A second question answered from the first one's calculation is not withheld; a new wrong number still is."""
+    out, _, sess = _run(monkeypatch, [_reply(CALL), _reply(types.Part(text="You can safely spend about 1,094 euros until payday."))])
+    assert out["grounded"]
+
+    async def emit(kind, data):
+        pass
+
+    replies = iter([_reply(types.Part(text="As I said, about 1,094 euros until payday."))])
+
+    async def fake(contents, cfg, fast=False):
+        return next(replies)
+
+    monkeypatch.setattr(agent, "_generate", fake)
+    again = asyncio.run(agent.run_turn(sess, "Say that again?", "text", emit))
+    assert again["grounded"] and not again["withheld"] and again["tools"] == []
+    assert again["figures"] and again["figures"][0]["source"] == "Safe to spend"
+
+    replies = iter([_reply(types.Part(text="About 2,345 euros.")), _reply(types.Part(text="About 2,346 euros."))])
+    wrong = asyncio.run(agent.run_turn(sess, "And now?", "text", emit))
+    assert wrong["withheld"]
+
+
 # ---------------------------------------------------------------- a slow model call does not hang the turn
 class _FakeModels:
     def __init__(self, plan):

@@ -357,6 +357,9 @@ def execute(m: Money, state: dict, name: str, args: dict, allowed: set[float] | 
         part = args.get("part") or "both"
         active = state.get("action")
         data, cs = {}, []
+        suggestion = None if active else loop.suggest(m)
+        if part == "look_back" and suggestion and suggestion.get("question"):
+            part = "both"          # a look back that went over ends in the one question, so the answer can set the thing
         if part != "thing":
             data["last_cycle"] = loop.slim(loop.check_in(m))
             cs.append(C.checkin_card(m))
@@ -364,12 +367,14 @@ def execute(m: Money, state: dict, name: str, args: dict, allowed: set[float] | 
             if active:
                 data["active_thing"] = _thing_progress(loop.progress(m, active))
             else:
-                data["suggestion"] = _thing(loop.suggest(m))
+                data["suggestion"] = _thing(suggestion)
                 data["how_to_offer"] = (
-                    "Offer exactly this one thing with its reason in one sentence. If there is a question, ask it and say in the same "
-                    "breath what each answer leads to, naming both things, so the user's answer is a choice between two named things. "
-                    "Their answer then counts as agreement: call set_action (accept_suggestion or pick). With no question, ask if they "
-                    "want to try it and call set_action only after a clear yes.")
+                    "If there is a question: say in two short sentences how the last cycle went and what did it, then ask the question "
+                    "and say in the same breath what each answer leads to, naming both things, so the user's answer is a choice between "
+                    "two named things. Do not offer the thing separately and do not ask anything else. Their answer then counts as "
+                    "agreement: call set_action at once (accept_suggestion or pick) without asking again. With no question: offer "
+                    "exactly this one thing with its reason in one sentence, ask if they want to try it, and call set_action only "
+                    "after a clear yes. About 60 words at most.")
             cs.append(C.action_card(m, active))
         return ToolOut(data, cs)
     if name == "set_action":
