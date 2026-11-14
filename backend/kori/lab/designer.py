@@ -30,6 +30,7 @@ EFFORT = os.environ.get("KORI_UI_EFFORT", "low")                  # thinking can
 MAX_TOKENS = 12000
 TABLE_HEAD = 6                                                    # rows of each table the model sees; the frame gets them all
 _HTTP_TIMEOUT = httpx.Timeout(90, connect=4)
+_CACHE = {"type": "ephemeral", "ttl": "1h"}                       # a cold prompt costs seconds before the first word: keep it an hour
 
 _used: contextvars.ContextVar[str] = contextvars.ContextVar("kori_ui_model", default="")
 _last = ""
@@ -150,7 +151,7 @@ async def _claude(payload: dict, model: str, effort: str | None, usage: dict) ->
     body: dict[str, Any] = {
         "model": model, "max_tokens": MAX_TOKENS, "stream": True,
         # the design system is the same for every question: first, with a cache breakpoint
-        "system": [{"type": "text", "text": system_prompt(), "cache_control": {"type": "ephemeral"}}],
+        "system": [{"type": "text", "text": system_prompt(), "cache_control": _CACHE}],
         "messages": [{"role": "user", "content": user_message(payload)}],
     }
     if effort:
@@ -178,6 +179,28 @@ async def _claude(payload: dict, model: str, effort: str | None, usage: dict) ->
                         raise RuntimeError("the designer model declined")
                 elif kind == "error":
                     raise RuntimeError(f"designer stream error: {str(ev.get('error'))[:240]}")
+
+
+async def warm(model: str | None = None) -> float:
+    """Put the design system in the model's cache, so the first real question starts as fast as the rest. Call at
+    start-up and again within the hour. Returns the seconds it took; never raises."""
+    t0 = time.monotonic()
+    name = model or config.UI_MODEL
+    key = config.anthropic_key()
+    if name.startswith("gemini") or not key:
+        return 0.0
+    body = {"model": name, "max_tokens": 16, "output_config": {"effort": "low"},
+            "system": [{"type": "text", "text": system_prompt(), "cache_control": _CACHE}],
+            "messages": [{"role": "user", "content": "Reply with the single word: ready"}]}
+    headers = {"x-api-key": key, "anthropic-version": "2023-06-01", "content-type": "application/json"}
+    try:
+        async with httpx.AsyncClient(timeout=httpx.Timeout(40, connect=4)) as c:
+            r = await c.post(config.ANTHROPIC_BASE_URL.rstrip("/") + "/v1/messages", json=body, headers=headers)
+            if r.status_code != 200:
+                log.warning("designer warm-up answered %s: %s", r.status_code, r.text[:160])
+    except Exception as e:  # noqa: BLE001
+        log.warning("designer warm-up failed: %s", str(e)[:160])
+    return round(time.monotonic() - t0, 2)
 
 
 # ------------------------------------------------------------------ Gemini (stand-in)

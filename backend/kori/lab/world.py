@@ -97,6 +97,14 @@ def _get(url: str, **kwargs: Any) -> httpx.Response:
     return httpx.request(method, url, timeout=timeout, headers=headers, follow_redirects=follow, **kwargs)
 
 
+_WALL = 9.0  # seconds; httpx timeouts are per phase, so live calls also run under this wall-clock limit
+
+
+def _within(loader: Callable[[], Any], seconds: float = _WALL) -> Callable[[], Any]:
+    """The loader, run on the pool and abandoned (TimeoutError) after `seconds` of wall clock."""
+    return lambda: _POOL.submit(loader).result(timeout=seconds)
+
+
 def _load_json(name: str, default: Any) -> Any:
     try:
         with (_BASE / name).open() as f:
@@ -319,6 +327,57 @@ def _skaupat_row(p: dict, fetched: str, browse_slug: str | None = None) -> dict 
     return row
 
 
+# Unit prices far from the rest of their kind are either a different product or a price nobody should trust.
+# A row under a third (or over three times) of its kind's median is dropped unless its page was opened and read by hand.
+_HAND_CHECKED = {  # ean: what the product page showed on 2026-11-14
+    "7340191135888": "Xtra tomaattiketsuppi 1 kg, 0,74 €, 0,74 €/kg",
+    "7340191185524": "Xtra pitkäjyväinen riisi 1 kg, 0,84 €, 0,84 €/kg",
+    "7340191140394": "Xtra sinappi 980 g, 1,95 €, 1,99 €/kg",
+    "7340191176805": "Xtra astianpesuaine 1 l, 1,55 €, 1,55 €/l",
+    "7340011321514": "Xtra shampoo 500 ml, 1,25 €, 2,50 €/l",
+    "7340011320630": "Xtra margariini 60 400 g, 0,37 €, 0,93 €/kg",
+    "7340191149564": "Coop maissia suolaliemessä 340/285 g, 1,09 €, 3,82 €/kg",
+    "6409100060749": "HK Popsi Iso Viitonen 900 g, 2,69 €, 2,99 €/kg",
+    "8002270506918": "San Pellegrino Limonata 33 cl, a small can of a premium soda",
+    "6420614280287": "Birkkalan Tila luomu spelttijauhot 800 g, organic spelt flour",
+}
+_DROPPED = {  # ean: why it is not in the catalogue
+    "7340191139435": "Xtra suodatinkahvi 500 g: the page shows 1,28 € (2,56 €/kg), a sixth of any other coffee; not trusted",
+    "6414301087860": "Serla Handy talouspaperiarkki 135 kpl: priced per sheet, the kind is priced per roll",
+    "6415712002114": "Kotimaista kuivattu herne 500 g: dried peas, not a canned vegetable",
+    "6438460994937": "Kotimaista kevätsipulinippu 100 g: a spring onion bunch, not onions",
+    "6415712713874": "Kotimaista naposteluporkkana 200 g: a snack pack, not carrots by the kilo",
+}
+_OUTLIER = 3.0
+
+
+def _median(xs: list[float]) -> float:
+    xs = sorted(xs)
+    m = len(xs) // 2
+    return xs[m] if len(xs) % 2 else (xs[m - 1] + xs[m]) / 2
+
+
+def _kind_medians(rows: list[dict]) -> dict[tuple, float]:
+    groups: dict[tuple, list[float]] = {}
+    for r in rows:
+        groups.setdefault((r["kind"], r["unit"], r["by_weight"]), []).append(r["unit_price"])
+    return {k: _median(v) for k, v in groups.items()}
+
+
+def _plausible(rows: list[dict]) -> list[dict]:
+    """Drop listed rows and rows whose unit price is far from their kind's median, unless checked by hand."""
+    rows = [r for r in rows if r["ean"] not in _DROPPED]
+    med = _kind_medians(rows)
+    keep = []
+    for r in rows:
+        m = med[(r["kind"], r["unit"], r["by_weight"])]
+        if r["ean"] in _HAND_CHECKED or m / _OUTLIER <= r["unit_price"] <= m * _OUTLIER:
+            keep.append(r)
+        else:
+            print(f"dropped as implausible: {r['name']} {r['unit_price']} €/{r['unit']} (kind median {m:.2f})", file=sys.stderr)
+    return keep
+
+
 def build_skaupat(path: Path | None = None, own: int = 4, branded: int = 6, pause: float = 0.7) -> list[dict]:
     """Fetch the catalogue from S-kaupat's API, one request at a time, and write skaupat.jsonl."""
     fetched = _today()
@@ -347,6 +406,7 @@ def build_skaupat(path: Path | None = None, own: int = 4, branded: int = 6, paus
             seen.add(c["ean"])
         rows.extend(picked)
         print(f"{kind}: {len(picked)} ({sum(c['own_brand'] for c in picked)} own) of {len(ordered)}", file=sys.stderr)
+    rows = _plausible(rows)
     out = path or (_BASE / "skaupat.jsonl")
     out.write_text("".join(json.dumps(r, ensure_ascii=False) + "\n" for r in rows))
     _CATALOGUE.clear()
@@ -397,13 +457,13 @@ def _public(row: dict, live: bool = False) -> dict:
 def _live_skaupat_search(query: str, n: int) -> list[dict]:
     data = _skaupat_post({"s": None, "q": query, "from": 0, "limit": max(1, min(n, 24))}, timeout=httpx.Timeout(5.0, connect=3.0))
     rows = [_skaupat_row(item.get("product") or {}, _today()) for item in data.get("productListItems") or []]
-    return [r for r in rows if r]
+    return [r for r in rows if r and r["ean"] not in _DROPPED]
 
 
 def _live_skaupat_category(slug: str) -> list[dict]:
     data = _skaupat_post({"s": slug, "q": None, "from": 0, "limit": 100}, timeout=httpx.Timeout(5.0, connect=3.0))
     rows = [_skaupat_row(item.get("product") or {}, _today()) for item in data.get("productListItems") or []]
-    return [r for r in rows if r]
+    return [r for r in rows if r and r["ean"] not in _DROPPED]
 
 
 def shop_search(query: str, store: str = "s-kaupat", n: int = 8) -> list[dict]:
@@ -429,7 +489,7 @@ def shop_search(query: str, store: str = "s-kaupat", n: int = 8) -> list[dict]:
             return [_public(r) for _, r in hits[:n]]
     # Not an everyday kind (a brand, "hummus", "pesto"): S-kaupat's own search, live; the catalogue's names if that fails.
     try:
-        live = _cached("skaupat-search", {"q": query, "n": n}, lambda: _live_skaupat_search(query, n), ttl=86400.0)
+        live = _cached("skaupat-search", {"q": query, "n": n}, _within(lambda: _live_skaupat_search(query, n), 6.0), ttl=86400.0)
         return [_public(r, live=True) for r in live[:n]]
     except Exception:
         pass
@@ -490,7 +550,7 @@ def cheaper_like(product: dict | str, n: int = 3) -> list[dict]:
     if not pool and orig.get("category"):
         # A product found live, outside the catalogue's kinds: compare within its own S-kaupat category, live.
         try:
-            pool = _cached("skaupat-category", orig["category"], lambda: _live_skaupat_category(orig["category"]), ttl=86400.0)
+            pool = _cached("skaupat-category", orig["category"], _within(lambda: _live_skaupat_category(orig["category"]), 6.0), ttl=86400.0)
         except Exception:
             pool = []
     out = []
@@ -807,7 +867,7 @@ def _exa_search(query: str, n: int) -> list[dict]:
         raise RuntimeError("web search is not configured")
     payload = {"query": query, "numResults": n, "contents": {"highlights": {"numSentences": 3}, "text": {"maxCharacters": 600}}}
     r = _get("https://api.exa.ai/search", method="POST", json=payload, headers={"x-api-key": key, "Content-Type": "application/json"},
-             timeout=httpx.Timeout(8.0, connect=4.0))
+             timeout=httpx.Timeout(6.0, connect=3.0))
     r.raise_for_status()
     data = r.json()
     return data.get("results", []) if isinstance(data, dict) else []
@@ -829,7 +889,7 @@ def web_search(query: str, n: int = 6) -> list[dict]:
                          "published": (x.get("publishedDate") or "")[:10], "fetched": _today()})
         return rows
     try:
-        return _cached("web-search", {"q": query, "n": n}, load, ttl=21600.0) or []
+        return _cached("web-search", {"q": query, "n": n}, _within(load), ttl=21600.0) or []
     except Exception as e:
         raise RuntimeError("web search is not available right now") from e
 
@@ -880,7 +940,7 @@ def web_read(url: str, max_chars: int = 6000) -> dict:
             raise RuntimeError("the page has no readable text")
         return {"url": url, "title": " ".join(p.title_parts).strip() or urlparse(url).netloc, "text": text, "fetched": _today()}
     try:
-        return _cached("web-read", {"url": url, "max": max_chars}, load, ttl=86400.0)
+        return _cached("web-read", {"url": url, "max": max_chars}, _within(load), ttl=86400.0)
     except Exception as e:
         raise RuntimeError(f"the page could not be read: {url}") from e
 
@@ -1008,7 +1068,7 @@ def market_history(symbol: str, years: int = 10) -> dict:
 
     def load() -> dict:
         try:
-            live = _live_market(canonical, requested)
+            live = _within(lambda: _live_market(canonical, requested), 6.0)()
             if live and live.get("points"):
                 return live
         except Exception:

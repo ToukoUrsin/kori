@@ -17,3 +17,6 @@
 @media (prefers-reduced-motion:reduce){.lab-caret,.lab-live-code{animation:none}}
 .lab-frame-wrap{margin:0 -20px}
 @media (max-width:480px){.lab-frame-wrap{margin:0 -16px}}
+.lab-runs{grid-template-columns:minmax(0,1fr)}.lab-run{min-width:0}.lab-run-row{min-width:0}
+.lab-sandbox{display:flex;align-items:center;gap:7px;color:var(--lab-faint);font-size:12px;line-height:16px}
+.lab-sandbox svg{flex:none;color:var(--lab-green)}

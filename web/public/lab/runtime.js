@@ -133,7 +133,12 @@
           if (m[3] && /hidden/.test(m[3])) continue;
           frag.appendChild(sp);
           // a Finnish date ends in a full stop: the sentence's own is not doubled
-          if (/\.$/.test(sp.textContent) && n.data.charAt(last) === "." && n.data.charAt(last + 1) !== ".") last++;
+          if (/\.$/.test(sp.textContent)) {
+            if (n.data.charAt(last) === "." && n.data.charAt(last + 1) !== ".") last++;
+            else if (last === n.data.length && /^(B|STRONG|EM|I|SPAN)$/.test(par.nodeName) && n === par.lastChild) {
+              var nx = par.nextSibling; if (nx && nx.nodeType === 3 && /^\.(?!\.)/.test(nx.data)) nx.data = nx.data.slice(1);
+            }
+          }
         }
         if (last < n.data.length) frag.appendChild(document.createTextNode(n.data.slice(last)));
         par.replaceChild(frag, n);

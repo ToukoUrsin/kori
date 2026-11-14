@@ -98,17 +98,25 @@ market.symbols()   market.history(symbol, years=10)    monthly closes of an inde
 """
 
 SHOP = """\
-shop.search(query, store="s-kaupat", n=8)   real grocery products: name, brand, price, unit_price, unit, size, image, url, store
+shop.search(query, store="s-kaupat", n=8)   real grocery products from S-kaupat (one Prisma, dated prices): name, brand, price, unit_price, unit,
+                                             size, image, url, store, kind, own_brand
 shop.cheaper(product, n=3)                   product = a product dict or a name. Cheaper products of the same kind (own brands first), each a product
                                              dict plus saves (euros per pack), saves_pct, instead_of. [] when nothing is cheaper
+                                             For a swap view: one row per product (never the same swap twice) with how often it was bought, and
+                                             only swaps a shopper would accept as the same thing; the claim is what the sample receipts support.
 shop.receipts(n=4)                           itemised receipts for the customer's last supermarket payments. SAMPLE data: the bank's data stops at the
                                              merchant; S-mobiili's "Omat ostot" has the lines. Say so in one short clause when you use it.
                                              Each: date, merchant, total, sample, items[{product: {name, brand, price, unit_price, unit, size, image, url}, qty, line_total}]
-web.products(query, n=6)                     things for sale in Finnish shops with price, picture and link (laptops, phones, bikes, flights...)
 """
 NO_SHOP = """\
-(Product lookups, shop.* and web.products, are not switched on in this version. If the customer asks for real products or prices, say that
- part is coming and answer what their own data can answer.)
+(Grocery lookups, shop.*, are not switched on in this version. If the customer asks for real grocery products or prices, say that part is
+ coming and answer what their own data can answer.)
+"""
+WEB_SHOP = """\
+web.products(query, n=6)                     things for sale in Finnish shops right now, with price, picture and link (laptops, phones, bikes...)
+"""
+NO_WEB_SHOP = """\
+(web.products is not switched on in this version. For a purchase, work with the amount the customer names, or ask for one.)
 """
 
 SYSTEM = """\
@@ -304,7 +312,7 @@ def _engine_doc(m: Money, st: dict) -> str:
 def _sandbox(m: Money | None = None, st: dict | None = None) -> str:
     from .door import products_ready
     engine = _engine_doc(m, st) if m is not None else "kori.help() lists the calls\n"
-    return SANDBOX.replace("{shop}", SHOP if products_ready() else NO_SHOP).replace("{engine}", engine)
+    return SANDBOX.replace("{shop}", (SHOP if products_ready("shop") else NO_SHOP) + (WEB_SHOP if products_ready("web") else NO_WEB_SHOP)).replace("{engine}", engine)
 
 
 def _account(m: Money) -> str:
@@ -554,14 +562,18 @@ class _Typing:
         self.w = w
         self.rid: str | None = None
         self.start = self.sent = 0
-        self.closed = False
+        self.closed = self.handed = False
 
     async def __call__(self, text: str, model: str) -> None:
         if self.closed:
             return
         if self.rid is None:
+            head = text.lstrip()
+            if head.startswith("MODEL:") and "\n" in head and not self.handed:      # the job is being handed to the larger model: say so at once
+                self.handed = True
+                self.w.turn.emit("status", {"text": head.split("\n", 1)[0][6:].strip()[:80] or STATUS[self.w.lang]["model"], "kind": "model"})
             f = _FENCE.search(text)
-            if not f or text.lstrip().startswith("ANSWER:"):
+            if not f or head.startswith(("ANSWER:", "MODEL:")):
                 return
             r = _RUN.search(text[: f.start()])
             self.rid, self.start = self.w.new_run(), f.end()
@@ -774,16 +786,12 @@ def starters(m: Money) -> list[dict]:
     from .door import products_ready
     fi = m.prefs.lang == "fi"
     items = [("When do I spend the most on eating out?", "Milloin kulutan eniten ulkona syömiseen?", "Any cut of your own payments", "Mikä tahansa näkymä omiin maksuihisi")]
-    if products_ready():
-        items += [
-            ("Can my grocery shopping be cheaper?", "Saisinko ruokaostokset halvemmalla?", "Real products and prices from S-kaupat", "Oikeat tuotteet ja hinnat S-kaupoista"),
-            ("I need a new laptop. What can I afford?", "Tarvitsen uuden läppärin. Mihin minulla on varaa?", "Real options, checked against your payday", "Oikeat vaihtoehdot, tarkistettu palkkapäivääsi vasten"),
-        ]
-    else:
-        items += [
-            ("Where is my account heading before payday?", "Mihin tilini on menossa ennen palkkapäivää?", "Your balance, day by day", "Saldosi päivä päivältä"),
-            ("Could I afford a €900 laptop this month?", "Olisiko minulla varaa 900 euron läppäriin tässä kuussa?", "Checked against your payday", "Tarkistettu palkkapäivääsi vasten"),
-        ]
+    items += [("Can my grocery shopping be cheaper?", "Saisinko ruokaostokset halvemmalla?", "Real products and prices from S-kaupat", "Oikeat tuotteet ja hinnat S-kaupoista")
+              if products_ready("shop") else
+              ("Where is my account heading before payday?", "Mihin tilini on menossa ennen palkkapäivää?", "Your balance, day by day", "Saldosi päivä päivältä")]
+    items += [("I need a new laptop. What can I afford?", "Tarvitsen uuden läppärin. Mihin minulla on varaa?", "Real options, checked against your payday", "Oikeat vaihtoehdot, tarkistettu palkkapäivääsi vasten")
+              if products_ready("web") else
+              ("Could I afford a €900 laptop this month?", "Olisiko minulla varaa 900 euron läppäriin tässä kuussa?", "Checked against your payday", "Tarkistettu palkkapäivääsi vasten")]
     items += [
         ("What if I save €150 a month for ten years?", "Mitä jos säästän 150 € kuussa kymmenen vuotta?", "A model with a range of outcomes", "Malli, joka näyttää vaihteluvälin"),
         ("Show me my year", "Näytä minun vuoteni", "Your year in money, as a story", "Vuotesi rahassa, tarinana"),

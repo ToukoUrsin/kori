@@ -15,6 +15,7 @@ type Strings = {
   thinking: string;
   work: string;
   working: string;
+  sandbox: (rows: number) => string;
   writing: (lines: number) => string;
   done: string;
   underHood: string;
@@ -48,6 +49,7 @@ export const strings: Record<LabLang, Strings> = {
     thinking: "Kori is working…",
     work: "Show the work",
     working: "Working",
+    sandbox: (rows) => `Private sandbox · ${rows.toLocaleString("en-GB")} of your payments · no network`,
     writing: (lines) => `writing code · ${lines} line${lines === 1 ? "" : "s"}`,
     done: "Done",
     underHood: "Under the hood",
@@ -85,6 +87,7 @@ export const strings: Record<LabLang, Strings> = {
     thinking: "Kori työskentelee…",
     work: "Näytä työ",
     working: "Työn alla",
+    sandbox: (rows) => `Oma hiekkalaatikko · ${rows.toLocaleString("fi-FI")} maksuasi · ei verkkoyhteyttä`,
     writing: (lines) => `kirjoittaa koodia · ${lines} ${lines === 1 ? "rivi" : "riviä"}`,
     done: "Valmis",
     underHood: "Konepellin alla",

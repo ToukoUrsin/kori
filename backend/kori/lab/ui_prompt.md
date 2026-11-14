@@ -23,7 +23,7 @@ Order of the fragment: optional `<style>` (short), markup, optional `<script>` l
 Crazy clean. Linear, Apple Wallet, a Swiss timetable. A banker should think "we could ship this tomorrow" and a 25-year-old should want to touch it.
 
 - White, ink, and one accent: Kori's green. Colour means something or it is absent. Grey for what is secondary. A second hue only for a warning or for data that has fixed roles.
-- Strong type does the work: one sentence that states the finding (`.k-lede`, key words in `<b>`), then at most three figures at once. The written answer above your view has already said the headline: the lede says it shorter or says the next thing, never the same sentence again. Labels are small and grey, in sentence case. No uppercase eyebrow labels, no emoji, no icons standing in for words, no gradients on text, no decoration.
+- Strong type does the work: one sentence that states the finding (`.k-lede`, key words in `<b>`), then at most three figures at once. The written answer above your view has already said the headline: the lede says it shorter or says the next thing, never the same sentence again. The lede is a finding about their money, never a description of the view or an instruction to touch it. Labels are small and grey, in sentence case. No uppercase eyebrow labels, no emoji, no icons standing in for words, no gradients on text, no decoration.
 - Very little text. The lede, short labels, at most one quiet note. No paragraphs explaining a chart: the chart has a readout that speaks when touched.
 - Hairlines and space, not boxes. Cards only for things that are objects (a product, an option to pick). Never a card inside a card.
 - One interaction that matters, big enough to hit (44 px), and it must visibly change the figures (`K.num` counts them to the new value).
@@ -88,7 +88,7 @@ Toggles that add up (a compact row per item: what they buy now, faded, beside wh
 A slider that only looks values up (one table per position, the scale held still):
 ```
 <div class="k-stats"><div class="k-fig"><span id="paid">{{paid_default|eur0}}</span><small>you put in</small></div><div class="k-fig pos"><span id="mid">{{mid_default|eur0}}</span><small>middle outcome</small></div></div>
-<k-chart x="year" h="210" yfmt="eur0" zero ymax="{{scale_max|raw}}"><k-area table="{{default_table|raw}}" lo="p10" hi="p90" tone="soft" label="Nine in ten outcomes"></k-area><k-line table="{{default_table|raw}}" y="p50" label="Middle" end></k-line><k-line table="{{default_table|raw}}" y="paid" tone="ink" dash label="Put in"></k-line></k-chart>
+<k-chart x="year" h="210" yfmt="eur0" zero ymax="{{scale_max|raw}}"><k-area table="{{default_table|raw}}" lo="p10" hi="p90" tone="soft" label="Eight in ten outcomes"></k-area><k-line table="{{default_table|raw}}" y="p50" label="Middle" end></k-line><k-line table="{{default_table|raw}}" y="paid" tone="ink" dash label="Put in"></k-line></k-chart>
 <input type="range" id="a" min="0" max="{{last_step|raw}}" step="1" value="{{default_step|raw}}">
 <script>const steps=K.table("steps");K.on("#a","input",(e,el)=>{const s=steps[+el.value];K.$$("k-chart > *").forEach(c=>c.setAttribute("table",s.table));K.num("#paid",s.paid,"eur0");K.num("#mid",s.p50,"eur0")})</script>
 ```
@@ -128,6 +128,6 @@ Write in the language you are told (English or Finnish), everywhere, including r
 
 End most views with two or three `.k-chip` follow-ups that this view makes obvious. Not on a story (its last slide asks).
 
-Every sentence must agree with the figures beside it: if a figure changes on touch, a sentence that states it must change too or not state it.
+Every sentence must agree with the figures beside it: if a figure changes on touch, a sentence that states it must change too or not state it. That includes the lede and the notes: after the slider moves or a switch flips, read every line again as the customer would.
 
 Before you finish, check: no digit typed in visible text; every name exists in the ledger; nothing wider than 350 px; the first thing on screen is the finding; the script is last and short.

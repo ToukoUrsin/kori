@@ -44,11 +44,12 @@ ENGINE: dict[str, tuple[str, list[str]]] = {
 DROP = {"how_to_say_it", "how_to_offer", "say", "shown_as", "count_labels"}        # notes written for the old coach
 
 
-def products_ready() -> bool:
-    """Shop and product lookups are offered only when the data behind them has been checked as real (a marker file
-    next to the data). Until then the sandbox is told they are not available, rather than being handed stand-in rows."""
+def products_ready(part: str = "shop") -> bool:
+    """Product lookups are offered only when the data behind them has been checked as real: a marker file next to the
+    data, one for groceries (`VERIFIED_SHOP`) and one for things for sale on the web (`VERIFIED_WEB`). Until then the
+    sandbox is told they are not available, rather than being handed stand-in rows."""
     from pathlib import Path
-    return (Path(__file__).with_name("world") / "VERIFIED").is_file()
+    return (Path(__file__).with_name("world") / f"VERIFIED_{part.upper()}").is_file()
 
 
 def _json(v: Any) -> Any:
@@ -191,7 +192,7 @@ class Door:
             ("market", "symbols"): lambda: world.market_symbols(),
         }
         f = table.get((ns, fn))
-        if f and (ns == "shop" or (ns, fn) == ("web", "products")) and not products_ready():
+        if f and ((ns == "shop" and not products_ready("shop")) or ((ns, fn) == ("web", "products") and not products_ready("web"))):
             raise RuntimeError(f"{ns}.{fn} is not available in this version yet")
         if not f:
             raise PermissionError(f"{ns}.{fn} is not on the list: " + ", ".join(sorted(f"{a}.{b}" for a, b in table)))
