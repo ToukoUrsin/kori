@@ -17,7 +17,7 @@ Your balance is not your budget. Kori is a voice coach in your bank app: it says
 
 Aino has €2,620 on her account. How much of it is hers to spend? €1,094, or €46 a day until payday. The rest is already spoken for: bills that haven't landed yet, a reserve for surprises, a small cushion.
 
-Kori is a coach you talk to. Ask out loud "can I afford a 650 euro phone this month?" and it answers in a few seconds, in English or Finnish: "Yes, but your pace drops from 46 to 18 euros a day until payday." The numbers are on screen while it speaks.
+Kori is a coach you talk to. Ask out loud "can I afford a 650 euro phone this month?" and it answers in a few seconds, in English or Finnish: "Yes, but your pace drops from 46 to 19 euros a day until payday." The numbers are on screen while it speaks.
 
 ## It coaches, one pay cycle at a time
 

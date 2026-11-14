@@ -17,8 +17,15 @@ def test_affordability_reports_pace_after_purchase():
     assert out["verdict"] == "tight"
     assert out["safe"] == {"before": 1093.94, "after": 443.94}
     assert out["per_day"]["after"] == pytest.approx(18.5)
-    assert "drops from €46 to €18" in out["headline"]
+    # 18.50 is said as 19, the way the card under the sentence shows it (halves up, from the cents)
+    assert "drops from €46 to €19" in out["headline"]
     assert {x["key"] for x in out["options"]} >= {"wait", "spread"}
+
+
+def test_whole_euros_round_like_the_screen():
+    from kori.engine.insights import eur, whole
+    assert [whole(v) for v in (18.5, 18.4975, 18.49, 0.5, 2.5, -18.5, 1093.94)] == [19, 19, 18, 1, 3, -19, 1094]
+    assert eur(18.5, "en") == "€19" and eur(2.5, "fi").startswith("3")
 
 
 @pytest.mark.parametrize("lang", ["en", "fi"])

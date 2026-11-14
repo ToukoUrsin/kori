@@ -106,7 +106,7 @@ export const X0 = PX + phoneWidth(PH) + 120;
 
 const STEPS = ['Looks back at the pay cycle', 'Asks what happened', 'Sets one thing to try', 'Keeps count on the home screen'];
 
-/** The number the answer changes, from the card the app showed: "€46 → €18 a day". */
+/** The number the answer changes, from the card the app showed: "€46 → €19 a day". */
 const BigChange: React.FC<{cap: string; card: string; at: number}> = ({cap, card, at}) => {
 	const frame = useCurrentFrame();
 	const d = cardOf(caps[cap], card);

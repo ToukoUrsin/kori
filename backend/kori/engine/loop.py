@@ -15,7 +15,7 @@ from datetime import date, timedelta
 from ..taxonomy import CATEGORIES, EVERYDAY, cat_label
 from ..wording import is_pensioner
 from .core import DAYS_PER_MONTH, Money, r2
-from .insights import eur
+from .insights import eur, whole
 from .query import fmt_day
 
 # everyday categories a person can put on hold for a couple of weeks without going hungry or missing work
@@ -241,7 +241,7 @@ def check_in(m: Money) -> dict:
 # -------------------------------------------------------------- one thing
 def _say(v: float, lang: str) -> str:
     """An amount as it is said aloud."""
-    n = int(round(v))
+    n = whole(v)
     return f"{n:,} euros" if lang == "en" else f"{n} euroa"
 
 

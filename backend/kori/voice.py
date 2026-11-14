@@ -13,7 +13,7 @@ import httpx
 from . import config
 from .engine import insights
 from .engine.core import Money
-from .engine.insights import eur
+from .engine.insights import eur, whole
 from .engine.query import MONTHS_LONG
 from .state import name_of
 from .wording import adapt
@@ -31,7 +31,7 @@ def _headers() -> dict:
 
 
 def spoken_eur(v: float, lang: str) -> str:
-    n = int(round(v))
+    n = whole(v)
     return f"{n:,} euros" if lang == "en" else f"{n} euroa"
 
 

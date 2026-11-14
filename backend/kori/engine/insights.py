@@ -15,11 +15,19 @@ SMALL = 15.0
 PURCHASES, OSTOKSET = ("purchase", "purchases"), ("ostos", "ostosta")
 
 
+def whole(v: float) -> int:
+    """Whole euros the way the screen rounds them: from the cents, halves up. (Python's round() sends 18.50 to 18 and the
+    app's own formatter sends it to 19, and then a sentence and the card under it disagree.)"""
+    a = abs(round(float(v), 2))
+    n = int(a + 0.5 + 1e-9)
+    return -n if v < 0 else n
+
+
 def eur(v: float, lang: str, cents: bool = False) -> str:
     """€1,094 in English, 1 094 € in Finnish."""
     neg = v < 0
     v = abs(v)
-    s = f"{v:,.2f}" if cents else f"{round(v):,}"
+    s = f"{v:,.2f}" if cents else f"{whole(v):,}"
     if lang == "fi":
         s = s.replace(",", " ").replace(".", ",")
         return f"{'−' if neg else ''}{s} €"
