@@ -32,6 +32,7 @@ const D = {
   "common.aDay": ["a day", "päivässä"],
   "common.aMonth": ["a month", "kuukaudessa"],
   "common.aYear": ["a year", "vuodessa"],
+  "common.perDay": ["Per day", "Päivässä"],
   "common.perMonthShort": ["/mo", "/kk"],
   "common.showMore": ["Show {n} more", "Näytä {n} lisää"],
   "common.showLess": ["Show less", "Näytä vähemmän"],
@@ -50,9 +51,9 @@ const D = {
   "status.very_tight": ["Very tight", "Hyvin tiukkaa"],
   "status.empty": ["Used up", "Käytetty"],
   "status.comfortable.line": ["You have room to breathe.", "Sinulla on liikkumavaraa."],
-  "status.tight.line": ["It holds if you stay near this pace.", "Riittää, kun pysyt lähellä tätä tahtia."],
-  "status.very_tight.line": ["Small days until payday, and it still holds.", "Pieniä päiviä palkkapäivään asti, mutta rahat riittävät."],
-  "status.empty.line": ["This pay cycle's everyday money is used up.", "Tämän palkkajakson arkirahat on käytetty."],
+  "status.tight.line": ["It holds if you stay near this pace.", "Riittää, kun pysyt tässä tahdissa."],
+  "status.very_tight.line": ["It lasts, with little to spare.", "Riittää, mutta varaa on vähän."],
+  "status.empty.line": ["Your everyday money is spent.", "Arkirahasi on käytetty."],
 
   "today.safeLabel": ["Safe to spend until payday", "Turvallista käyttää palkkapäivään asti"],
   "today.perDay": ["{v} a day", "{v} päivässä"],
@@ -298,6 +299,7 @@ const D = {
   "lesson.start": ["Start lesson", "Aloita oppitunti"],
   "lesson.again": ["Open again", "Avaa uudelleen"],
   "lesson.min": ["about {n} min", "noin {n} min"],
+  "lesson.minShort": ["{n} min", "{n} min"],
   "lesson.done": ["Done", "Tehty"],
 
   "card.pin": ["Pin to My view", "Kiinnitä omaan näkymään"],
@@ -396,7 +398,7 @@ const D = {
   "persona.current": ["Selected", "Valittu"],
 
   "judge.try": ["Try this", "Kokeile tätä"],
-  "judge.tryHint": ["Each one drives the phone on the left.", "Jokainen ohjaa vasemmalla olevaa puhelinta."],
+  "judge.tryHint": ["Each one drives the phone.", "Jokainen ohjaa puhelinta."],
   "judge.voice": ["Talk to it", "Puhu sille"],
   "judge.minute": ["Play the money minute", "Toista rahaminuutti"],
   "judge.customer": ["Demo customer", "Demoasiakas"],

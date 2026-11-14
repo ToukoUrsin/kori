@@ -116,7 +116,7 @@ function CategorySheet({ d, row: current, onClose }: { d: BasketsResponse; row: 
             </IconButton>
           </div>
 
-          <div className="scroll-y min-h-0 px-5 pb-[max(18px,env(safe-area-inset-bottom))] pt-4">
+          <div className="scroll-y min-h-0 px-5 pb-[max(18px,var(--safe-b))] pt-4">
             <p className="num text-[34px] font-semibold leading-10 tracking-[-0.03em] text-ink">{money(row.amount, lang, { cents: true })}</p>
             <p className="num mt-0.5 text-[13px] leading-[18px] text-ink-2">
               {row.count === 1 ? t("baskets.purchase1") : t("baskets.purchases", { n: row.count })} · {t("common.usual", { v: money(row.usual, lang) })}
@@ -190,7 +190,7 @@ function Slips({ d }: { d: BasketsResponse }) {
   const top = s.top_kinds.slice(0, 4);
   const max = Math.max(1, ...top.map((k) => k.total));
   return (
-    <section className="mt-7">
+    <section className="mt-8">
       <SectionHead title={t("baskets.slips")} />
       <div className="rounded-card border border-line bg-surface px-4 pb-3 pt-3.5">
         <p className="num text-[28px] font-semibold leading-8 tracking-[-0.025em] text-ink">{money(s.total, lang)}</p>
@@ -326,7 +326,7 @@ export function Baskets() {
 
         <Slips d={d} />
 
-        <section className="mt-7">
+        <section className="mt-8">
           <SectionHead title={t("baskets.history")} sub={t("baskets.historyHint")} />
           <div className="rounded-card border border-line bg-surface px-2 pb-1.5 pt-3">
             <HistoryStrip months={d.history} selected={c.month} onSelect={setMonth} />

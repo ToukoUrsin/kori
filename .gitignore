@@ -15,3 +15,8 @@ backend/scratch/
 research/
 docs/FRONTEND_*.md
 film/out/
+rounds.jsonl
+film/public/cap/
+film/public/audio/vo/
+film/public/audio/music.mp3
+film/src/data/caps.json

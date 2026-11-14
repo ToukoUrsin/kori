@@ -45,12 +45,27 @@
   --color-neg: oklch(0.5 0.17 27);
   --color-neg-soft: oklch(0.95 0.03 27);
 
+  /* the customer's own words in the coach sheet: a quiet neutral, not brand */
+  --color-bubble: oklch(0.925 0.009 95);
+
   --radius-card: 14px;
   --radius-ctl: 10px;
 
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
   --shadow-pop: 0 1px 2px oklch(0.22 0.02 160 / 0.06), 0 8px 24px -6px oklch(0.22 0.02 160 / 0.14);
   --shadow-sheet: 0 -1px 0 oklch(0.22 0.02 160 / 0.05), 0 -18px 48px -12px oklch(0.22 0.02 160 / 0.22);
+}
+
+/* safe areas: the device's own on a phone, a fixed inset inside the laptop phone frame so nothing sits in its round corners */
+:root {
+  --safe-t: env(safe-area-inset-top, 0px);
+  --safe-b: env(safe-area-inset-bottom, 0px);
+}
+@media (min-width: 640px) {
+  :root {
+    --safe-t: 20px;
+    --safe-b: 14px;
+  }
 }
 
 @layer base {
@@ -115,6 +130,9 @@
   h3 {
     text-wrap: balance;
   }
+  p {
+    text-wrap: pretty;
+  }
 }
 
 @layer utilities {
@@ -142,14 +160,14 @@
     min-width: 44px;
   }
   .pb-safe {
-    padding-bottom: env(safe-area-inset-bottom, 0px);
+    padding-bottom: var(--safe-b);
   }
   .pt-safe {
-    padding-top: env(safe-area-inset-top, 0px);
+    padding-top: var(--safe-t);
   }
   /* skeleton shimmer, quiet */
   .skel {
-    background: linear-gradient(100deg, var(--color-sunk) 30%, oklch(0.975 0.005 95) 50%, var(--color-sunk) 70%);
+    background: linear-gradient(100deg, oklch(0.928 0.008 95) 30%, oklch(0.958 0.006 95) 50%, oklch(0.928 0.008 95) 70%);
     background-size: 220% 100%;
     animation: skel 1.4s linear infinite;
     border-radius: 6px;

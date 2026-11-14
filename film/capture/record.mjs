@@ -35,7 +35,7 @@ if (!scenarioName) {
 const BASE = flag('base', 'https://kori-coach.fly.dev');
 const OUT = flag('out', `/bulk2/runs/spankki/film/${scenarioName}`);
 const VW = Number(flag('width', 390)), VH = Number(flag('height', 844)), SCALE = Number(flag('scale', 3));
-const USER_VOICE = {en: 'cjVigY5qzO86Huf0OWal', fi: 'ESapivUCtGNuYKDCwzcI'};   // not the coach's voice
+const USER_VOICE = {en: 'Xb7hH8MSUJpSbSDYk0k2', fi: 'ESapivUCtGNuYKDCwzcI'};   // Aino: a woman's voice, and not the coach's
 const CACHE = path.join(here, '..', 'public', 'audio', 'user');
 fs.mkdirSync(path.join(OUT, 'frames'), {recursive: true});
 fs.mkdirSync(CACHE, {recursive: true});
@@ -65,7 +65,7 @@ const inPage = () => {
 	const Hook = function (url, opts) {
 		const es = new ES(url, opts);
 		for (const name of ['user', 'status', 'card', 'coach', 'effect', 'done']) {
-			es.addEventListener(name, (e) => K.screen.push({at: epoch(), name, data: String(e.data || '').slice(0, 600)}));
+			es.addEventListener(name, (e) => K.screen.push({at: epoch(), name, data: String(e.data || '').slice(0, 20000)}));
 		}
 		return es;
 	};

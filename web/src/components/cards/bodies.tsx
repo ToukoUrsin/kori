@@ -100,7 +100,7 @@ export function SafeBody({ d, open }: { d: SafeData; open: boolean }) {
       </div>
       <div className="mt-3">
         <Cells>
-          <Cell label={t("common.aDay")}>{money(d.per_day, lang, { cents: true })}</Cell>
+          <Cell label={t("common.perDay")}>{money(d.per_day, lang, { cents: true })}</Cell>
           <Cell label={t("safe.thisWeek")}>{money(d.this_week, lang, { cents: true })}</Cell>
           <Cell label={t("forecast.payday")}>{day(d.next_payday, lang)}</Cell>
         </Cells>
@@ -372,8 +372,8 @@ export function WhatIfBody({ d, showChanges }: { d: WhatIfData; showChanges?: bo
             {money(d.yearly_effect, lang, { sign: true })}
           </span>
           <span className="mb-1 text-[14px] text-ink-2">{t("common.aYear")}</span>
-          <span className="mb-1 ml-auto text-[13px] text-ink-2">
-            <span className="num font-medium text-ink">{money(m, lang, { sign: true, cents: true })}</span> {t("common.aMonth")}
+          <span className="mb-1 ml-auto whitespace-nowrap text-[13px] text-ink-2">
+            <span className="num font-medium text-ink">{money(m, lang, { sign: true, cents: true })}</span> {t("common.perMonthShort")}
           </span>
         </div>
       ) : o ? (

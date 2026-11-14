@@ -183,6 +183,8 @@ export function ForecastChart({ data, variant = "full" }: { data: ForecastData; 
           {/* the two paces */}
           <motion.path d={path(uv)} fill="none" stroke="var(--color-ink-2)" strokeWidth={1.5} strokeLinejoin="round" strokeLinecap="round" {...draw(0.1)} />
           <motion.path d={path(sv)} fill="none" stroke="var(--color-brand)" strokeWidth={2.25} strokeLinejoin="round" strokeLinecap="round" {...draw(0.25)} />
+          {/* where each pace ends: shown once its line has arrived */}
+          <motion.g initial={reduce ? false : { opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3, delay: 0.85 }}>
           <circle cx={xe} cy={y(uEnd)} r={3} fill="var(--color-surface)" stroke={uEnd < 0 ? "var(--color-neg)" : "var(--color-ink-2)"} strokeWidth={1.5} />
           <circle cx={xe} cy={y(sEnd)} r={3.5} fill="var(--color-brand)" />
           <text x={payX + 7} y={clampY(ys) + 4} fill="var(--color-brand)" fontWeight={600} className="num">
@@ -191,6 +193,7 @@ export function ForecastChart({ data, variant = "full" }: { data: ForecastData; 
           <text x={payX + 7} y={clampY(yu) + 4} fill={uEnd < 0 ? "var(--color-neg)" : "var(--color-ink-2)"} fontWeight={500} className="num">
             {money(uEnd, lang)}
           </text>
+          </motion.g>
         </svg>
       )}
     </div>

@@ -162,15 +162,22 @@ function Lab({ d }: { d: PlanResponse }) {
   };
 
   return (
-    <section className="mt-7">
+    <section className="mt-8">
       <SectionHead title={t("plan.whatif")} sub={t("plan.whatifHint")} />
 
       <div>
         {/* the result stays in sight while the sliders move */}
-        <div className="sticky top-0 z-10 -mx-5 bg-ground px-5 pb-2 pt-1.5">
+        <div className="sticky top-0 z-10 -mx-5 bg-ground px-5 pt-1.5 after:pointer-events-none after:absolute after:inset-x-0 after:top-full after:h-3 after:bg-gradient-to-b after:from-ground after:to-transparent">
           <div className="flex min-h-[84px] flex-col justify-center rounded-card border border-line bg-surface px-4 py-3" aria-live="polite">
             {changed.length === 0 ? (
-              <p className="text-[14px] leading-5 text-ink-2">{t("plan.noChange")}</p>
+              // nothing moved yet: the number the sliders will change, and what to do
+              <div className="flex items-center gap-3">
+                <div className="min-w-0 flex-1">
+                  <p className="text-[14px] font-medium leading-5 text-ink">{t("plan.leftOverLine")}</p>
+                  <p className="text-[13px] leading-[18px] text-ink-2">{t("plan.noChange")}</p>
+                </div>
+                <Money value={res ? res.left_over.now : d.usual.left_over} className="shrink-0 text-[22px] font-semibold leading-7 tracking-[-0.02em] text-ink" />
+              </div>
             ) : (
               <div className={cx("transition-opacity duration-150", !live && "opacity-50")}>
                 <div className="flex items-end gap-x-2.5">
@@ -195,7 +202,7 @@ function Lab({ d }: { d: PlanResponse }) {
           </div>
         </div>
 
-        <div className="rounded-card border border-line bg-surface px-4 pb-2 pt-1.5">
+        <div className="mt-3 rounded-card border border-line bg-surface px-4 pb-2 pt-1.5">
           <div className="divide-y divide-line">
             {cats.map((c) => (
               <SliderRow key={c.key} c={c} v={vals[c.key] || 0} line={lines.get(c.key)} onChange={(v) => setVals((s) => ({ ...s, [c.key]: v }))} />
@@ -290,7 +297,7 @@ function OneOff() {
   const shown = pick && res && res.one_off_total === pick.amount ? res : null;
 
   return (
-    <section className="mt-7">
+    <section className="mt-8">
       <SectionHead title={t("plan.oneoff")} sub={t("plan.oneoffHint")} />
       <div className="flex flex-wrap gap-2">
         {PRESETS.map((p) => {
@@ -392,7 +399,7 @@ function GoalBlock({ q }: { q: Query<PlanResponse> }) {
     "h-11 w-full min-w-0 rounded-[10px] border border-line-strong bg-surface px-3 text-[16px] text-ink outline-none transition-[border-color,box-shadow] duration-150 placeholder:text-ink-3 focus:border-brand focus:shadow-[0_0_0_3px_oklch(0.42_0.095_158/0.14)]";
 
   return (
-    <section className="mt-7">
+    <section className="mt-8">
       <SectionHead title={t("plan.goal")} sub={g && !editing ? undefined : t("plan.goalHint")} />
       {g && !editing ? (
         <div className="rounded-card border border-line bg-surface px-4 pb-1.5 pt-3.5">
@@ -520,7 +527,7 @@ function Setters({ q }: { q: Query<PlanResponse> }) {
   };
 
   return (
-    <section className="mt-7">
+    <section className="mt-8">
       <SectionHead title={t("plan.setters")} />
       <div className="rounded-card border border-line bg-surface px-4">
         <div className="divide-y divide-line">

@@ -48,15 +48,15 @@ export function Learn() {
             </div>
 
             {next ? (
-              <section className="mt-4 rounded-card bg-brand px-4 pb-4 pt-3.5 text-white">
-                <p className="num text-[13px] leading-[18px] text-white/80">
-                  {t("learn.next")} · {t("lesson.min", { n: next.minutes })}
-                </p>
-                <h2 className="mt-1 text-[22px] font-semibold leading-7 tracking-[-0.02em]">{next.title}</h2>
-                <p className="mt-1.5 text-[14px] leading-[21px] text-white/90">{next.concept}</p>
-                <Button onClick={() => openLesson(next.id)} className="mt-3.5 !border-transparent !bg-white !text-brand-strong hover:!bg-brand-soft">
-                  {t("lesson.start")}
-                </Button>
+              <section className="mt-4 rounded-card border border-line bg-surface px-4 pb-4 pt-3.5">
+                <h2 className="text-[20px] font-semibold leading-[26px] tracking-[-0.02em] text-ink">{next.title}</h2>
+                <p className="mt-1 text-[14px] leading-[21px] text-ink-2">{next.concept}</p>
+                <div className="mt-3.5 flex items-center gap-3">
+                  <Button variant="primary" onClick={() => openLesson(next.id)}>
+                    {t("lesson.start")}
+                  </Button>
+                  <span className="num text-[13px] leading-[18px] text-ink-3">{t("lesson.min", { n: next.minutes })}</span>
+                </div>
               </section>
             ) : (
               <p className="mt-4 rounded-card bg-brand-soft px-4 py-3 text-[14px] leading-[21px] text-brand-strong">{t("learn.allDone")}</p>
@@ -69,7 +69,7 @@ export function Learn() {
                     type="button"
                     onClick={() => openLesson(l.id)}
                     className={cx(
-                      "group flex min-h-[60px] w-full items-center gap-3 px-4 py-2.5 text-left transition-colors duration-150 hover:bg-sunk/60 active:bg-sunk",
+                      "group flex min-h-[52px] w-full items-center gap-3 px-4 py-2.5 text-left transition-colors duration-150 hover:bg-sunk/60 active:bg-sunk",
                       i === 0 && "rounded-t-card",
                       i === list.length - 1 && "rounded-b-card",
                     )}
@@ -82,12 +82,8 @@ export function Learn() {
                     >
                       {l.done ? <Check size={15} strokeWidth={2.5} aria-label={t("lesson.done")} /> : i + 1}
                     </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block text-[15px] font-medium leading-5 text-ink">{l.title}</span>
-                      <span className="num block text-[12px] leading-4 text-ink-3">
-                        {l.done ? t("lesson.done") : t("lesson.min", { n: l.minutes })}
-                      </span>
-                    </span>
+                    <span className="min-w-0 flex-1 text-[15px] font-medium leading-5 text-ink">{l.title}</span>
+                    <span className="num shrink-0 text-[13px] leading-5 text-ink-3">{l.done ? t("lesson.done") : t("lesson.minShort", { n: l.minutes })}</span>
                     <ChevronRight size={17} strokeWidth={2} className="shrink-0 text-ink-3 transition-transform duration-150 group-hover:translate-x-0.5" aria-hidden />
                   </button>
                 </li>
@@ -96,7 +92,7 @@ export function Learn() {
           </>
         )}
 
-        <section className="mt-7">
+        <section className="mt-8">
           <SectionHead title={t("learn.about")} />
           <div className="space-y-3">
             <AboutCard tool="spender_profile" />

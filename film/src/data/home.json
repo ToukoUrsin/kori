@@ -1,0 +1,224 @@
+{
+ "safe": {
+  "amount": 1093.94,
+  "per_day": 45.58,
+  "this_week": 319.06,
+  "week_days": 7,
+  "days_to_payday": 24,
+  "next_payday": "2026-10-15",
+  "status": "tight",
+  "limit": "budget",
+  "balance": 2620.74,
+  "usual_per_day": 53.93,
+  "pace_ratio": 0.85,
+  "budget": {
+   "income": 2994.62,
+   "fixed": 1231.47,
+   "surprise": 224.6,
+   "saving": 0.0,
+   "everyday_monthly": 1538.55,
+   "cycle_days": 30,
+   "everyday_budget": 1516.31,
+   "everyday_spent": 422.37,
+   "left": 1093.94,
+   "cycle_start": "2026-09-15"
+  },
+  "cash": {
+   "balance": 2620.74,
+   "fixed_due": 1078.85,
+   "surprise_reserve": 177.08,
+   "saving_left": 0.0,
+   "cushion": 100.0,
+   "free": 1264.81
+  },
+  "upcoming": [
+   {
+    "date": "2026-10-08",
+    "category": "Housing",
+    "amount": 1029.76,
+    "window": [
+     "2026-10-01",
+     "2026-10-08"
+    ],
+    "label": "Housing"
+   },
+   {
+    "date": "2026-10-08",
+    "category": "Utilities",
+    "amount": 49.09,
+    "label": "Utilities"
+   }
+  ],
+  "spoken_for": [
+   {
+    "key": "fixed",
+    "label": "Fixed musts",
+    "amount": 1078.85
+   },
+   {
+    "key": "surprise",
+    "label": "Surprise reserve",
+    "amount": 177.08
+   },
+   {
+    "key": "saving",
+    "label": "Planned saving",
+    "amount": 0.0
+   },
+   {
+    "key": "cushion",
+    "label": "Cushion",
+    "amount": 100.0
+   },
+   {
+    "key": "safe",
+    "label": "Safe to spend",
+    "amount": 1093.94
+   },
+   {
+    "key": "buffer",
+    "label": "Your buffer",
+    "amount": 170.87
+   }
+  ],
+  "late_pay": {
+   "date": "2026-10-30",
+   "extra_days": 15,
+   "rate": 0.292,
+   "extra_needed": 907.13,
+   "covered": false
+  },
+  "partial_view": false,
+  "cushion": 100.0
+ },
+ "customer": null,
+ "baskets": {
+  "month": "2026-09",
+  "is_current": true,
+  "days_elapsed": 21,
+  "days_in_month": 30,
+  "income": 3285.36,
+  "baskets": [
+   {
+    "key": "fixed",
+    "label": "Fixed musts",
+    "short": "Fixed",
+    "desc": "Mandatory and regular: rent, housing costs, utilities. Same size, same time, every month.",
+    "amount": 1124.34,
+    "usual": 1231.47,
+    "vs_usual_pct": -9,
+    "categories": [
+     {
+      "category": "Housing",
+      "label": "Housing",
+      "icon": "home",
+      "amount": 1029.76,
+      "count": 1,
+      "usual": 1046.62
+     },
+     {
+      "category": "Utilities",
+      "label": "Utilities",
+      "icon": "bolt",
+      "amount": 94.58,
+      "count": 3,
+      "usual": 171.75
+     }
+    ],
+    "share": 0.364
+   },
+   {
+    "key": "surprise",
+    "label": "Surprise musts",
+    "short": "Surprises",
+    "desc": "Mandatory but irregular: a broken washing machine, a dentist bill, a new phone when the old one dies. You can't skip them and you can't time them.",
+    "amount": 256.75,
+    "usual": 224.6,
+    "vs_usual_pct": 14,
+    "categories": [
+     {
+      "category": "Health",
+      "label": "Health",
+      "icon": "heart",
+      "amount": 163.32,
+      "count": 3,
+      "usual": 92.05
+     },
+     {
+      "category": "Home & Tech",
+      "label": "Home & tech",
+      "icon": "wrench",
+      "amount": 93.43,
+      "count": 1,
+      "usual": 177.0
+     }
+    ],
+    "share": 0.083
+   },
+   {
+    "key": "everyday",
+    "label": "Everyday",
+    "short": "Everyday",
+    "desc": "Everyday spending that slips through your fingers: food, coffees, eating out, rides, fun. Small amounts, many times. This is the basket you steer.",
+    "amount": 1709.43,
+    "usual": 1416.05,
+    "vs_usual_pct": 21,
+    "categories": [
+     {
+      "category": "Groceries",
+      "label": "Groceries",
+      "icon": "basket",
+      "amount": 773.26,
+      "count": 11,
+      "usual": 521.4
+     },
+     {
+      "category": "Transportation",
+      "label": "Getting around",
+      "icon": "tram",
+      "amount": 621.13,
+      "count": 15,
+      "usual": 224.82
+     },
+     {
+      "category": "Lifestyle",
+      "label": "Shopping",
+      "icon": "bag",
+      "amount": 200.66,
+      "count": 1,
+      "usual": 193.61
+     },
+     {
+      "category": "Restaurants",
+      "label": "Eating out",
+      "icon": "cup",
+      "amount": 114.38,
+      "count": 6,
+      "usual": 252.67
+     },
+     {
+      "category": "Entertainment",
+      "label": "Fun",
+      "icon": "ticket",
+      "amount": 0.0,
+      "count": 0,
+      "usual": 118.92
+     },
+     {
+      "category": "Travel",
+      "label": "Trips",
+      "icon": "plane",
+      "amount": 0.0,
+      "count": 0,
+      "usual": 66.55
+     }
+    ],
+    "share": 0.553
+   }
+  ],
+  "spend": 3090.52,
+  "usual_spend": 2872.12,
+  "saved": 0.0,
+  "left_over": 194.84
+ }
+}

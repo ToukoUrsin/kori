@@ -8,7 +8,7 @@ Your balance is not your budget. Kori is a voice coach for your bank app: it tel
 **Challenge:** S-Pankki, Personal Economic Trainer. **Tech challenges:** ElevenLabs, Gemini API.
 
 **Demo:** https://kori-coach.fly.dev
-**Source:** (GitHub link)
+**Source:** https://github.com/ToukoUrsin/kori
 **Video:** (link)
 
 **Description** (max 5000, markdown):

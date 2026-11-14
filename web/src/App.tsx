@@ -27,14 +27,16 @@ function useViewportHeight() {
 function Stage() {
   useViewportHeight();
   return (
-    <div className="flex h-full w-full items-center justify-center overflow-hidden lg:gap-[72px] lg:px-10">
+    <div className="flex h-full w-full items-center justify-center overflow-hidden lg:gap-14 lg:px-10 xl:gap-12">
+      <JudgePanel part="intro" className="hidden xl:flex" />
       {/* below 640px the app is the whole screen; above it sits in a quiet phone frame */}
       <div className="h-[var(--app-h,100dvh)] w-full shrink-0 sm:h-[min(864px,calc(100dvh-32px))] sm:w-[410px] sm:rounded-[54px] sm:bg-ink sm:p-[10px] sm:shadow-[0_30px_70px_-30px_oklch(0.22_0.02_160/0.55)]">
         <div className="relative h-full w-full overflow-hidden bg-ground sm:rounded-[44px]">
           <Shell />
         </div>
       </div>
-      <JudgePanel />
+      <JudgePanel part="guide" className="hidden xl:flex" />
+      <JudgePanel part="all" className="hidden lg:flex xl:hidden" />
     </div>
   );
 }

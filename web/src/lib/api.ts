@@ -60,13 +60,21 @@ const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
  * later, so a request that never reached the API (not an answer from it) is tried again, up to three times.
  * Only for requests that are safe to repeat.
  */
-async function net(input: string, init: RequestInit = {}, tries = 3): Promise<Response> {
+async function net(input: string, init: RequestInit = {}, tries = 3, patience = 6000): Promise<Response> {
   for (let i = 0; ; i++) {
+    // a request that hangs is as bad as one that fails: give up on it and ask again
+    const ctl = new AbortController();
+    const onAbort = () => ctl.abort();
+    init.signal?.addEventListener("abort", onAbort);
+    const timer = setTimeout(() => ctl.abort(), patience * (i + 1));
     try {
-      return await fetch(input, init);
+      return await fetch(input, { ...init, signal: ctl.signal });
     } catch (e) {
       if (init.signal?.aborted || i >= tries - 1) throw e;
       await sleep(250 * (i + 1));
+    } finally {
+      clearTimeout(timer);
+      init.signal?.removeEventListener("abort", onAbort);
     }
   }
 }
@@ -169,12 +177,22 @@ export const api = {
     let drops = 0;
     for (;;) {
       const had = after;
+      // the API sends something every two seconds; six seconds of silence means the line is dead, not the coach
+      const ctl = new AbortController();
+      const onAbort = () => ctl.abort();
+      signal?.addEventListener("abort", onAbort);
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      const alive = () => {
+        clearTimeout(timer);
+        timer = setTimeout(() => ctl.abort(), 6000);
+      };
       try {
+        alive();
         const r = await fetch("/api/chat", {
           method: "POST",
           headers: { ...headers(), Accept: "text/event-stream" },
           body: JSON.stringify({ ...body, turn, after }),
-          signal,
+          signal: ctl.signal,
         });
         if (!r.ok || !r.body) await fail(r);
         const reader = r.body!.getReader();
@@ -183,6 +201,7 @@ export const api = {
         for (;;) {
           const { value, done } = await reader.read();
           if (done) break;
+          alive();
           buf += dec.decode(value, { stream: true });
           let i: number;
           while ((i = buf.search(/\r?\n\r?\n/)) >= 0) {
@@ -201,6 +220,9 @@ export const api = {
         drops = after > had ? 1 : drops + 1;
         if (drops > 4) throw e;
         await sleep(300 * drops);
+      } finally {
+        clearTimeout(timer);
+        signal?.removeEventListener("abort", onAbort);
       }
     }
   },

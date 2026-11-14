@@ -268,10 +268,11 @@ export function CatIcon({ icon, size = 16, className }: { icon?: string; size?: 
 
 export function SectionHead({ title, action, sub }: { title: string; action?: ReactNode; sub?: string }) {
   return (
-    <div className="mb-2.5 flex items-end justify-between gap-3">
+    <div className="mb-3 flex items-baseline justify-between gap-3">
       <div className="min-w-0">
-        <h2 className="text-[15px] font-semibold leading-5 tracking-[-0.01em] text-ink">{title}</h2>
-        {sub && <p className="mt-0.5 text-[13px] leading-[18px] text-ink-3">{sub}</p>}
+        {/* one step above the 15px titles inside cards, so a section never reads at the same level as its content */}
+        <h2 className="text-[17px] font-semibold leading-[22px] tracking-[-0.015em] text-ink">{title}</h2>
+        {sub && <p className="mt-0.5 text-[13px] leading-[18px] text-ink-2">{sub}</p>}
       </div>
       {action}
     </div>

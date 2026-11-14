@@ -143,8 +143,7 @@ function Player({ id, onClose, onList }: { id: string; onClose: () => void; onLi
     const right = picked === c.correct;
     body = (
       <>
-        <p className="text-[13px] font-medium leading-[18px] text-ink-2">{t("learn.question")}</p>
-        <h2 className="mt-1 text-[22px] font-semibold leading-7 tracking-[-0.02em] text-ink">{c.question}</h2>
+        <h2 className="text-[22px] font-semibold leading-7 tracking-[-0.02em] text-ink">{c.question}</h2>
         <ul className="mt-5 space-y-2">
           {c.options.map((o, i) => {
             const isRight = answered && i === c.correct;
@@ -188,8 +187,7 @@ function Player({ id, onClose, onList }: { id: string; onClose: () => void; onLi
   } else if (step.kind === "teach" && d.teach_back) {
     body = (
       <>
-        <p className="text-[13px] font-medium leading-[18px] text-ink-2">{t("learn.sayBack")}</p>
-        <h2 className="mt-1 text-[22px] font-semibold leading-7 tracking-[-0.02em] text-ink">{d.teach_back.prompt}</h2>
+        <h2 className="text-[22px] font-semibold leading-7 tracking-[-0.02em] text-ink">{d.teach_back.prompt}</h2>
         {!grade ? (
           <>
             <p className="mt-2 text-[14px] leading-[21px] text-ink-2">{t("learn.sayBackHint")}</p>
@@ -209,7 +207,8 @@ function Player({ id, onClose, onList }: { id: string; onClose: () => void; onLi
               </div>
             </div>
             <p role="status" className="mt-2 min-h-[18px] text-[13px] leading-[18px] text-ink-2">
-              {grading ? t("learn.checking") : note}
+              {/* while grading, the button itself says so */}
+              {grading ? null : note}
             </p>
           </>
         ) : (
@@ -306,7 +305,7 @@ function Player({ id, onClose, onList }: { id: string; onClose: () => void; onLi
           </motion.div>
         </AnimatePresence>
       </div>
-      <div className="shrink-0 border-t border-line bg-ground px-5 pt-3 pb-[max(14px,env(safe-area-inset-bottom))]">{footer}</div>
+      <div className="shrink-0 border-t border-line bg-ground px-5 pt-3 pb-[max(14px,var(--safe-b))]">{footer}</div>
     </div>
   );
 }

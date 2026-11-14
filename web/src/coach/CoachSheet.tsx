@@ -180,8 +180,8 @@ function CoachTurn({ turn, last }: { turn: Turn; last: boolean }) {
 function UserTurn({ turn }: { turn: Turn }) {
   return (
     <div className="flex justify-end pl-10" data-turn="user">
-      <p className="max-w-full whitespace-pre-wrap break-words rounded-[20px] rounded-br-[6px] bg-brand px-3.5 py-2 text-[16px] leading-6 text-white">
-        {turn.via === "voice" && <Mic size={13} strokeWidth={2.25} className="mr-1.5 inline-block -translate-y-px opacity-80" aria-hidden />}
+      <p className="max-w-full whitespace-pre-wrap break-words rounded-[20px] rounded-br-[6px] bg-bubble px-3.5 py-2 text-[16px] leading-6 text-ink">
+        {turn.via === "voice" && <Mic size={13} strokeWidth={2.25} className="mr-1.5 inline-block -translate-y-px text-ink-2" aria-hidden />}
         {turn.text}
       </p>
     </div>
@@ -252,7 +252,7 @@ function VoiceDock() {
   const label =
     v.phase === "connecting" ? t("voice.connecting") : working ? t("voice.thinking") : v.speaking ? t("voice.speaking") : v.muted ? t("voice.muted") : t("voice.listening");
   return (
-    <div className="shrink-0 border-t border-line bg-surface px-4 pt-3 pb-[max(14px,env(safe-area-inset-bottom))]">
+    <div className="shrink-0 border-t border-line bg-surface px-5 pt-3 pb-[max(14px,var(--safe-b))]">
       {v.note && (
         <p role="status" className="mb-3 text-[13px] leading-[18px] text-ink-2">
           {v.note}
@@ -327,14 +327,14 @@ function Composer({ inputRef }: { inputRef: RefObject<HTMLTextAreaElement | null
 
   return (
     <form
-      className="shrink-0 border-t border-line bg-ground px-3 pt-2.5 pb-[max(10px,env(safe-area-inset-bottom))]"
+      className="shrink-0 border-t border-line bg-ground px-5 pt-2.5 pb-[max(10px,var(--safe-b))]"
       onSubmit={(e) => {
         e.preventDefault();
         submit();
       }}
     >
       {coach.voice.note && (
-        <p role="status" className="mb-2 px-2 text-[13px] leading-[18px] text-ink-2">
+        <p role="status" className="mb-2 text-[13px] leading-[18px] text-ink-2">
           {coach.voice.note}
         </p>
       )}
@@ -442,11 +442,11 @@ function Conversation({ inputRef, onClose }: { inputRef: RefObject<HTMLTextAreaE
 
       <div
         ref={scroller}
-        className="scroll-y relative min-h-0 flex-1 px-4"
+        className="scroll-y relative min-h-0 flex-1 px-5"
         style={{ containerType: "size", maskImage: "linear-gradient(to bottom, transparent, black 10px)", WebkitMaskImage: "linear-gradient(to bottom, transparent, black 10px)" }}
       >
         {turns.length === 0 ? (
-          <div className="px-1 pb-6 pt-5">
+          <div className="pb-6 pt-5">
             <h3 className="text-[24px] font-semibold leading-[30px] tracking-[-0.025em] text-ink">{t("coach.emptyTitle")}</h3>
             <p className="mt-2 text-[15px] leading-[22px] text-ink-2">{t("coach.emptyBody")}</p>
             {suggestions.length > 0 && (

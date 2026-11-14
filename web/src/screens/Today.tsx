@@ -5,16 +5,22 @@ import { CardView } from "../components/cards/CardView";
 import { NoticeRow, StatusChip } from "../components/cards/parts";
 import { ForecastChart, ForecastLegend } from "../components/charts/ForecastChart";
 import { SpokenBar } from "../components/charts/SpokenBar";
-import { BigMoney, Chip, Collapse, Dot, ErrorInline, LangToggle, SectionHead, Skel } from "../components/ui/bits";
+import { BigMoney, Collapse, Dot, ErrorInline, LangToggle, SectionHead, Skel } from "../components/ui/bits";
 import { day, longDate, money, weekday } from "../lib/format";
 import { useApp } from "../lib/store";
 import type { Card, Home } from "../lib/types";
 import { AvatarButton } from "../shell/Shell";
 
+/** A card teaser shows a whole thought or none: the first sentence, never a cut-off second one. */
+function firstSentence(text: string): string {
+  const m = text.match(/^.*?[.!?](?=\s|$)/);
+  return m ? m[0] : text;
+}
+
 function Header({ d }: { d?: Home }) {
   const { lang } = useApp();
   return (
-    <header className="flex items-center gap-3 px-5 pb-1 pt-[max(12px,env(safe-area-inset-top))]">
+    <header className="flex items-center gap-3 px-5 pb-1 pt-[max(12px,var(--safe-t))]">
       <AvatarButton />
       <div className="min-w-0 flex-1">
         {d ? (
@@ -29,7 +35,8 @@ function Header({ d }: { d?: Home }) {
           </>
         )}
       </div>
-      <LangToggle />
+      {/* on a laptop the language switch sits in the panel beside the phone */}
+      <LangToggle className="lg:hidden" />
     </header>
   );
 }
@@ -53,12 +60,13 @@ function Hero({ d }: { d: Home }) {
         )}
         {s.days_to_payday === 1 ? t("today.dayTo", { date }) : t("today.daysTo", { n: s.days_to_payday, date })}
       </p>
-      <div className="mt-3 flex items-start gap-2.5">
-        <StatusChip status={s.status} className="shrink-0" />
-        <p className="text-[14px] leading-6 text-ink-2">{t(`status.${s.status}.line`)}</p>
-      </div>
+      {/* chip and line flow as one paragraph, so a long line wraps under the chip instead of hanging beside it */}
+      <p className="mt-3 text-[14px] leading-[26px] text-ink-2">
+        <StatusChip status={s.status} className="mr-2 align-[1px]" />
+        {t(`status.${s.status}.line`)}
+      </p>
       {empty && (
-        <p className="mt-2.5 text-[14px] leading-[21px] text-ink-2">
+        <p className="mt-1.5 text-[14px] leading-[21px] text-ink-2">
           {s.limit === "budget"
             ? t("today.emptyBudget", {
                 budget: money(s.budget.everyday_budget, lang),
@@ -182,7 +190,7 @@ export function Today() {
         </button>
 
         {notices.length > 0 && (
-          <section className="mt-7">
+          <section className="mt-8">
             <SectionHead title={t("today.notices")} />
             <div className="rounded-card border border-line bg-surface">
               <ul className="divide-y divide-line">
@@ -217,7 +225,7 @@ export function Today() {
           </section>
         )}
 
-        <section className="mt-7" data-focus-key="forecast">
+        <section className="mt-8" data-focus-key="forecast">
           <SectionHead title={t("today.forecast")} />
           <div
             data-on={minuteFocus === "forecast" ? "true" : undefined}
@@ -231,7 +239,7 @@ export function Today() {
           </div>
         </section>
 
-        <section className="mt-7">
+        <section className="mt-8">
           <SectionHead
             title={t("today.baskets")}
             action={
@@ -263,7 +271,7 @@ export function Today() {
         </section>
 
         {next && (
-          <section className="mt-7">
+          <section className="mt-8">
             <SectionHead title={t("today.lessonNext")} action={<span className="num shrink-0 text-[13px] leading-5 text-ink-3">{t("learn.progress", { done: d.lessons.done, total: d.lessons.total })}</span>} />
             <button
               type="button"
@@ -275,14 +283,14 @@ export function Today() {
               </span>
               <span className="min-w-0 flex-1">
                 <span className="block text-[15px] font-semibold leading-5 text-ink">{next.title}</span>
-                <span className="mt-0.5 line-clamp-2 text-[13px] leading-[18px] text-ink-2">{next.concept}</span>
+                <span className="mt-0.5 line-clamp-2 text-[13px] leading-[18px] text-ink-2">{firstSentence(next.concept)}</span>
               </span>
               <ChevronRight size={18} strokeWidth={2} className="shrink-0 text-ink-3" aria-hidden />
             </button>
           </section>
         )}
 
-        <section className="mt-7">
+        <section className="mt-8">
           <SectionHead title={t("today.myView")} />
           {!pinned ? (
             pins.error ? (
@@ -297,23 +305,12 @@ export function Today() {
               ))}
             </div>
           ) : (
-            <div className="rounded-card border border-dashed border-line-strong px-4 py-4">
-              <div className="flex gap-3">
-                <Pin size={18} strokeWidth={2} className="mt-0.5 shrink-0 text-ink-3" aria-hidden />
-                <div className="min-w-0">
-                  <p className="text-[15px] font-semibold leading-5 text-ink">{t("today.myViewEmptyTitle")}</p>
-                  <p className="mt-1 text-[13px] leading-[18px] text-ink-2">{t("today.myViewEmptyBody")}</p>
-                </div>
+            <div className="flex gap-3 rounded-card bg-sunk px-4 py-3.5">
+              <Pin size={17} strokeWidth={2} className="mt-0.5 shrink-0 text-ink-3" aria-hidden />
+              <div className="min-w-0">
+                <p className="text-[14px] font-medium leading-5 text-ink">{t("today.myViewEmptyTitle")}</p>
+                <p className="mt-0.5 text-[13px] leading-[18px] text-ink-2">{t("today.myViewEmptyBody")}</p>
               </div>
-              {d.suggestions.length > 0 && (
-                <div className="mt-3 flex flex-wrap gap-2 pl-[30px]">
-                  {d.suggestions.slice(0, 2).map((q) => (
-                    <Chip key={q} onClick={() => openCoach({ ask: q })} wrap>
-                      {q}
-                    </Chip>
-                  ))}
-                </div>
-              )}
             </div>
           )}
         </section>

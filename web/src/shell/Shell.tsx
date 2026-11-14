@@ -40,7 +40,7 @@ export function AvatarButton() {
 
 export function ScreenHeader({ title, sub }: { title: string; sub?: string }) {
   return (
-    <header className="flex items-start justify-between gap-3 px-5 pb-1 pt-[max(14px,env(safe-area-inset-top))]">
+    <header className="flex items-start justify-between gap-3 px-5 pb-1 pt-[max(14px,var(--safe-t))]">
       <div className="min-w-0">
         <h1 className="text-[28px] font-semibold leading-[34px] tracking-[-0.03em] text-ink">{title}</h1>
         {sub && <p className="mt-0.5 text-[14px] leading-5 text-ink-2">{sub}</p>}
@@ -61,7 +61,7 @@ const TABS: { key: Tab; icon: LucideIcon; label: Key }[] = [
   { key: "learn", icon: BookOpen, label: "tab.learn" },
 ];
 
-function TabBar() {
+function TabBar({ joined }: { joined?: boolean }) {
   const { tab, setTab, t, openCoach } = useApp();
   const item = (x: (typeof TABS)[number]) => {
     const on = tab === x.key;
@@ -72,32 +72,26 @@ function TabBar() {
         onClick={() => setTab(x.key)}
         aria-current={on ? "page" : undefined}
         className={cx(
-          "flex h-14 flex-col items-center justify-center gap-[3px] text-[11px] font-medium leading-[13px] transition-colors duration-150",
+          "flex h-14 min-w-0 flex-col items-center justify-center gap-[3px] text-[11px] font-medium leading-[13px] transition-colors duration-150",
           on ? "text-ink" : "text-ink-3 hover:text-ink-2",
         )}
       >
         <x.icon size={22} strokeWidth={on ? 2.1 : 1.75} aria-hidden />
-        <span>{t(x.label)}</span>
+        <span className="max-w-full truncate px-0.5">{t(x.label)}</span>
       </button>
     );
   };
   return (
-    <nav aria-label={t("tab.nav")} className="pb-safe relative z-10 shrink-0 border-t border-line bg-surface">
+    // `joined`: the ask dock sits directly above, and the two read as one surface
+    <nav aria-label={t("tab.nav")} className={cx("pb-safe relative z-10 shrink-0 bg-surface", !joined && "border-t border-line")}>
       <div className="grid grid-cols-5">
         {TABS.slice(0, 2).map(item)}
-        <div className="relative">
-          <button
-            type="button"
-            onClick={() => openCoach()}
-            aria-label={t("tab.openCoach")}
-            className="group absolute inset-x-0 -top-4 bottom-0 flex flex-col items-center justify-end gap-[3px] pb-[9px] text-[11px] font-medium leading-[13px] text-ink-2"
-          >
-            <span className="flex h-12 w-12 items-center justify-center rounded-full bg-brand text-white shadow-[0_6px_14px_-4px_oklch(0.42_0.095_158/0.55)] ring-4 ring-surface transition-[transform,background-color] duration-150 group-hover:bg-brand-strong group-active:scale-95">
-              <Mark size={24} />
-            </span>
-            <span aria-hidden>{t("tab.coach")}</span>
-          </button>
-        </div>
+        {/* the coach is an action, not a place: one filled mark, inside the bar, no label */}
+        <button type="button" onClick={() => openCoach()} aria-label={t("tab.openCoach")} title={t("tab.openCoach")} className="group flex h-14 items-center justify-center">
+          <span className="flex h-11 w-11 items-center justify-center rounded-full bg-brand text-white transition-[transform,background-color] duration-150 group-hover:bg-brand-strong group-active:scale-95">
+            <Mark size={22} />
+          </span>
+        </button>
         {TABS.slice(2).map(item)}
       </div>
     </nav>
@@ -111,9 +105,9 @@ function AskBar() {
   const coach = useCoach();
   const chips = home.data?.suggestions;
   return (
-    <div className="shrink-0 border-t border-line bg-ground pb-4 pt-2.5">
+    <div className={cx("shrink-0 bg-surface pb-1.5", minuteOn ? "pt-1" : "border-t border-line pt-2.5")}>
       {!minuteOn && (
-        <div className="scroll-x flex h-[46px] items-start gap-2 px-4 [mask-image:linear-gradient(to_right,black_calc(100%-32px),transparent)]">
+        <div className="scroll-x flex h-11 items-start gap-2 px-4 [mask-image:linear-gradient(to_right,black_calc(100%-32px),transparent)]">
           {chips
             ? chips.map((q) => (
                 <Chip key={q} onClick={() => openCoach({ ask: q })}>
@@ -131,7 +125,7 @@ function AskBar() {
       <div className="px-4">
         <div
           data-on={minuteFocus === "ask" ? "true" : undefined}
-          className="focus-ring flex h-12 items-center rounded-full border border-line-strong bg-surface pl-4 pr-0.5 transition-colors duration-150 hover:border-ink-3"
+          className="focus-ring flex h-12 items-center rounded-full border border-line bg-ground pl-4 pr-0.5 transition-colors duration-150 hover:border-line-strong"
         >
           <button type="button" onClick={() => openCoach({ focus: true })} className="h-full min-w-0 flex-1 truncate rounded-full text-left text-[16px] text-ink-3">
             {t("today.ask")}
@@ -164,7 +158,7 @@ function CardSheet() {
           <IconButton label={t("common.close")} onClick={() => setOverlay(null)} className="absolute -top-2 right-2 z-10">
             <X size={21} strokeWidth={2} aria-hidden />
           </IconButton>
-          <div className="scroll-y min-h-0 px-5 pb-[max(18px,env(safe-area-inset-bottom))]">
+          <div className="scroll-y min-h-0 px-5 pb-[max(18px,var(--safe-b))]">
             <CardView card={card} bare defaultOpen />
           </div>
         </div>
@@ -201,7 +195,7 @@ function PersonaSheet() {
             <X size={21} strokeWidth={2} aria-hidden />
           </IconButton>
         </div>
-        <div className="scroll-y min-h-0 px-3 pb-[max(18px,env(safe-area-inset-bottom))]">
+        <div className="scroll-y min-h-0 px-3 pb-[max(18px,var(--safe-b))]">
           <ul>
             {(personas || []).map((p) => {
               const on = p.id === customer;
@@ -265,7 +259,7 @@ function ToastHost() {
         <motion.div
           key={toast.id}
           role="status"
-          className="pointer-events-none absolute inset-x-0 bottom-[calc(76px+env(safe-area-inset-bottom))] z-[70] flex justify-center px-4"
+          className="pointer-events-none absolute inset-x-0 bottom-[calc(76px+var(--safe-b))] z-[70] flex justify-center px-4"
           initial={reduce ? { opacity: 0 } : { opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, transition: { duration: 0.15 } }}
@@ -331,7 +325,7 @@ export function Shell() {
       </main>
       {tab === "today" && minuteOn && <MinutePlayer />}
       {tab === "today" && <AskBar />}
-      <TabBar />
+      <TabBar joined={tab === "today"} />
       <CardSheet />
       <PersonaSheet />
       <CoachSheet />

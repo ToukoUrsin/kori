@@ -378,7 +378,7 @@ async def chat(req: ChatReq, x_kori_device: str | None = Header(None)):
     async def stream():
         n = max(0, req.after)
         while True:
-            got = await events.after(n, 10)
+            got = await events.after(n, 2)
             if not got:
                 yield ": keep-alive\n\n"
             for n, kind, data in got:
