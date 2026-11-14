@@ -22,7 +22,7 @@ from google.genai import types
 
 from .. import config, state as S
 from ..engine.core import Money
-from . import grounding, prompts, tools as T
+from . import grounding, prompts, teachback, tools as T
 from ..wording import adapt, is_pensioner, pension_text
 
 log = logging.getLogger("kori.agent")
@@ -377,7 +377,12 @@ async def run_turn(sess: Session, text: str, mode: str, emit: Emit) -> dict:
 
 
 async def grade_teachback(lang: str, lesson: dict, answer: str) -> dict:
-    """Say-it-back check. Falls back to a keyword check if the model is unavailable."""
+    """Say-it-back check: grades the idea, not the vocabulary.
+
+    The model reads the answer; a deterministic idea check (teachback.check) backs it up. A correct idea in
+    any plain words passes; a known misconception never does; a wrong or empty answer gets one hint naming
+    the missing idea. Without the model, the deterministic check grades alone.
+    """
     prompt = prompts.TEACHBACK.format(title=lesson["title"], concept=lesson["concept"], prompt=lesson["teach_back"]["prompt"],
                                       rubric="\n".join("- " + r for r in lesson["teach_back"]["rubric"]),
                                       answer=answer.replace('"', "'")[:800], language="Finnish" if lang == "fi" else "English")
@@ -386,49 +391,32 @@ async def grade_teachback(lang: str, lesson: dict, answer: str) -> dict:
               "required": ["passed", "got", "missing", "encouragement"]}
     cfg = types.GenerateContentConfig(response_mime_type="application/json", response_json_schema=schema,
                                       thinking_config=types.ThinkingConfig(thinking_level="low"))
+    model = None
     try:
         resp = await _generate([types.Content(role="user", parts=[types.Part(text=prompt)])], cfg)
-        out = json.loads(resp.text)
-        result = {"passed": bool(out.get("passed")), "got": out.get("got", ""), "missing": out.get("missing", ""),
-                  "encouragement": out.get("encouragement", ""), "by": "gemini"}
+        model = json.loads(resp.text)
     except Exception as e:   # noqa: BLE001
         log.warning("teachback grading failed: %s", e)
-        ok = len(answer.split()) >= 6
-        result = {"passed": ok, "got": {"en": "Thanks for putting it in your own words.", "fi": "Kiitos, että sanoit sen omin sanoin."}[lang],
-                  "missing": "" if ok else {"en": "Try a full sentence about the main idea.", "fi": "Kokeile kokonaista lausetta pääajatuksesta."}[lang],
-                  "encouragement": "", "by": "fallback"}
-    # The model's generous boolean is useful copy, but completion is gated by
-    # a small deterministic concept check so the exact misconception cannot pass.
-    text = (answer or "").lower()
-    concept = lesson.get("id", "")
-    groups = {
-        "baskets": ([("fixed", "kiinte"), ("surprise", "ylläty"), ("everyday", "arki")], ("steer", "ohja", "control")),
-        "safe": ([("bill", "lask", "rent", "vuokr", "reserve", "vara")], ("safe", "turvall", "budget", "budjet")),
-        "surprise": ([("irregular", "epäsäänn", "unpredict", "arvaam")], ("reserve", "vara", "set aside", "sivuun")),
-        "slips": ([("small", "pien", "tiny")], ("add", "sum", "year", "vuod")),
-        "paycycle": ([("payday", "palkkapäiv", "income", "tulo")], ("before", "ennen", "rent", "asum")),
-        "buffer": ([("month", "kuukaus")], ("must", "pakoll", "essential")),
-        "payfirst": ([("payday", "palkkapäiv", "first", "ensin")], ("save", "sääst", "siir")),
-        "whatif": ([("month", "kuukaus")], ("year", "vuod", "annual")),
-    }
-    req = groups.get(concept)
-    if req:
-        a, b = req
-        has_a = all(any(k in text for k in group) for group in a)
-        has_b = any(k in text for k in b)
-        misconception = concept == "safe" and any(x in text for x in ("balance is what i can spend", "saldo on se mitä voin käyttää", "katson vain saldon"))
-        if misconception:
-            has_a = has_b = False
-        grade = "got_it" if has_a and has_b and len(text.split()) >= 4 else "partly" if (has_a or has_b) and len(text.split()) >= 3 else "not_yet"
-        result["passed"] = grade == "got_it"
-        result["grade"] = grade
-        if grade != "got_it":
-            result["missing"] = {"en": "Mention the money already set aside and why the number lasts until payday.",
-                                  "fi": "Mainitse jo varatut rahat ja miksi luku kestää palkkapäivään asti."}[lang] if concept == "safe" else result.get("missing") or {"en": "Add the main idea in one clear sentence.", "fi": "Lisää pääajatus yhteen selkeään lauseeseen."}[lang]
-            result["hint"] = {"en": "Try again using the lesson's own words.", "fi": "Yritä uudelleen oppitunnin omilla sanoilla."}[lang]
-        else:
-            result["hint"] = ""
+    W = lambda en, fi: fi if lang == "fi" else en
+    det = teachback.check(lesson.get("id", ""), answer, lang)
+    model_passed = bool(model and model.get("passed"))
+    if det is None:                       # a lesson without an idea list: the model decides, or a length check
+        passed = model_passed if model else len(answer.split()) >= 6
+        grade = "got_it" if passed else "not_yet"
+        missing = "" if passed else (model or {}).get("missing") or W("Try a full sentence about the main idea.",
+                                                                      "Kokeile kokonaista lausetta pääajatuksesta.")
     else:
-        result["grade"] = "got_it" if result["passed"] else "not_yet"
-        result["hint"] = "" if result["passed"] else {"en": "Try again with the main idea.", "fi": "Yritä uudelleen pääajatuksella."}[lang]
-    return result
+        # The deterministic check passes a correct idea in plain words on its own; the model can also pass an
+        # answer the word lists missed, as long as it touches at least one idea. A misconception never passes.
+        passed = not det["misconception"] and (det["grade"] == "got_it" or (model_passed and det["grade"] == "partly"))
+        grade = "got_it" if passed else det["grade"]
+        missing = "" if passed else det["missing"]
+    got = (model or {}).get("got", "")
+    encouragement = (model or {}).get("encouragement", "") if passed and model_passed else ""
+    if passed:
+        encouragement = encouragement or W("That's it, in your own words.", "Juuri noin, omin sanoin.")
+        got = got or W("You explained the idea in your own words.", "Selitit idean omin sanoin.")
+    elif not got and grade == "partly":
+        got = W("You have part of the idea.", "Osa ideasta on jo mukana.")
+    return {"passed": passed, "grade": grade, "got": got, "missing": missing, "encouragement": encouragement,
+            "hint": "", "by": "gemini" if model else "fallback"}

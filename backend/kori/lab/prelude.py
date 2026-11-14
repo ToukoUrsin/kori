@@ -134,10 +134,21 @@ _said: list[str] = []
 def eur(value, cents: bool = False) -> str:
     """Money the way this customer reads it: €1,357 or €56.54 in English, 1 357 € or 56,54 € in Finnish."""
     v = float(value)
-    s = f"{v:,.2f}" if cents else f"{round(v):,}"
+    if not cents:                                    # whole euros the way every screen rounds them: from the cents, halves up
+        v = math.copysign(int(abs(round(v, 2)) + 0.5 + 1e-9), v)
+    s = f"{v:,.2f}" if cents else f"{int(v):,}"
     if (G.get("me") or {}).get("lang") == "fi":
         return s.replace(",", "\u00a0").replace(".", ",") + "\u00a0€"
     return ("-€" + s[1:]) if s.startswith("-") else "€" + s
+
+
+def num(value, digits: int = 1) -> str:
+    """A number that is not money, the way this customer reads it: 2.2 in English, 2,2 in Finnish; whole numbers stay whole."""
+    v = round(float(value), digits)
+    s = f"{v:,.{digits}f}".rstrip("0").rstrip(".") if digits else f"{v:,.0f}"
+    if (G.get("me") or {}).get("lang") == "fi":
+        return s.replace(",", "\u00a0").replace(".", ",")
+    return s
 
 
 def say(text) -> None:
@@ -186,11 +197,12 @@ def _load() -> dict:
     with open(os.path.join(DATA, "me.json")) as f:
         me = json.load(f)
     today = datetime.date.fromisoformat(me.pop("today"))
-    return {"tx": tx, "me": me, "today": today}
+    full = sorted(m for m in tx["month"].dropna().unique() if m < today.strftime("%Y-%m"))     # complete calendar months, oldest first
+    return {"tx": tx, "me": me, "today": today, "last6": full[-6:], "last12": full[-12:]}
 
 
 G: dict = {"__name__": "__kori__", "pd": pd, "np": np, "duckdb": duckdb, "math": math, "json": json, "datetime": datetime,
-           "emit": emit, "table": table, "show": show, "say": say, "eur": eur,
+           "emit": emit, "table": table, "show": show, "say": say, "eur": eur, "num": num,
            "kori": _Door("engine"), "shop": _Door("shop"), "web": _Door("web"), "market": _Door("market")}
 
 

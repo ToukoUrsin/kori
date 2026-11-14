@@ -65,7 +65,8 @@
 .host-persona-copy small { color: var(--color-ink-3); font-size: 12px; line-height: 16px; }
 
 .host-controls { display: flex; flex: 0 0 auto; align-items: center; gap: 4px; }
-.host-controls select { height: 36px; border: 1px solid var(--color-line-strong); border-radius: 10px; padding: 0 8px; background: var(--color-surface); color: var(--color-ink-2); font: inherit; font-size: 13px; font-weight: 600; }
+.host-controls select { -webkit-appearance: none; appearance: none; height: 36px; border: 1px solid var(--color-line); border-radius: 999px; padding: 0 28px 0 12px; background: var(--color-surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7570' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 10px center; color: var(--color-ink-2); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; transition: border-color 150ms; }
+@media (hover: hover) { .host-controls select:hover { border-color: var(--color-line-strong); } }
 
 .host-icon-button { display: grid; width: 44px; height: 44px; flex: 0 0 44px; place-items: center; border: 0; border-radius: 12px; background: transparent; color: var(--color-ink-2); }
 @media (hover: hover) { .host-icon-button:hover { background: var(--color-sunk); color: var(--color-ink); } }
@@ -188,7 +189,6 @@
 
 .host-inspector { width: min(460px, 100%); min-width: 0; }
 .host-inspector-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; }
-.host-eyebrow { margin: 0 0 6px; color: var(--color-ink-3); font-size: 13px; font-weight: 500; line-height: 18px; }
 .host-inspector h2 { margin: 0; font-size: clamp(24px, 2.6vw, 30px); font-weight: 600; line-height: 1.15; letter-spacing: -0.03em; }
 .host-contract-copy { margin-top: 20px; color: var(--color-ink-2); font-size: 14px; line-height: 21px; }
 .host-contract-copy p { margin: 0 0 10px; }

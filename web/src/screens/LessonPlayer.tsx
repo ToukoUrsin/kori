@@ -16,8 +16,8 @@ type Step = { kind: "slide"; i: number } | { kind: "sort"; i: number } | { kind:
 function Player({ id, onClose, onList }: { id: string; onClose: () => void; onList: () => void }) {
   const { customer, lang, t, bump, openLesson, version } = useApp();
   const reduce = useReducedMotion();
-  const q = useQuery<Lesson>(`lesson|${id}|${customer}|${lang}|${version}`, customer, () => api.lesson(id, customer, lang));
-  const list = useQuery<LessonSummary[]>(`lessons|${customer}|${lang}|${version}`, customer, () => api.lessons(customer, lang));
+  const q = useQuery<Lesson>(`lesson|${id}|${customer}|${lang}|${version}`, `${customer}|${lang}`, () => api.lesson(id, customer, lang));
+  const list = useQuery<LessonSummary[]>(`lessons|${customer}|${lang}|${version}`, `${customer}|${lang}`, () => api.lessons(customer, lang));
   const d = q.data;
   const [n, setN] = useState(0);
   const [picked, setPicked] = useState<number | null>(null);

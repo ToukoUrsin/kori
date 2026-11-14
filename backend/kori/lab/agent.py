@@ -55,7 +55,8 @@ CHIPS: <question> | <question> | <question>
    Whenever this cell is the last one you need, also end it with say(...) and add the CHIPS line: the customer then reads the
    answer the moment the cell has run, seconds sooner than if you write it afterwards. say() takes the answer exactly as form 3
    describes it: 1 to 3 short sentences in the customer's language, **bold** around the one key figure, every figure in it emitted
-   by this cell. Build it from the values the code computed, with money through eur(): say(f"You could save **{eur(m)}** a month, or
+   by this cell. Build it from the values the code computed, with money through eur() and every other number through num()
+   (it writes 2,2 for a Finnish reader): say(f"You could save **{eur(m)}** a month, or
    {eur(y)} a year."). Where the wording depends on the result (yes or no, which day, which product), decide it in the code
    with if/else. Leave say() out only when more cells will follow.
 
@@ -83,11 +84,14 @@ A Python process that holds only this customer's data. It has no network. Variab
 tx       pandas DataFrame, every transaction on the account up to today, oldest first. Columns:
            ts (datetime64), date (datetime.date), month ("2026-09"),
            amount (float, NEGATIVE = money out, positive = money in), balance (account balance right after it),
-           type, category, kind (finer than category), merchant,
+           type (lowercase: "purchase", "salary", ...), category ("Restaurants", "Groceries", ...), kind (finer than category), merchant.
+             The exact values on this account are listed under THIS ACCOUNT: filter only on those, case matters,
            basket ("fixed" = regular musts like rent, "surprise" = irregular musts like a dentist or a broken appliance,
                    "everyday" = everything a person steers day to day, None for income and transfers),
            is_spend (bool: a purchase or bill), spend (positive euros for spending rows, 0 otherwise)
 today    datetime.date, the day the app is being used. Nothing after it exists.
+last6, last12   lists of month strings ("2026-08"): the last 6 and the last 12 complete calendar months before this one.
+           tx[tx.month.isin(last12)] is "the last 12 months", "the past year" and "a year", always, so every answer gives the same total.
 me       dict: name, age, area, lang
 pd, np, duckdb, math, json, datetime   (duckdb.sql("select ... from tx") works)
 
@@ -97,6 +101,7 @@ table(name, rows, label="")                 a DataFrame or list of dicts, at mos
 show(products)                              real products (rows from shop.* or web.products) the view should picture
 say(text)                                   the written answer, when the cell can already give it (see HOW TO REPLY)
 eur(x, cents=False)                         money as the customer reads it, for say(): eur(1356.89) -> "€1,357", eur(56.54, True) -> "€56.54" (in Finnish "1 357 €", "56,54 €")
+num(x, digits=1)                            any other number for say(): num(2.2) -> "2.2" (in Finnish "2,2"), num(9.0) -> "9"
 
 THE DOOR (the only way out; each call is logged and shown to the customer)
 {engine}{shop}web.search(query, n=6)                       pages: title, url, snippet, image
@@ -163,6 +168,13 @@ Explore freely: any cut of the data, any comparison, any model the question need
 THIS ACCOUNT
 {account}
 
+WHAT THE APP ALREADY TELLS THIS CUSTOMER
+These sentences are on their screens right now, each from the engine call named beside it. Say the same thing about the same thing:
+when a question is about one of them (how the last pay cycle went, what is safe to spend, the usual month, the income, what kind of
+spender they are), call that kori.* function and build the answer on its figures. Never work the same thing out again from tx with
+a method of your own: a second, different figure for it is the mistake a customer notices first. You may add detail around it.
+{app_says}
+
 RULES FOR FIGURES
 - A figure exists for the customer only if it is on the ledger. emit() every figure you will say; table() every series, list or grid the view will draw.
 - The designer sees only the ledger and your brief and it cannot calculate. Give it finished values. For a slider or a toggle, put one row per position
@@ -184,15 +196,30 @@ WHAT GOOD LOOKS LIKE
 - When there is something they could do, name one small thing and what it would change in euros.
 - Saving and investing: an illustration, never advice. Never tell them what to buy or that something will rise. Show a range of outcomes including a bad one,
   say that value can fall, and when a product is needed as an example use S-Pankki's own (market.funds()) with its real facts.
-- No credit, loans or pay-later recommendations. You can show what a monthly payment would do to their numbers.
+- No credit, loans or pay-later recommendations. You can show what a monthly payment would do to their numbers: then the rate and
+  the term are your assumptions, emitted and labelled as assumptions, and the answer says it is an example and not an offer or advice.
 - If the data cannot answer (a salary that moves to another bank, item lines the bank does not have), say what is missing instead of filling it in.
+- Asked what to buy (a share, a coin, a fund): say you cannot pick, show what their own numbers say (buffer, room to save) and at most
+  one illustration. Do not list products to choose from, and no chip that starts a purchase or a plan.
+- When the message is about a feeling (worry, shame, stress), answer the person first in one warm sentence, then one small fact from
+  their numbers that helps. No verdict that everything is fine.
+- Write dates as people do ("30 March", in Finnish "30.3."), never 2026-03-30. A count of 1 is singular ("1 visit", "1 payment"): choose the word in the code, with if/else on the count.
 
 WRITING CODE
 - One cell does the whole analysis when it can: compute, print a short summary for yourself (at most ten lines, never whole tables), emit and table.
   Keep it under about 45 lines. No exploratory prints unless you truly do not know the data.
 - If a cell fails, read the error, fix it, run again. Never present figures from a failed cell.
 - Never run a cell only to inspect something. The shapes of kori.* results are listed above; for tx you know the columns.
-- Dates: compare tx.date with datetime.date values. "Last month" is the last complete calendar month before today; a "usual month" is the last six complete months.
+- Dates: compare tx.date with datetime.date values. "Last month" is the last complete calendar month before today. A "usual month" is the
+  last six complete months (last6), and kori.usual_month() already has it per category: use that figure and call it "a usual month".
+  "The last 12 months" is last12; an average over it is the total / 12 and is called "on average over 12 months". "This year" starts
+  on 1 January. One question, one window: when two windows meet in an answer, name both.
+- The bank sees a merchant and an amount, not what was bought. Payments that repeat are "payments that repeat", not subscriptions,
+  unless the kind says so; never tell them to cancel one. A purchase is a row with type "purchase": name its merchant, not its category.
+- Words to rows: eating out, restaurants and dining are category "Restaurants" (every kind in it); groceries and food shopping are
+  category "Groceries"; a narrower word (taxis, fast food, fuel) is its kind. A visit is one row.
+- A zero is a claim too. Before you say someone spent or earned 0, be sure the filter could have matched: the value is in the lists
+  under THIS ACCOUNT. When 0 is true, say so in words and give the nearest real figure (the whole category, another month).
 - A view with motion or a control needs data to move: a row per weekday and hour, a row per month, a row per option.
 
 THE ANSWER AND THE BRIEF
@@ -306,6 +333,9 @@ ENGINE_CALLS = [
     ("safe_to_save", [], "what could be saved each month, and the emergency buffer"),
     ("peers", [], "how they compare with customers like them"),
     ("replay", [], "how the safe-to-spend number would have held on past paydays (the track record)"),
+    ("last_cycle", [], "the last complete pay cycle, as the home screen tells it: did everyday spending fit what the pay left, by how much, and what did it"),
+    ("income", [], "the pay: what lands on this account each month and, when it moves to another bank, how much moves and what stays"),
+    ("profile", [], 'the spender profile on the Learn tab: the answer to "what kind of spender am I?"'),
 ]
 _shape_cache: dict[str, str] = {}
 
@@ -336,12 +366,48 @@ def _engine_doc(m: Money, st: dict) -> str:
                 lines.append(f"{call}   # {what}\n   -> {json.dumps(_shape(v), ensure_ascii=False)[:1300]}")
             except Exception as e:   # noqa: BLE001 - one call that cannot be shown is not worth a failed turn
                 log.warning("no shape for kori.%s: %s", fn, e)
-        lines.append("kori.baskets(month=None), kori.one_off(amount, label), kori.profile(), kori.small_purchases(), kori.notices(), kori.help()   # also there")
+        lines.append("kori.baskets(month=None), kori.one_off(amount, label), kori.small_purchases(), kori.notices(), kori.help()   # also there")
         if len(_shape_cache) > 64:
             _shape_cache.clear()
         _shape_cache[key] = ("These are real results for this customer, cut to their shape (lists show their first row). Use the keys exactly as shown;\n"
                              "never spend a cell printing a result to learn its shape.\n" + "\n".join(lines) + "\n")
     return _shape_cache[key]
+
+
+_says_cache: dict[str, str] = {}
+
+
+def _app_says(m: Money, st: dict) -> str:
+    """The sentences already on this customer's screens (home, pay-cycle card, replay, Learn). An answer that says something
+    else about the same thing is the mistake a customer notices first."""
+    key = f"{m.customer_id}:{m.today}:{bool(m.linked_view)}"
+    if key not in _says_cache:
+        d = Door(m, st)
+        lines: list[str] = []
+
+        def add(fn: str, make) -> None:
+            try:
+                v = make(json.loads(json.dumps(d._engine("engine", fn, [], {}), default=str)))
+                if v:
+                    lines.append(f"- {v}   [kori.{fn}()]")
+            except Exception as e:   # noqa: BLE001 - a missing line is not worth a failed turn
+                log.warning("app says: kori.%s: %s", fn, e)
+
+        add("safe_to_spend", lambda s: f"Safe to spend until payday: €{s['amount']:,.2f}, which is €{s['per_day']:,.2f} a day for {s['days_to_payday']} days "
+                                       f"(this week: €{s['this_week']:,.2f}). Usual pace: €{s['usual_per_day']:,.2f} a day.")
+        add("last_cycle", lambda c: " ".join(x for x in ((c.get("last_cycle") or {}).get("headline"), (c.get("last_cycle") or {}).get("what_did_it"),
+                                                         (c.get("last_cycle") or {}).get("history_line")) if x))
+        add("usual_month", lambda u: f"A usual month (last 6 complete months): income €{u['income']:,.0f}, spending €{u['spend']:,.0f}, left over €{u['left_over']:,.0f}. "
+                                     "By category: " + ", ".join(f"{c} €{v:,.0f}" for c, v in u["categories"].items() if v) +
+                                     ". The three baskets are medians and the categories are means, so the categories do not add up to the spending: "
+                                     "never list them as parts of it. For a split that adds up use kori.baskets().")
+        add("replay", lambda r: r.get("headline") or r.get("title"))
+        add("income", lambda i: i.get("headline"))
+        add("profile", lambda p: f"Spender profile: {p['archetype']['name']}. {p['archetype']['tagline']}")
+        if len(_says_cache) > 64:
+            _says_cache.clear()
+        _says_cache[key] = "\n".join(lines)
+    return _says_cache[key]
 
 
 def _sandbox(m: Money | None = None, st: dict | None = None) -> str:
@@ -360,11 +426,15 @@ def _account(m: Money) -> str:
         f"{len(df)} transactions from {df['date'].min()} to {df['date'].max()}. Balance today €{s['balance']:,.2f}.",
         "categories (euros all time): " + ", ".join(f"{c} {v:,.0f}" for c, v in cats.items()),
         "kinds (count): " + ", ".join(f"{k} {int(r['count'])}" for k, r in kinds.iterrows()),
-        "other rows: " + ", ".join(f"{c} {n}" for c, n in df[~df["is_spend"]]["category"].value_counts().items()),
+        "other rows (category, not spending): " + ", ".join(f"{c} {n}" for c, n in df[~df["is_spend"]]["category"].value_counts().items()),
+        "type values (exact, count): " + ", ".join(f"{c} {n}" for c, n in df["type"].value_counts().items()),
     ]
     if m.partial_view:
         lines.append("PARTIAL VIEW: most of this customer's salary moves to another bank, so this account shows only part of their money. "
-                     "Say so whenever income, saving capacity or 'what is left' matters.")
+                     "Say so whenever income, saving capacity or 'what is left' matters. "
+                     f"The engine's own figures: a usual salary of €{m.salary_typical:,.0f} lands here (type \"salary\") and about "
+                     f"€{m.sweep_typical:,.0f} of it moves on the same day (type \"salary_sweep\", negative amounts). What happens to it "
+                     "in the other bank is not in the data.")
     return "\n".join(lines)
 
 
@@ -376,7 +446,7 @@ def _system(m: Money, st: dict | None = None) -> str:
         name=p["name"] if p else "the customer", age=m.customer.age, today=f"{m.today:%A %-d %B %Y}",
         pay_word=("Pension day" if pension else "Payday"), payday=f"{m.next_payday:%-d %B}", days=m.days_to_payday,
         language="Finnish (natural, spoken-plain, never translated-sounding)" if lang == "fi" else "English",
-        sandbox=_sandbox(m, st), format=FORMAT, account=_account(m),
+        sandbox=_sandbox(m, st), format=FORMAT, account=_account(m), app_says=_app_says(m, st) if st is not None else "",
         money_style="Money as 1 357 € and 56,54 € (Finnish style)" if lang == "fi" else "Money as €1,357 and €56.54")
 
 
@@ -499,10 +569,10 @@ def _parse(text: str) -> dict:
 STATUS = {
     "en": {"start": "Working out how to answer", "code": "Running code on your payments", "model": "Building the model", "design": "Building the view",
            "engine": "Asking the engine", "shop": "Looking in the shop", "web": "Looking on the web", "market": "Reading market data", "fix": "Fixing the code",
-           "write": "Writing code", "answer": "Writing the answer"},
+           "write": "Writing code", "answer": "Writing the answer", "zero": "Checking a zero twice"},
     "fi": {"start": "Mietin, miten tämän saa selville", "code": "Ajan koodia maksuillasi", "model": "Rakennan mallia", "design": "Rakennan näkymää",
            "engine": "Kysyn laskentamoottorilta", "shop": "Katson kaupasta", "web": "Katson verkosta", "market": "Luen markkinatietoja", "fix": "Korjaan koodia",
-           "write": "Kirjoitan koodia", "answer": "Kirjoitan vastausta"},
+           "write": "Kirjoitan koodia", "answer": "Kirjoitan vastausta", "zero": "Tarkistan nollan vielä kerran"},
 }
 _NS_KIND = {"engine": "engine", "shop": "shop", "web": "web", "market": "model"}
 
@@ -628,6 +698,45 @@ class _Typing:
         if upto > self.sent:
             self.w.turn.emit("run_code", {"id": self.rid, "delta": code[self.sent:upto]})
             self.sent = upto
+
+
+_NUMBER = re.compile(r"\d+(?:[ \u00a0,.]\d+)*")
+_ZERO_UNITS = {"eur", "eur_per_day", "eur_per_month", "count"}
+ZERO = ("CHECK BEFORE THIS IS SHOWN. These came out as 0: {names}. A filter that matched no rows gives 0 too. The exact values on this "
+        "account are: type: {types}. category: {cats}. kind: {kinds}.\n"
+        "If the cell filtered on a value that is not in those lists, fix it and run it again, with say() and CHIPS.\n"
+        "If 0 is the true answer, reply with form 3: say it in words (there were none in that period) and give the nearest real figure "
+        "on the ledger so the answer is still useful, or run one more cell that emits it. Nothing has been shown to the customer yet.")
+
+
+ASIDE = ("That reply was not one of the three forms, so the customer saw nothing. If the code needs another go, send it now as form 1 "
+         "(RUN:, the code in a python fence, say() and CHIPS). If you are done, reply with ANSWER: and CHIPS, written to the customer: "
+         "no code, no names from the sandbox, nothing about what went wrong.")
+_CODEY = re.compile(r"`|\b(?:tx|df|kori|shop|web|market)[\[.]|\b(?:emit|table|say|groupby|isin)\(|\b[a-z]+_[a-z_]+\b")
+
+
+def _aside(text: str, answer: str, last_ok: bool) -> bool:
+    """True when a reply that would be shown as the answer is the model talking to itself: no ANSWER: line after a cell
+    that failed, or sandbox names and code in the sentence."""
+    marked = bool(_field(text.strip(), "ANSWER"))
+    return (not marked and not last_ok) or bool(_CODEY.search(answer)) or not answer.strip()
+
+
+def _zeros(w: "_Work", added: dict) -> list[str]:
+    """A zero is checked twice before it is said: the figures this cell put on the ledger that are 0, when the answer states a zero
+    or most of them are. A filter that matched nothing looks exactly like a true zero."""
+    money = [n for n in added if w.facts[n]["unit"] in _ZERO_UNITS and isinstance(added[n], (int, float)) and not isinstance(added[n], bool)]
+    names = [n for n in money if added[n] == 0]
+    if not names:
+        return []
+    said = any(not t.strip("0 \u00a0,.") for t in _NUMBER.findall(w.said or ""))
+    return names if said or (len(names) >= 2 and len(names) * 2 >= len(money)) else []
+
+
+def _values(m: Money) -> dict:
+    df = m.df
+    return {"types": ", ".join(sorted(map(str, df["type"].dropna().unique()))), "cats": ", ".join(sorted(map(str, df["category"].dropna().unique()))),
+            "kinds": ", ".join(sorted(map(str, df["kind"].dropna().unique())))}
 
 
 def _result(out: dict, extra: str = "") -> types.Content:
@@ -773,6 +882,8 @@ async def run_turn(sess: LabSession, turn: Turn) -> None:
         mine: list = [types.Content(role="user", parts=[types.Part(text=turn.message)])]
         contents = [c for h in sess.history[-KEEP_TURNS:] for c in h] + mine
         answer, title, brief, chips, retried = "", "", "", [], False
+        last_ok, nudged = True, 0                                        # a failed cell must be followed by a cell or a real answer
+        held, zero_checked = ("", ""), False                             # the view a cell asked for, kept while a zero is checked
         view: asyncio.Task | None = None
         rec = None if turn.fresh else kept.find(turn.message, lang, sess.customer_id)
 
@@ -800,9 +911,18 @@ async def run_turn(sess: LabSession, turn: Turn) -> None:
                 if rep["kind"] == "run" and rep["code"]:
                     await warm
                     out = await w.cell(rep["title"], rep["code"], model, rid=typing.rid)
-                    extra = ""
-                    if out["ok"] and rep["brief"] and view is None and (w.facts or w.tables or w.products):
-                        view = asyncio.create_task(_view(w, turn.message, "", rep["view"] or rep["title"], rep["brief"]))
+                    extra, last_ok = "", bool(out["ok"])
+                    if rep["brief"]:
+                        held = (rep["view"] or rep["title"], rep["brief"])
+                    zeros = _zeros(w, out["put_on_ledger"]["facts"]) if out["ok"] and not zero_checked else []
+                    if zeros:                                           # nothing is said or drawn until the zero is confirmed
+                        zero_checked, w.said = True, ""
+                        log.info("zero check: %s", ", ".join(zeros))
+                        turn.emit("status", {"text": STATUS[lang]["zero"], "kind": "code"})
+                        add(_said(text), _result(out, ZERO.format(names=", ".join(zeros), **_values(m))))
+                        continue
+                    if out["ok"] and held[1] and view is None and (w.facts or w.tables or w.products):
+                        view = asyncio.create_task(_view(w, turn.message, "", held[0], held[1]))
                         extra = "The designer is building the view from this ledger now. Reply with ANSWER and CHIPS only."
                     if out["ok"] and w.said and not check.answer(w.said, check.allowed(w.ledger(), turn.message), lang):
                         answer, chips = w.said, rep["chips"]            # the cell said it: no second round with the model
@@ -818,13 +938,18 @@ async def run_turn(sess: LabSession, turn: Turn) -> None:
                         extra = "The designer is building the view from this ledger now. Reply with ANSWER and CHIPS only."
                     add(_said(text), _result(out, extra))
                 else:
+                    if _aside(text, rep["answer"], last_ok) and nudged < 2 and step < MAX_STEPS - 1:
+                        nudged += 1                                     # the model thought aloud instead of acting: never shown
+                        log.info("analyst step %d: a note to itself, asked again", step)
+                        add(_said(text), _result({"accepted": False, "problem": ASIDE}))
+                        continue
                     bad = check.answer(rep["answer"], check.allowed(w.ledger(), turn.message), lang)
                     if bad and not retried and step < MAX_STEPS - 1:
                         retried = True
                         add(_said(text), _result({"accepted": False, "problem": "These figures in your answer are not on the ledger: " + ", ".join(bad[:6]) +
                                                   ". emit() them from a cell (computed, not typed), or take them out, then answer again."}))
                         continue
-                    answer, title, brief, chips = rep["answer"], rep["view"], rep["brief"], rep["chips"]
+                    answer, title, brief, chips = rep["answer"], rep["view"] or held[0], rep["brief"] or held[1], rep["chips"]
                     mine.append(_said(text))
                     break
                 turn.emit("status", {"text": STATUS[lang]["answer" if view else "start"], "kind": "thinking"})

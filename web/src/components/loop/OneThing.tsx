@@ -29,15 +29,17 @@ const QUIET = "inline-flex h-11 items-center rounded-[8px] px-2 text-[13px] font
 
 /* ------------------------------------------------------------- look back */
 
-/** "Last pay cycle 15 Aug to 14 Sep" and, when the cycles can be judged, how many of them held. */
-function Eyebrow({ check, api }: { check: LoopCheckIn; api: Api }) {
+/** "Last pay cycle 15 Aug to 14 Sep" and, when the cycles can be judged, how many of them held.
+ *  When pay is late the server names it "Last full pay cycle" and says the current one is still running. */
+function Eyebrow({ check, api }: { check: LoopCheckIn & { period_title?: string | null; period_note?: string | null }; api: Api }) {
   const { t } = useApp();
   const judged = !check.partial_view && !!check.history_line && !!check.history?.length;
   return (
     <div className="flex items-start justify-between gap-3">
       <p className="flex min-w-0 flex-wrap gap-x-1.5 text-[12px] leading-4 text-ink-3">
-        <span className="font-medium text-ink-2">{t(api.pension ? "loop.lastCyclePension" : "loop.lastCycle")}</span>
+        <span className="font-medium text-ink-2">{check.period_title || t(api.pension ? "loop.lastCyclePension" : "loop.lastCycle")}</span>
         {check.period && <span className="num whitespace-nowrap">{check.period}</span>}
+        {check.period_note && <span className="basis-full">{check.period_note}</span>}
       </p>
       {judged && <HistoryDots rows={check.history!} line={check.history_line!} />}
     </div>

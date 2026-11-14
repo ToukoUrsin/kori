@@ -195,9 +195,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     });
   }, [customer, bump]);
 
-  const home = useQuery<Home>(`home|${customer}|${lang}|${version}`, customer, () => api.home(customer, lang));
-  const pins = useQuery<Card[]>(`pins|${customer}|${lang}|${version}`, customer, () => api.pins(customer, lang));
-  const personasQ = useQuery<Persona[]>(`personas|${lang}|${version}`, "all", () => api.personas(lang));
+  const home = useQuery<Home>(`home|${customer}|${lang}|${version}`, `${customer}|${lang}`, () => api.home(customer, lang));
+  const pins = useQuery<Card[]>(`pins|${customer}|${lang}|${version}`, `${customer}|${lang}`, () => api.pins(customer, lang));
+  const personasQ = useQuery<Persona[]>(`personas|${lang}|${version}`, lang, () => api.personas(lang));
 
   useEffect(() => {
     if (!home.data) return;
@@ -209,6 +209,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
         if (first) prefetch(`lesson|${first.id}|${customer}|${lang}|${version}`, customer, () => api.lesson(first.id, customer, lang));
         return list;
       });
+      // the other language is one tap away: fetched now, so the switch never waits or shows a mixed screen
+      const other: Lang = lang === "fi" ? "en" : "fi";
+      prefetch(`home|${customer}|${other}|${version}`, customer, () => api.home(customer, other));
+      prefetch(`pins|${customer}|${other}|${version}`, customer, () => api.pins(customer, other));
+      prefetch(`personas|${other}|${version}`, other, () => api.personas(other));
     };
     const ric = (window as unknown as { requestIdleCallback?: (cb: () => void) => number }).requestIdleCallback;
     const id = ric ? ric(run) : window.setTimeout(run, 250);

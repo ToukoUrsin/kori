@@ -52,6 +52,8 @@
     },
     pct: function (v) { var a = Math.abs(+v), p = parts(v, a < 10 && a % 1 ? 1 : 0); return p[0] + p[1] + p[2] + (fi() ? NB + "%" : "%"); },
     int: function (v) { var p = parts(v, 0); return p[0] + p[1]; },
+    // a count, days or months: whole when it is whole, one decimal when it is not ("2.2 months", never "2")
+    count: function (v) { var n = +v; if (Math.abs(n - Math.round(n)) < 0.05) return fmt.int(n); var p = parts(n, 1); return p[0] + p[1] + p[2]; },
     num: function (v) { var p = parts(v, 2); return p[0] + p[1] + p[2].replace(/0+$/, "").replace(/[.,]$/, ""); },
     signed: function (v) { return (+v > 0 ? "+" : "") + fmt.eur0(v); },
     date: function (v) { var d = ymd(v); if (!d) return String(v); if (d[2] == null) return fmt.month(v); return fi() ? d[2] + "." + d[1] + "." : d[2] + " " + loc().mon[d[1] - 1]; },
@@ -65,9 +67,13 @@
     raw: function (v) { return v == null ? "" : String(v); },
   };
   fmt.text = fmt.raw;
-  var UNIT_FMT = { eur: "eur", eur_per_day: "eur", eur_per_month: "eur", pct: "pct", count: "int", days: "int", months: "int", date: "date", ratio: "num", text: "raw" };
+  var UNIT_FMT = { eur: "eur", eur_per_day: "eur", eur_per_month: "eur", pct: "pct", count: "count", days: "count", months: "count", years: "count", date: "date", ratio: "num", text: "raw" };
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
-  function apply(v, f) { return (fmt[f] || (typeof v === "number" ? fmt.num : fmt.raw))(v); }
+  var NUMF = /^(eur|eur0|pct|int|count|num|signed)$/;
+  function apply(v, f) {
+    if (NUMF.test(f) && !(typeof v === "number" ? isFinite(v) : typeof v === "string" && v.trim() !== "" && isFinite(v))) return "–";   // a missing value, never "€NaN"
+    return (fmt[f] || (typeof v === "number" ? fmt.num : fmt.raw))(v);
+  }
   // html for a figure: the cents (and the trailing sign in Finnish) are a quieter span the kit can dim
   function figHtml(v, f) {
     var s = esc(apply(v, f));
@@ -327,9 +333,15 @@
     el._kv = v; el.setAttribute("data-v", v); el.setAttribute("data-f", f);
     el._kstop = tween(from === v ? 0 : ms || 450, function (t) { el.innerHTML = figHtml(from + (v - from) * t, f); });
   }
+  var GEO = /^(x|y|x1|x2|y1|y2|cx|cy|r|rx|ry|width|height|d|points|viewBox)$/;
+  function bad(v) { return typeof v === "number" ? !isFinite(v) : typeof v === "string" && /\b(NaN|-?Infinity)\b|undefined/.test(v); }
   function el(tag, attrs, parentNode) {
     var e = document.createElementNS(SVGNS, tag);
-    for (var k in attrs) if (attrs[k] != null) e.setAttribute(k, attrs[k]);
+    for (var k in attrs) {
+      if (attrs[k] == null) continue;
+      if (bad(attrs[k])) { if (GEO.test(k)) e.setAttribute("display", "none"); continue; }   // a broken value hides the shape, never draws it at 0,0
+      e.setAttribute(k, attrs[k]);
+    }
     if (parentNode) parentNode.appendChild(e);
     return e;
   }
@@ -337,13 +349,17 @@
   var TONES = { brand: "brand", ink: "ink", dim: "ink-3", soft: "brand-line", mid: "brand-mid", line: "line-strong", warn: "warn", neg: "neg", info: "info", fixed: "fixed", everyday: "everyday", surprise: "surprise", saving: "saving" };
   function tone(t, fallback) { return "var(--color-" + (TONES[t] || TONES[fallback] || "brand") + ")"; }
   function color(t) { var d = document.createElement("i"); d.style.color = tone(t); root.appendChild(d); var c = getComputedStyle(d).color; d.remove(); return c; }
+  function numv(v) { return typeof v === "number" ? (isFinite(v) ? v : NaN) : typeof v === "string" && v.trim() !== "" && isFinite(v) ? +v : NaN; }
   function niceTicks(lo, hi, n) {
-    var span = hi - lo || 1, raw = span / n, p = Math.pow(10, Math.floor(Math.log10(raw))), m = raw / p, step = (m < 1.5 ? 1 : m < 3.5 ? 2 : m < 7.5 ? 5 : 10) * p, out = [];
-    for (var v = Math.ceil(lo / step) * step; v <= hi + 1e-9; v += step) out.push(+v.toFixed(10));
+    if (!isFinite(lo) || !isFinite(hi)) return [];
+    if (hi < lo) { var sw = lo; lo = hi; hi = sw; }
+    var span = hi - lo || Math.abs(hi) || 1, raw = span / n, p = Math.pow(10, Math.floor(Math.log10(raw))), m = raw / p, step = (m < 1.5 ? 1 : m < 3.5 ? 2 : m < 7.5 ? 5 : 10) * p, out = [];
+    if (!(step > 0) || !isFinite(step)) return [lo];
+    for (var v = Math.ceil(lo / step) * step; v <= hi + 1e-9 && out.length < 50; v += step) out.push(+v.toFixed(10));
     return out;
   }
   function xval(v) { // -> [number, kind]
-    var d = ymd(v); if (d && typeof v === "string") return [Date.UTC(d[0], d[1] - 1, d[2] || 1) / 864e5, "date"];
+    var d = ymd(v); if (d && typeof v === "string") { var t = Date.UTC(d[0], d[1] - 1, d[2] || 1) / 864e5; if (isFinite(t)) return [t, "date"]; }
     return typeof v === "number" || (v !== "" && isFinite(v)) ? [+v, "num"] : [NaN, "ord"];
   }
   function sigOf(elm) {
@@ -383,7 +399,7 @@
       this._sync();
     },
     _render: function () {
-      var me = this, W = this.clientWidth || S.width - 40, H = +this.getAttribute("h") || 190;
+      var me = this, W = this.clientWidth || (S.width || 390) - 40, H = +this.getAttribute("h") || 190;
       var xcol = this.getAttribute("x") || "date", yf = this.getAttribute("yfmt") || "eur0";
       var kids = Array.prototype.filter.call(this.children, function (c) { return !own(c); });
       var series = [], kind = "ord", xmin = Infinity, xmax = -Infinity, ymin = Infinity, ymax = -Infinity, ordN = 0;
@@ -391,11 +407,13 @@
         var tag = c.nodeName.toLowerCase(); if (tag !== "k-line" && tag !== "k-area") return;
         var rows = rowsOf(c), xc = c.getAttribute("x") || xcol;
         var cols = tag === "k-area" && c.hasAttribute("lo") ? [c.getAttribute("lo"), c.getAttribute("hi")] : [c.getAttribute("y") || "value"];
-        var pts = [];
+        var pts = [], ordOnly = !rows.some(function (r) { return r && typeof r === "object" && xval(r[xc])[1] !== "ord"; });
         rows.forEach(function (r, i) {
-          var xv = xval(r[xc]), a = +r[cols[0]], b = cols[1] ? +r[cols[1]] : a;
+          if (!r || typeof r !== "object") return;
+          var xv = xval(r[xc]), a = numv(r[cols[0]]), b = cols[1] ? numv(r[cols[1]]) : a;
           if (!isFinite(a) || !isFinite(b)) return;
-          if (xv[1] === "ord") xv[0] = i; else kind = xv[1];
+          if (xv[1] === "ord") { if (!ordOnly) return; xv[0] = i; } else kind = xv[1];
+          if (!isFinite(xv[0])) return;
           pts.push({ x: xv[0], a: a, b: b, row: r, xr: r[xc] });
           if (xv[0] < xmin) xmin = xv[0]; if (xv[0] > xmax) xmax = xv[0];
           if (Math.min(a, b) < ymin) ymin = Math.min(a, b); if (Math.max(a, b) > ymax) ymax = Math.max(a, b);
@@ -408,27 +426,39 @@
       var readout = null, hasLabels = series.some(function (s) { return s.label; });
       if (hasLabels) { readout = h("div", "k-readout k-legend"); this.appendChild(readout); }
       var svg = el("svg", { viewBox: "0 0 " + W + " " + H, height: H, role: "img" }); svg.setAttribute("data-k-own", ""); this.appendChild(svg);
-      if (!series.length || !isFinite(xmin)) return;
+      if (!series.length || !isFinite(xmin) || !isFinite(ymin)) return;
+      // where an x value sits: a date or number on a date or number axis, else the point whose x reads the same
+      function xAt(v) {
+        var q = xval(v);
+        if (q[1] !== "ord" && kind !== "ord" && isFinite(q[0])) return q[0];
+        for (var i = 0; i < series.length; i++) for (var j = 0; j < series[i].pts.length; j++) if (String(series[i].pts[j].xr) === String(v)) return series[i].pts[j].x;
+        return NaN;
+      }
       kids.forEach(function (c) { // rules and marks stretch the y range too
-        if (c.nodeName === "K-RULE" && isFinite(+c.getAttribute("y"))) { ymin = Math.min(ymin, +c.getAttribute("y")); ymax = Math.max(ymax, +c.getAttribute("y")); }
-        if (c.nodeName === "K-NOW" || c.nodeName === "K-MARK") { var xs = c.nodeName === "K-NOW" ? [c.getAttribute("x") || S.data.today] : rowsOf(c).map(function (r) { return r[c.getAttribute("x") || xcol]; }); xs.forEach(function (v) { var q = xval(v); if (q[1] !== "ord") { xmin = Math.min(xmin, q[0]); xmax = Math.max(xmax, q[0]); } }); }
+        var ry = numv(c.getAttribute("y"));
+        if (c.nodeName === "K-RULE" && isFinite(ry)) { ymin = Math.min(ymin, ry); ymax = Math.max(ymax, ry); }
+        if (c.nodeName === "K-NOW" || c.nodeName === "K-MARK") { var xs = c.nodeName === "K-NOW" ? [c.getAttribute("x") || S.data.today] : rowsOf(c).map(function (r) { return r && r[c.getAttribute("x") || xcol]; }); xs.forEach(function (v) { var q = xAt(v); if (isFinite(q)) { xmin = Math.min(xmin, q); xmax = Math.max(xmax, q); } }); }
       });
-      if (this.hasAttribute("ymin")) ymin = +this.getAttribute("ymin");
-      if (this.hasAttribute("ymax")) ymax = +this.getAttribute("ymax");
+      var ya = numv(this.getAttribute("ymin")), yb = numv(this.getAttribute("ymax"));
+      if (isFinite(ya)) ymin = ya;
+      if (isFinite(yb)) ymax = yb;
+      if (ymax < ymin) { var sw = ymin; ymin = ymax; ymax = sw; }
       if (this.hasAttribute("zero") || (ymin >= 0 && ymin < 0.4 * ymax)) ymin = Math.min(0, ymin);
-      var pad = (ymax - ymin || 1) * 0.08; if (!this.hasAttribute("ymax")) ymax += pad; if (ymin !== 0 && !this.hasAttribute("ymin")) ymin -= pad;
+      if (ymax === ymin) { var flat = Math.abs(ymax) * 0.5 || 1; if (ymin !== 0) ymin -= flat; ymax += flat; }   // a flat series sits in the middle
+      var pad = (ymax - ymin || 1) * 0.08; if (!isFinite(yb)) ymax += pad; if (ymin !== 0 && !isFinite(ya)) ymin -= pad;
       var ticks = niceTicks(ymin, ymax, 3), marked = kids.some(function (c) { return c.nodeName === "K-MARK"; });
       // the scale has its own gutter on the left, so a line never runs through a label
       var PL = this.hasAttribute("bare") ? 0 : Math.ceil(Math.max.apply(null, ticks.map(function (t) { return apply(t, yf).length; }).concat(2)) * 6.1) + 10;
       // and a line that ends with its value gets room for it on the right
       var PR = 0; series.forEach(function (s) { if (s.end && s.pts.length) PR = Math.max(PR, Math.ceil(apply(s.pts[s.pts.length - 1].b, s.f).length * 6.5) + 12); });
-      var T = marked ? 26 : 10, B = 22, ph = H - T - B, pw = W - PL - PR;
+      var T = marked ? 26 : 10, B = 22, ph = Math.max(10, H - T - B), pw = Math.max(10, W - PL - PR);
       var X = function (v) { return PL + (xmax > xmin ? ((v - xmin) / (xmax - xmin)) * pw : pw / 2); };
       var Y = function (v) { return T + ph - ((v - ymin) / (ymax - ymin || 1)) * ph; };
       // grid
-      var g = el("g", {}, svg);
+      var g = el("g", {}, svg), seenTick = {};
       ticks.forEach(function (t) {
         var y = Math.round(Y(t)) + 0.5; if (y < T - 2 || y > T + ph + 1) return;
+        var tl = apply(t, yf); if (seenTick[tl]) return; seenTick[tl] = 1;
         el("line", { x1: PL, x2: W - PR, y1: y, y2: y, class: "k-grid" + (t === 0 ? " k-zero" : "") }, g);
         if (PL) el("text", { x: 0, y: y + 3.5, class: "k-ax" }, g).textContent = apply(t, yf);
       });
@@ -447,6 +477,7 @@
         var shape = { top: top, bot: bot, paths: [] };
         if (s.band || s.fill) { var a = el("path", { fill: c, "fill-opacity": s.band ? (s.el.getAttribute("opacity") || 0.2) : 0.1, stroke: "none" }, plot); shape.area = a; }
         if (s.tag === "k-line") { var ln = el("path", { fill: "none", stroke: c, "stroke-width": s.w, "stroke-linejoin": "round", "stroke-linecap": "round" }, plot); if (s.dash) ln.setAttribute("stroke-dasharray", "1 5"); shape.line = ln; }
+        if (s.tag === "k-line" && top.length === 1 && !s.end) el("circle", { cx: top[0][0], cy: top[0][1], r: 4, fill: c }, plot);
         if (s.end && top.length) { shape.dot = el("circle", { r: 4, fill: c, stroke: "var(--color-surface)", "stroke-width": 2 }, plot); shape.lab = el("text", { class: "k-ax on", "text-anchor": "start", style: "fill:" + c }, plot); shape.lab.textContent = apply(s.pts[s.pts.length - 1].b, s.f); }
         geo.push(shape);
       });
@@ -487,18 +518,20 @@
       kids.forEach(function (c) {
         var tag = c.nodeName.toLowerCase(), col = tone(c.getAttribute("tone"), "ink");
         if (tag === "k-now") {
-          var q = xval(c.getAttribute("x") || S.data.today), px = Math.round(X(q[0])) + 0.5;
+          var qx = xAt(c.getAttribute("x") || S.data.today); if (!isFinite(qx)) return;
+          var px = Math.round(X(qx)) + 0.5;
           el("line", { x1: px, x2: px, y1: T - 4, y2: T + ph, stroke: "var(--color-ink)", "stroke-width": 1, "stroke-dasharray": "2 3" }, axis);
           xlab(px, c.getAttribute("label") || loc().today, " on", px < PL + 30 ? "start" : px > W - PR - 30 ? "end" : "middle");
         } else if (tag === "k-rule") {
-          var yv = +c.getAttribute("y"); if (!isFinite(yv)) return; var py = Math.round(Y(yv)) + 0.5;
+          var yv = numv(c.getAttribute("y")); if (!isFinite(yv)) return; var py = Math.round(Y(yv)) + 0.5;
           el("line", { x1: PL, x2: W - PR, y1: py, y2: py, stroke: col, "stroke-width": 1, "stroke-dasharray": "3 3" }, axis);
           if (c.getAttribute("label")) el("text", { x: PL + 2, y: py - 5, class: "k-ax on k-halo", "text-anchor": "start", style: "fill:" + col }, axis).textContent = c.getAttribute("label");
         } else if (tag === "k-mark") {
           var by = {}, order = [];
-          rowsOf(c).forEach(function (r) { var k = r[c.getAttribute("x") || xcol]; if (!by[k]) { by[k] = []; order.push(k); } by[k].push(r[c.getAttribute("label") || "label"]); });
+          rowsOf(c).forEach(function (r) { if (!r) return; var k = r[c.getAttribute("x") || xcol]; if (k == null) return; if (!by[k]) { by[k] = []; order.push(k); } by[k].push(r[c.getAttribute("label") || "label"]); });
           order.forEach(function (k) {
-            var q = xval(k), px = X(q[0]), v = onLine(q[0]), py = v == null ? T + ph : Y(v);
+            var qx = xAt(k); if (!isFinite(qx)) return;
+            var px = X(qx), v = onLine(qx), py = v == null || !isFinite(v) ? T + ph : Y(v);
             // the name sits above the plot, a hairline drops from it to the point on the line
             el("line", { x1: px, x2: px, y1: T - 8, y2: py, stroke: col, "stroke-width": 1, opacity: 0.45 }, axis);
             el("circle", { cx: px, cy: py, r: 4.5, fill: "var(--color-surface)", stroke: col, "stroke-width": 2 }, axis);
@@ -545,11 +578,13 @@
   /* ---------------- k-heat: a grid of values, or a year of days ---------------- */
   define("k-heat", {
     _render: function () {
-      var me = this, W = this.clientWidth || S.width - 40, rows = rowsOf(this), vcol = this.getAttribute("v") || "value";
+      var me = this, W = this.clientWidth || (S.width || 390) - 40, rows = rowsOf(this).filter(function (r) { return r && typeof r === "object"; }), vcol = this.getAttribute("v") || "value";
       var dateCol = this.getAttribute("date"), xc = this.getAttribute("x"), yc = this.getAttribute("y"), xf = this.getAttribute("xfmt"), yfm = this.getAttribute("yfmt");
       var col = tone(this.getAttribute("tone"), "brand");
       this._clear();
-      if (!rows.length) { var ph0 = el("svg", { height: 160, viewBox: "0 0 " + W + " 160" }); ph0.setAttribute("data-k-own", ""); this.appendChild(ph0); return; }
+      var empty = !rows.length;
+      if (!empty && dateCol) empty = !rows.some(function (r) { return isFinite(xval(r[dateCol])[0]); });
+      if (empty) { var ph0 = el("svg", { height: 160, viewBox: "0 0 " + W + " 160" }); ph0.setAttribute("data-k-own", ""); this.appendChild(ph0); return; }
       // cells: {xi, yi, band, v, row}; slots: every place a cell could be (the empty grid)
       var cells = [], slots = [], xlabels = [], ylabels = [], vmax = 0, nx, ny, bands = 1;
       if (dateCol) {
@@ -564,26 +599,28 @@
           slots.push(slot);
           if (!seenM[mk] && dt.getUTCDate() <= 7) { seenM[mk] = 1; xlabels.push({ xi: slot.xi, band: slot.band, s: loc().mon[dt.getUTCMonth()] }); }
         }
-        days.forEach(function (o) { var v = +o.r[vcol] || 0, wk = Math.floor((o.d - start) / 7); cells.push({ xi: wk % nx, yi: dow(o.d), band: Math.floor(wk / nx), v: v, row: o.r }); if (v > vmax) vmax = v; });
+        days.forEach(function (o) { var v = numv(o.r[vcol]) || 0, wk = Math.floor((o.d - start) / 7); cells.push({ xi: wk % nx, yi: dow(o.d), band: Math.floor(wk / nx), v: v, row: o.r }); if (v > vmax) vmax = v; });
       } else {
         var uniq = function (c) {
-          var seen = {}, out = []; rows.forEach(function (r) { var k = r[c]; if (!(k in seen)) { seen[k] = 1; out.push(k); } });
-          if (out.every(function (k) { return typeof k === "number"; })) {
+          var seen = {}, out = []; rows.forEach(function (r) { var k = r[c]; if (k == null || (typeof k === "number" && !isFinite(k))) return; if (!(k in seen)) { seen[k] = 1; out.push(k); } });
+          if (out.length && out.every(function (k) { return typeof k === "number"; })) {
             // a run of whole numbers gets its gaps filled (weekdays, hours); blocks of two hours stay as they are
             out.sort(function (a, b) { return a - b; });
-            var unit = out.some(function (k, j) { return j && k - out[j - 1] === 1; }), full = []; for (var q = out[0]; q <= out[out.length - 1]; q++) full.push(q);
-            if (unit && full.length <= out.length * 3) out = full;
+            var unit = out.some(function (k, j) { return j && k - out[j - 1] === 1; }), full = [];
+            if (unit && out[out.length - 1] - out[0] < out.length * 3) { for (var q = out[0]; q <= out[out.length - 1]; q++) full.push(q); out = full; }
           } else if (out.every(function (k) { return /^\d/.test(String(k)); })) out.sort(function (a, b) { return parseFloat(a) - parseFloat(b); });
           else if (out.every(function (k) { return wdIndex(k) >= 0 && isNaN(+k); })) out.sort(function (a, b) { return wdIndex(a) - wdIndex(b); });
           return out;
         };
-        var xs = uniq(xc), ys = uniq(yc); nx = xs.length; ny = ys.length;
+        var xs = uniq(xc), ys = uniq(yc); if (!xs.length) xs = [""]; if (!ys.length) ys = [""]; nx = xs.length; ny = ys.length;
         xs.forEach(function (k, i) { xlabels.push({ xi: i, band: 0, s: xf ? apply(k, xf) : String(k) }); }); ylabels = ys.map(function (k) { return yfm ? apply(k, yfm) : String(k); });
         for (var gy = 0; gy < ny; gy++) for (var gx = 0; gx < nx; gx++) slots.push({ xi: gx, yi: gy, band: 0 });
-        rows.forEach(function (r) { var v = +r[vcol] || 0; cells.push({ xi: xs.indexOf(r[xc]), yi: ys.indexOf(r[yc]), band: 0, v: v, row: r }); if (v > vmax) vmax = v; });
+        rows.forEach(function (r) { var v = numv(r[vcol]) || 0; cells.push({ xi: xs.indexOf(r[xc]), yi: ys.indexOf(r[yc]), band: 0, v: v, row: r }); if (v > vmax) vmax = v; });
       }
-      var labW = Math.min(64, Math.max.apply(null, ylabels.map(function (t) { return t.length; })) * 6.4 + 10), gap = nx > 20 ? 2 : 3;
-      var cw = (W - labW - gap * (nx - 1)) / nx, ch = dateCol ? cw : Math.max(20, Math.min(34, cw));
+      var labW = Math.min(64, Math.max.apply(null, ylabels.map(function (t) { return t.length; }).concat(0)) * 6.4 + 10), gap = nx > 20 ? 2 : 3;
+      var cw = Math.max(2, (W - labW - gap * (nx - 1)) / Math.max(1, nx));
+      if (dateCol) cw = Math.min(cw, 30);                     // a few weeks of days stay small squares, not a wall
+      var ch = dateCol ? cw : Math.max(20, Math.min(34, cw));
       var labH = 18, bandH = ny * ch + (ny - 1) * gap, topPad = dateCol ? labH : 2, bandStep = bandH + (dateCol ? labH + 6 : 0);
       var H = topPad + bands * bandH + (bands - 1) * (bandStep - bandH) + (dateCol ? 2 : 20);
       var X = function (c) { return labW + c.xi * (cw + gap); }, Y = function (c) { return topPad + c.band * bandStep + c.yi * (ch + gap); };
@@ -632,19 +669,20 @@
   /* ---------------- k-bars ---------------- */
   define("k-bars", {
     _render: function () {
-      var me = this, W = this.clientWidth || S.width - 40, rows = rowsOf(this).slice(), xc = this.getAttribute("x") || "label", yc = this.getAttribute("y") || "value";
+      var me = this, W = this.clientWidth || (S.width || 390) - 40, rows = rowsOf(this).filter(function (r) { return r && typeof r === "object"; }), xc = this.getAttribute("x") || "label", yc = this.getAttribute("y") || "value";
       var f = this.getAttribute("fmt") || "eur0", xf = this.getAttribute("xfmt"), horiz = this.getAttribute("dir") === "h", limit = +this.getAttribute("limit") || (horiz ? 8 : 40);
-      var sort = this.getAttribute("sort"); if (sort) { var desc = sort[0] === "-", sc = sort.replace(/^-/, "") || yc; rows.sort(function (a, b) { return desc ? b[sc] - a[sc] : a[sc] - b[sc]; }); }
+      var sort = this.getAttribute("sort"); if (sort) { var desc = sort[0] === "-", sc = sort.replace(/^-/, "") || yc; rows.sort(function (a, b) { var x = numv(a[sc]), y = numv(b[sc]); x = isFinite(x) ? x : -Infinity; y = isFinite(y) ? y : -Infinity; return x === y ? 0 : desc ? (y > x ? 1 : -1) : x > y ? 1 : -1; }); }
       rows = rows.slice(0, limit);
+      var val0 = function (r) { var v = numv(r[yc]); return isFinite(v) ? v : 0; };
       var firstDraw = !this._drawn; this._drawn = true;
       this._clear(); if (!rows.length) return;
-      var vmax = Math.max.apply(null, rows.map(function (r) { return +r[yc] || 0; })) || 1, pickMode = this.getAttribute("pick") || "max", sel = -1;
-      if (pickMode === "max") rows.forEach(function (r, i) { if (sel < 0 || +r[yc] > +rows[sel][yc]) sel = i; }); else if (pickMode === "last") sel = rows.length - 1; else if (/^\d+$/.test(pickMode)) sel = +pickMode;
+      var vmax = Math.max.apply(null, rows.map(val0).concat(0)) || 1, pickMode = this.getAttribute("pick") || "max", sel = -1;
+      if (pickMode === "max") rows.forEach(function (r, i) { if (sel < 0 || val0(r) > val0(rows[sel])) sel = i; }); else if (pickMode === "last") sel = rows.length - 1; else if (/^\d+$/.test(pickMode)) sel = Math.min(+pickMode, rows.length - 1);
       var lab = function (r) { return xf ? apply(r[xc], xf) : String(r[xc]); };
       var tpl = this.getAttribute("readout");
       if (horiz) {
         var items = rows.map(function (r, i) {
-          var b = h("button", "k-hbar", "<span>" + esc(lab(r)) + '</span><i style="--w:' + ((+r[yc] / vmax) * 100).toFixed(1) + ";--i:" + i + '"></i><b class="k-n">' + esc(apply(r[yc], f)) + "</b>");
+          var b = h("button", "k-hbar", "<span>" + esc(lab(r)) + '</span><i style="--w:' + ((Math.max(0, val0(r)) / vmax) * 100).toFixed(1) + ";--i:" + i + '"></i><b class="k-n">' + esc(apply(r[yc], f)) + "</b>");
           if (!firstDraw) b.querySelector("i").style.animation = "none";
           b.addEventListener("click", function () { choose(i); }); me.appendChild(b); return b;
         });
@@ -652,7 +690,7 @@
         var choose = function (i, quiet) { sel = i; items.forEach(function (b, j) { b.setAttribute("aria-current", j === i ? "true" : "false"); }); if (out && rows[i]) out.innerHTML = fillRow(tpl, rows[i], i).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>"); if (!quiet) me.dispatchEvent(new CustomEvent("k-pick", { bubbles: true, detail: rows[i] })); };
         choose(sel, true); return;
       }
-      var H = +this.getAttribute("h") || 150, T = 22, B = 22, n = rows.length, band = W / n, bw = Math.max(3, Math.min(44, band * (n > 20 ? 0.78 : 0.62))), ph = H - T - B;
+      var H = +this.getAttribute("h") || 150, T = 22, B = 22, n = rows.length, band = Math.max(1, W / n), bw = Math.max(3, Math.min(44, band * (n > 20 ? 0.78 : 0.62))), ph = H - T - B;
       var svg = el("svg", { viewBox: "0 0 " + W + " " + H, height: H }); svg.setAttribute("data-k-own", ""); this.appendChild(svg);
       el("line", { x1: 0, x2: W, y1: T + ph + 0.5, y2: T + ph + 0.5, class: "k-grid" }, svg);
       var step = Math.max(1, Math.ceil(34 / band)), bars = [], labs = [], val = el("text", { class: "k-ax on", "text-anchor": "middle" }, svg);
@@ -664,7 +702,7 @@
         return t.length <= maxCh ? t : t.slice(0, Math.max(1, maxCh - 1)).replace(/\s+$/, "") + "…";
       };
       rows.forEach(function (r, i) {
-        var v = Math.max(0, +r[yc] || 0), bh = Math.max(v > 0 ? 2 : 0, (v / vmax) * ph), x = i * band + (band - bw) / 2;
+        var v = Math.max(0, val0(r)), bh = Math.max(v > 0 ? 2 : 0, (v / vmax) * ph), x = i * band + (band - bw) / 2;
         var b = el("rect", { x: x, y: T + ph - bh, width: bw, height: bh, rx: Math.min(5, bw / 2.5) }, svg);
         b.style.transition = "fill 200ms"; b.style.transformBox = "fill-box"; b.style.transformOrigin = "bottom";
         if (firstDraw && !REDUCED) b.animate([{ transform: "scaleY(0)" }, { transform: "scaleY(1)" }], { duration: 700, delay: 120 + i * (360 / n), fill: "backwards", easing: "cubic-bezier(0.16, 1, 0.3, 1)" });
@@ -679,7 +717,7 @@
         sel = i;
         bars.forEach(function (b, j) { b.style.fill = j === i || i < 0 ? col : "var(--color-brand-line)"; if (me.closest("k-slides")) b.style.fill = j === i || i < 0 ? "var(--k-tone)" : "var(--k-rule)"; });
         labs.forEach(function (t, j) { t.setAttribute("class", "k-ax" + (j === i ? " on" : "")); if (j === i && !t.textContent) t.textContent = lab(rows[j]); });
-        if (i >= 0) { var bx = i * band + band / 2; val.textContent = apply(rows[i][yc], f); val.setAttribute("x", Math.max(24, Math.min(W - 24, bx))); val.setAttribute("y", +bars[i].getAttribute("y") - 7); }
+        if (i >= 0 && bars[i]) { var bx = i * band + band / 2; val.textContent = apply(rows[i][yc], f); val.setAttribute("x", Math.max(24, Math.min(W - 24, bx))); val.setAttribute("y", +bars[i].getAttribute("y") - 7); }
         if (out2 && rows[i]) out2.innerHTML = fillRow(tpl, rows[i], i).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>");
         if (!quiet && i >= 0) me.dispatchEvent(new CustomEvent("k-pick", { bubbles: true, detail: rows[i] }));
       }

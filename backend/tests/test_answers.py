@@ -169,3 +169,15 @@ def test_home_sentence_uses_the_same_figures_as_the_breakdown(cid):
     assert insights.eur(m.safe["balance"], "en") in line
     if not m.partial_view and m.safe["amount"] > 0 and m.safe["cash"]["fixed_due"] > 0.5:
         assert insights.eur(m.safe["cash"]["fixed_due"], "en") in line
+
+
+@pytest.mark.parametrize("cid", EVERYONE)
+def test_home_sentence_adds_up_to_the_number_above_it(cid):
+    """A judge subtracted the figures in the sentence from the balance and did not get the number: now every euro is named."""
+    import re
+    m = Money(cid)
+    if m.partial_view or m.safe["amount"] <= 0.005:
+        return
+    line = insights.hero_line(m)
+    figures = [int(x.replace(",", "")) for x in re.findall(r"€([\d,]+)", line)]
+    assert figures[0] - sum(figures[1:]) == insights.whole(m.safe["amount"]), line

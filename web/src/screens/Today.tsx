@@ -24,20 +24,18 @@ function firstSentence(text: string): string {
 
 function Header({ d }: { d?: Home }) {
   const { lang } = useApp();
+  // who, then the day: the name already sits in the switcher, so the greeting is for screen readers and the date stands alone
   return (
     <header className="flex items-center gap-3 px-5 pb-1 pt-[max(12px,var(--safe-t))]">
       <AvatarButton />
-      <div className="min-w-0 flex-1">
+      <div className="min-w-0 flex-1 text-right">
         {d ? (
           <>
-            <h1 className="truncate text-[17px] font-semibold leading-[22px] tracking-[-0.015em] text-ink">{d.greeting.replace(d.persona.name, "").trim() || d.greeting}</h1>
-            <p className="num text-[12px] leading-4 text-ink-3">{weekday(d.today, lang)}</p>
+            <h1 className="sr-only">{d.greeting}</h1>
+            <p className="num truncate text-[13px] leading-[18px] text-ink-3">{weekday(d.today, lang)}</p>
           </>
         ) : (
-          <>
-            <Skel className="h-4 w-24" />
-            <Skel className="mt-1.5 h-3 w-16" />
-          </>
+          <Skel className="ml-auto h-3 w-16" />
         )}
       </div>
       {/* on a laptop the language switch sits in the panel beside the phone */}
@@ -54,9 +52,9 @@ function Hero({ d }: { d: Home }) {
   const payWord = lang === "fi" ? `${d.pay_word || "palkkapäivä"}än` : d.pay_word || "payday";
   return (
     <section data-focus-key="safe" data-on={minuteFocus === "safe" ? "true" : undefined} className="focus-ring -mx-2.5 rounded-card px-2.5 py-2">
-      <p className="sr-only">{s.partial_view ? t("today.safePartialLabel") : t("today.safeLabel", { word: payWord })}</p>
-      <p>
-        <BigMoney value={s.amount} lang={lang} countUp className="text-[56px] font-semibold leading-[62px] tracking-[-0.04em] text-ink" />
+      <p className="text-[14px] leading-5 text-ink-2">{s.partial_view ? t("today.safePartialLabel") : t("today.safeLabel", { word: payWord })}</p>
+      <p className="mt-0.5">
+        <BigMoney value={s.amount} lang={lang} className="text-[56px] font-semibold leading-[62px] tracking-[-0.04em] text-ink" />
       </p>
       <p className="num mt-1 text-[14px] leading-5 text-ink-2">
         {!empty && (
@@ -197,6 +195,8 @@ export function Today() {
           </span>
           <ChevronRight size={18} strokeWidth={2} className="shrink-0 text-ink-3" aria-hidden />
         </a>
+        {/* last pay cycle and the one question about it: the coaching starts on the first screen, not behind a tap */}
+        {d.loop && <OneThing variant="today" />}
         <button
           type="button"
           aria-expanded={moreOpen}
@@ -230,7 +230,6 @@ export function Today() {
           </div>
         )}
 
-        {d.loop && <OneThing variant="today" />}
         <section className="relative mt-5 rounded-card border border-line bg-surface px-4 py-3.5 transition-colors duration-150 hover:border-line-strong">
           <h2 className="mb-3 flex items-start gap-2">
             <button

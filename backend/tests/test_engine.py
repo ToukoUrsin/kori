@@ -152,7 +152,7 @@ def test_pensioner_never_reads_about_salary():
     from kori.wording import adapt, pension_text
     from kori import voice
     for lang, banned in (("en", ("payday", "salary", "your pay", "my pay", "pay cycle", "pay came", "pay arrives")), ("fi", ("palkka", "palkan", "palkasta"))):
-        m = Money("CUST00706", prefs=Prefs(lang=lang))          # Helena, 82
+        m = Money("CUST02227", prefs=Prefs(lang=lang))          # Helena, 78
         blob = json.dumps([adapt(m, insights.notices(m)), adapt(m, lessons.build(m)), voice.first_message(m),
                            voice.minute_script(m)], ensure_ascii=False).lower()
         for w in banned:

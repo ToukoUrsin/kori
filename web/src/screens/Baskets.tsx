@@ -68,7 +68,7 @@ function CategorySheet({ d, row: current, onClose }: { d: BasketsResponse; row: 
   const row = useLast(current);
   const [busy, setBusy] = useState(false);
   const month = d.current.month;
-  const tx = useQuery<Tx[]>(row ? `tx|${customer}|${lang}|${month}|${row.category}|${version}` : null, customer, () =>
+  const tx = useQuery<Tx[]>(row ? `tx|${customer}|${lang}|${month}|${row.category}|${version}` : null, `${customer}|${lang}`, () =>
     api.transactions({ customer, lang, month, category: row!.category, limit: 100 }),
   );
 
@@ -119,7 +119,7 @@ function CategorySheet({ d, row: current, onClose }: { d: BasketsResponse; row: 
           <div className="scroll-y min-h-0 px-5 pb-[max(18px,var(--safe-b))] pt-4">
             <p className="num text-[34px] font-semibold leading-10 tracking-[-0.03em] text-ink">{money(row.amount, lang, { cents: true })}</p>
             <p className="num mt-0.5 text-[13px] leading-[18px] text-ink-2">
-              {row.count === 1 ? t("baskets.purchase1") : t("baskets.purchases", { n: row.count })} · {t("common.usual", { v: money(row.usual, lang) })}
+              {row.count === 1 ? t("baskets.purchase1") : t("baskets.purchases", { n: row.count })} · {t("common.average", { v: money(row.usual, lang) })}
             </p>
 
             <section className="mt-5">
@@ -180,7 +180,7 @@ function Slips({ d }: { d: BasketsResponse }) {
   const { customer, lang, t, openCoach, version } = useApp();
   const s = d.slips;
   // the API names the kinds by key; their words come from the same customer's own transactions
-  const recent = useQuery<Tx[]>(s.top_kinds.some((k) => !k.label) ? `tx-recent|${customer}|${lang}|${version}` : null, customer, () => api.transactions({ customer, lang, limit: 300 }));
+  const recent = useQuery<Tx[]>(s.top_kinds.some((k) => !k.label) ? `tx-recent|${customer}|${lang}|${version}` : null, `${customer}|${lang}`, () => api.transactions({ customer, lang, limit: 300 }));
   const names = useMemo(() => {
     const m = new Map<string, string>();
     for (const x of recent.data || []) if (x.kind && x.kind_label && !m.has(x.kind)) m.set(x.kind, x.kind_label);
@@ -236,7 +236,7 @@ export function Baskets() {
   const { customer, lang, t, version } = useApp();
   const [month, setMonth] = useState<string | null>(null);
   const [open, setOpen] = useState<Row | null>(null);
-  const q = useQuery<BasketsResponse>(`baskets|${customer}|${lang}|${month || ""}|${version}`, customer, () => api.baskets(customer, lang, month || undefined));
+  const q = useQuery<BasketsResponse>(`baskets|${customer}|${lang}|${month || ""}|${version}`, `${customer}|${lang}`, () => api.baskets(customer, lang, month || undefined));
   const d = q.data;
 
   if (!d) {
@@ -309,7 +309,7 @@ export function Baskets() {
                         <span className="min-w-0 flex-1">
                           <span className="block truncate text-[14px] font-medium leading-5 text-ink">{r.label}</span>
                           <span className="num block truncate text-[12px] leading-4 text-ink-3">
-                            {r.count === 1 ? t("baskets.purchase1") : t("baskets.purchases", { n: r.count })} · {t("common.usual", { v: money(r.usual, lang) })}
+                            {r.count === 1 ? t("baskets.purchase1") : t("baskets.purchases", { n: r.count })} · {t("common.average", { v: money(r.usual, lang) })}
                           </span>
                         </span>
                         <span className={cx("num shrink-0 text-[14px] font-semibold leading-5", r.amount > 0 ? "text-ink" : "text-ink-3")}>{money(r.amount, lang)}</span>

@@ -228,8 +228,15 @@ def check_in(m: Money) -> dict:
               "Voin verrata tämän tilin menoja, mutta en koko kuukauttasi: palkkasi siirtyy toiseen pankkiin.") if partial else
             L("Counted from this account: the pay that came in, the bills that left, a share for surprises, and everyday spending.",
               "Laskettu tältä tililtä: tullut palkka, lähteneet laskut, osuus yllätyksiin ja arjen menot."))
+    # Pay has not come this month although it usually lands on the 15th: the cycle that started on the last payday is
+    # still running, so the last complete one looks old. Say so next to its dates.
+    late = bool(len(m.salaries)) and not m.paid_this_month and m.today.day > 15 and cycles[-1][1] <= m.today
+    period_title = L(f"Last full {w.cycle}", f"Viimeisin täysi {w.cycle}") if late else None
+    period_note = L(f"This one is still running: {w.pay} is late.",
+                    f"Nykyinen jakso on yhä kesken, koska {w.pay} on myöhässä.") if late else None
     out = {"available": True, "cycle": row, "history": history, "headline": headline, "driver_line": driver_line,
            "history_line": history_line, "partial_view": partial, "note": note,
+           "period_title": period_title, "period_note": period_note,
            "can_judge": {"everyday_spending": True, "full_income": not partial, "whole_financial_picture": not partial}}
     if m.linked_view:
         out["linked_view"] = m.linked_view
@@ -686,6 +693,7 @@ def slim(ci: dict) -> dict:
     drv = c.get("driver")
     return {"headline": ci["headline"], "what_did_it": ci.get("driver_line"), "history_line": ci.get("history_line"),
             "note": ci["note"], "partial_view": ci["partial_view"], "can_judge": ci["can_judge"],
+            **({"current_cycle": ci["period_note"]} if ci.get("period_note") else {}),
             "cycle": {**{k: c[k] for k in keep},
                       "driver": {k: drv[k] for k in ("label", "spent", "usual", "above_usual", "kind", "biggest")} if drv else None},
             "history": {k: ci["history"][k] for k in ("total", "within", "over")}}

@@ -155,6 +155,7 @@ def _loop_home(m: Money, st: dict) -> dict:
     action = st.get("action")
     return {"check_in": {"available": ci["available"], "headline": ci["headline"], "what_did_it": ci.get("driver_line"),
                          "history_line": ci.get("history_line"), "period": c.get("label"), "within": c.get("within"),
+                         "period_title": ci.get("period_title"), "period_note": ci.get("period_note"),
                          "over_by": c.get("over_by"), "difference": c.get("difference"), "partial_view": ci["partial_view"],
                          "history": [{"label": r["label"], "within": r["within"]} for r in ci["history"]["cycles"]]},
             "action": {**loop.progress(m, action), "why": action.get("why")} if action else None,

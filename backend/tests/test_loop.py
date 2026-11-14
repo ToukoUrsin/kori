@@ -7,7 +7,7 @@ from kori.app import app
 from kori.engine import loop
 from kori.engine.core import Money, Prefs
 
-AINO, EETU, MIKKO, SANNA, JARI, HELENA = "CUST00092", "CUST00248", "CUST01051", "CUST00332", "CUST02957", "CUST00706"
+AINO, EETU, MIKKO, SANNA, JARI, HELENA = "CUST00092", "CUST00248", "CUST01051", "CUST00332", "CUST02957", "CUST02227"
 ALL = (AINO, EETU, MIKKO, SANNA, JARI, HELENA)
 
 
@@ -204,7 +204,7 @@ def test_voice_opening_fits_each_situation():
     assert used_up["asks"] and "used up" in used_up["text"] and "0 euros" not in used_up["text"]
     assert not say("CUST00332")["asks"] and "held" in say("CUST00332")["text"]
     assert not say("CUST02957")["asks"] and say("CUST02957")["text"].count("On this account") == 1
-    assert "eläke" in say("CUST00706", "fi")["text"] and "palkka" not in say("CUST00706", "fi")["text"]
+    assert "eläke" in say("CUST02227", "fi")["text"] and "palkka" not in say("CUST02227", "fi")["text"]
     m = Money("CUST00092", prefs=Prefs(lang="en"))
     s = loop.suggest(m)
     active = {**s, "cycle_start": m.cycle_start.isoformat(), "set_on": m.today.isoformat()}

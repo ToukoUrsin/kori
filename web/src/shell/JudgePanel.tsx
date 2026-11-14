@@ -16,8 +16,10 @@ const STEPS: [Key, Key][] = [
 ];
 
 const H2 = "text-[15px] font-semibold leading-5 tracking-[-0.01em] text-ink";
-const PILL =
-  "inline-flex h-9 items-center gap-1.5 whitespace-nowrap rounded-full border border-line-strong bg-surface px-3.5 text-[13px] font-medium text-ink transition-colors duration-150 hover:border-ink-3";
+const MORE =
+  "group -ml-0.5 inline-flex h-9 items-center gap-2.5 rounded-full pr-3 text-[14px] font-medium text-ink-2 transition-colors duration-150 hover:text-ink";
+const MORE_ICON =
+  "flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-line-strong bg-surface text-ink-2 transition-colors duration-150 group-hover:border-ink-3 group-hover:text-ink";
 const FINE = "text-[12px] leading-[17px] text-ink-3";
 
 function Brand() {
@@ -69,37 +71,49 @@ function Try() {
               </li>
             ))}
       </ul>
-      <div className="mt-4 flex flex-wrap gap-1.5">
-        <button
-          type="button"
-          onClick={() => {
-            openCoach();
-            coach.voice.start();
-          }}
-          className={PILL}
-        >
-          <Mic size={15} strokeWidth={2} aria-hidden />
-          {t("judge.voice")}
-        </button>
-        <a href="/host" target="_blank" rel="noreferrer" className={PILL}>
-          <ArrowUpRight size={15} strokeWidth={2} aria-hidden />
-          {t("judge.bankApp")}
-        </a>
-        <button
-          type="button"
-          onClick={() => {
-            closeCoach();
-            closeChat();
-            setTab("today");
-            setMinuteOn(true);
-          }}
-          className={PILL}
-        >
-          <Play size={13} strokeWidth={2} fill="currentColor" aria-hidden />
-          {t("judge.minute")}
-        </button>
-      </div>
-      <p className={cx(FINE, "mt-3")}>{t("judge.firstStep")}</p>
+      {/* three other ways in: one quiet list, so the set never breaks into a ragged second row */}
+      <ul className="mt-4 flex flex-col gap-1">
+        <li>
+          <button
+            type="button"
+            onClick={() => {
+              openCoach();
+              coach.voice.start();
+            }}
+            className={MORE}
+          >
+            <span className={MORE_ICON}>
+              <Mic size={14} strokeWidth={2} aria-hidden />
+            </span>
+            {t("judge.voice")}
+          </button>
+        </li>
+        <li>
+          <a href="/host" target="_blank" rel="noreferrer" className={MORE}>
+            <span className={MORE_ICON}>
+              <ArrowUpRight size={14} strokeWidth={2} aria-hidden />
+            </span>
+            {t("judge.bankApp")}
+          </a>
+        </li>
+        <li>
+          <button
+            type="button"
+            onClick={() => {
+              closeCoach();
+              closeChat();
+              setTab("today");
+              setMinuteOn(true);
+            }}
+            className={MORE}
+          >
+            <span className={MORE_ICON}>
+              <Play size={12} strokeWidth={2} fill="currentColor" aria-hidden />
+            </span>
+            {t("judge.minute")}
+          </button>
+        </li>
+      </ul>
     </section>
   );
 }
@@ -138,19 +152,30 @@ function Customers() {
   );
 }
 
-function How() {
-  const { t } = useApp();
+/** `fit`: in the column beside the phone, a short screen keeps the five steps and drops their second lines, so nothing sits below the fold. */
+function How({ fit }: { fit?: boolean }) {
+  const { t, customer, lang } = useApp();
+  const short = fit ? "[@media(max-height:820px)]:hidden" : "";
+  // step 3 is the claim a judge will want to see for themselves: the same chat with the code it writes beside it, written live
+  const work = `/lab?customer=${encodeURIComponent(customer)}&lang=${lang}&dev=1&fresh=1`;
   return (
     <section>
       <h2 className={H2}>{t("judge.how")}</h2>
       <ol className="mt-3">
         {STEPS.map(([a, b], i) => (
-          <li key={a} className="relative flex gap-3 pb-3 last:pb-0">
+          <li key={a} className={cx("relative flex gap-3 pb-3 last:pb-0", fit && "[@media(max-height:820px)]:pb-2.5")}>
             {i < STEPS.length - 1 && <span className="absolute bottom-0 left-[11px] top-6 w-px bg-line-strong" aria-hidden />}
             <span className="num flex h-[23px] w-[23px] shrink-0 items-center justify-center rounded-full border border-line-strong bg-surface text-[12px] font-semibold text-ink-2">{i + 1}</span>
             <span className="min-w-0">
-              <span className="block text-[14px] font-semibold leading-[22px] text-ink">{t(a)}</span>
-              <span className="block text-[13px] leading-[18px] text-ink-2">{t(b)}</span>
+              {a === "judge.s3" && !LEGACY_COACH ? (
+                <a href={work} target="_blank" rel="noreferrer" data-entry="work" className="group inline-flex items-center gap-1 text-[14px] font-semibold leading-[22px] text-ink underline decoration-line-strong underline-offset-4 transition-colors duration-150 hover:text-brand hover:decoration-brand">
+                  {t(a)}
+                  <ArrowUpRight size={14} strokeWidth={2} className="text-ink-3 transition-colors duration-150 group-hover:text-brand" aria-label={t("judge.s3see")} />
+                </a>
+              ) : (
+                <span className="block text-[14px] font-semibold leading-[22px] text-ink">{t(a)}</span>
+              )}
+              <span className={cx("block text-[13px] leading-[18px] text-ink-2", short)}>{t(b)}</span>
             </span>
           </li>
         ))}
@@ -196,7 +221,7 @@ export function JudgePanel({ part, className }: { part: "intro" | "guide" | "all
       <Column className={className} top={<LangToggle className="ml-auto" />} foot={t("persona.footnote")}>
         <Customers />
         <div className="mt-8">
-          <How />
+          <How fit />
         </div>
       </Column>
     );

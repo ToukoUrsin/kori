@@ -328,6 +328,11 @@ mark.k-flag {
   line-height: 28px;
   letter-spacing: -0.025em;
 }
+/* three across a phone: a step smaller, so "32 310 €" keeps clear of the hairline */
+.k-stats:has(> :nth-child(3)) .k-fig > :first-child {
+  font-size: 22px;
+  line-height: 26px;
+}
 
 /* ---------- rows ---------- */
 .k-rows {

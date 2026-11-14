@@ -14,6 +14,7 @@ type Strings = {
   voice: string;
   thinking: string;
   thinkingShort: string;
+  drawing: string;
   ask: string;
   work: string;
   working: string;
@@ -59,6 +60,7 @@ export const strings: Record<LabLang, Strings> = {
     voice: "Talk to Kori",
     thinking: "Kori is working…",
     thinkingShort: "Thinking",
+    drawing: "Building the screen for this answer",
     ask: "Ask anything",
     work: "Show the work",
     working: "Working",
@@ -108,6 +110,7 @@ export const strings: Record<LabLang, Strings> = {
     voice: "Puhu Korille",
     thinking: "Kori työskentelee…",
     thinkingShort: "Mietin",
+    drawing: "Rakennan näkymää tälle vastaukselle",
     ask: "Kysy mitä vain",
     work: "Näytä työ",
     working: "Työn alla",

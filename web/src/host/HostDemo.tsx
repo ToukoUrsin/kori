@@ -100,7 +100,7 @@ const DEMO_CUSTOMERS = [
   { id: "CUST01051", name: "Mikko" },
   { id: "CUST00332", name: "Sanna" },
   { id: "CUST02957", name: "Jari" },
-  { id: "CUST00706", name: "Helena" },
+  { id: "CUST02227", name: "Helena" },
 ];
 const PARTIAL_CUSTOMER = "CUST02957";
 
@@ -240,7 +240,6 @@ function ContractPanel({ lang, logs, onClose }: { lang: Lang; logs: LogEntry[]; 
     <aside className="host-inspector">
       <div className="host-inspector-heading">
         <div>
-          <p className="host-eyebrow">{text(lang, "Boundary", "Raja")}</p>
           <h2>{text(lang, "Web-view contract", "Web-näkymän sopimus")}</h2>
         </div>
         {onClose && (
@@ -461,6 +460,8 @@ export function HostDemo() {
   const logId = useRef(0);
   /** kori:open has gone out to the frame that is loaded now: it is sent once per load, not once per render */
   const openedRef = useRef(false);
+  /** where Kori opens: the Safe to spend tile opens the explanation of that number (Kori's home), the Kori tab the chat */
+  const screenRef = useRef<"coach" | "home">("coach");
 
   const persona = useMemo(() => personas.find((item) => item.id === customer) || home?.persona, [customer, home?.persona, personas]);
   const frameSrc = `/?embed=1&customer=${encodeURIComponent(customer)}&lang=${lang}`;
@@ -576,11 +577,12 @@ export function HostDemo() {
       setPendingQuestion(null);
     } else if (!openedRef.current) {
       openedRef.current = true;
-      send({ type: "kori:open", v: BRIDGE_VERSION, screen: "coach" });
+      send({ type: "kori:open", v: BRIDGE_VERSION, screen: screenRef.current });
     }
   }, [bridgeReady, consent, pendingQuestion, tab]);
 
-  const chooseTab = (next: HostTab) => {
+  const chooseTab = (next: HostTab, screen: "coach" | "home" = "coach") => {
+    if (next === "coach") screenRef.current = screen;
     if (next === "coach" && !consent.transactions) {
       setSheet("consent");
       return;
@@ -667,7 +669,7 @@ export function HostDemo() {
           <div className="host-phone">
             <HostHeader lang={lang} customer={customer} persona={persona} personas={personas} onLang={setLang} onCustomer={setCustomer} onContract={() => setContractOpen(true)} />
             {tab === "home" ? (
-              <HomeView lang={lang} home={home} transactions={transactions} safe={safe} allowed={consent.transactions} onAsk={askAbout} onKori={() => chooseTab("coach")} onPermissions={() => setSheet("permissions")} />
+              <HomeView lang={lang} home={home} transactions={transactions} safe={safe} allowed={consent.transactions} onAsk={askAbout} onKori={() => chooseTab("coach", "home")} onPermissions={() => setSheet("permissions")} />
             ) : (
               <main className="host-coach">
                 {consent.transactions ? (
@@ -684,7 +686,7 @@ export function HostDemo() {
                 )}
               </main>
             )}
-            <HostNav tab={tab} lang={lang} onChange={chooseTab} onMore={() => setSheet("permissions")} />
+            <HostNav tab={tab} lang={lang} onChange={(next) => chooseTab(next)} onMore={() => setSheet("permissions")} />
 
             {sheet === "consent" && <ConsentSheet lang={lang} onAllow={() => void allowTransactions()} onClose={() => setSheet(null)} />}
             {sheet === "permissions" && (

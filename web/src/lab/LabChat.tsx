@@ -49,8 +49,13 @@ function setLangInUrl(lang: LabLang) {
   history.replaceState(null, "", `${location.pathname}?${q.toString()}`);
 }
 
+/** A figure never breaks across lines: "15 770 €" keeps its thousands and its euro sign together (Finnish puts spaces in both). */
+function keepFigures(text: string): string {
+  return text.replace(/(\d) (?=\d{3}(?!\d))/g, "$1\u00a0").replace(/(\d) (?=[€%])/g, "$1\u00a0");
+}
+
 function renderBold(text: string): ReactNode[] {
-  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+  const parts = keepFigures(text).split(/(\*\*[^*]+\*\*)/g);
   return parts.map((part, i) => part.startsWith("**") && part.endsWith("**") ? <strong key={i}>{part.slice(2, -2)}</strong> : <span key={i}>{part}</span>);
 }
 
@@ -227,6 +232,7 @@ export default function LabChat({ onVoice, embed }: { onVoice?: () => void; embe
   const [sheet, setSheet] = useState<SheetTarget | null>(null);
   const [voiceNote, setVoiceNote] = useState("");
   const [draft, setDraft] = useState("");
+  const [queued, setQueued] = useState("");                                        // asked while an answer was still building: sent the moment it is done
   const [mock] = useState(() => new URLSearchParams(location.search).get("mock") === "1");
   // The customer sees a plain chat. `?dev=1` shows the work behind an answer (code, ledger, sources) for a technical reader.
   const [dev] = useState(() => !embed && new URLSearchParams(location.search).get("dev") === "1");
@@ -316,7 +322,7 @@ export default function LabChat({ onVoice, embed }: { onVoice?: () => void; embe
     if (!request || request.id <= handledRequest) return;
     handledRequest = request.id;
     if (request.ask) {
-      if (turns.some((turn) => turn.pending)) setDraft(request.ask);   // one answer at a time: the question waits in the input
+      if (turns.some((turn) => turn.pending)) setQueued(request.ask);   // one answer at a time: the question waits its turn
       else void runRef.current(request.ask);
     } else if (request.focus) window.setTimeout(() => inputRef.current?.focus({ preventScroll: true }), 60);   // once the layer is visible
   }, [request]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -328,7 +334,18 @@ export default function LabChat({ onVoice, embed }: { onVoice?: () => void; embe
     if (nextLang && nextLang !== lang) { setLang(nextLang); setLangInUrl(nextLang); }
   }, [lang, session]);
   const changeLang = (next: LabLang) => { void reset(next); };
-  const submit = (e: FormEvent) => { e.preventDefault(); void runQuestion(draft); };
+  const send = (raw: string) => {
+    const question = raw.trim();
+    if (!question) return;
+    if (turns.some((turn) => turn.pending)) { setQueued(question); setDraft(""); stickRef.current = true; }
+    else void runQuestion(question);
+  };
+  useEffect(() => {
+    if (!queued || turns.some((turn) => turn.pending)) return;
+    setQueued("");
+    void runRef.current(queued);
+  }, [queued, turns]);
+  const submit = (e: FormEvent) => { e.preventDefault(); send(draft); };
   const openTrace = (turn: Turn, name: string) => {
     const run = turn.runs.find((item) => item.done?.facts?.some((fact: Fact) => fact.name === name) || item.done?.tables?.some((table: Table) => table.name === name));
     if (!run) return;
@@ -378,23 +395,25 @@ export default function LabChat({ onVoice, embed }: { onVoice?: () => void; embe
           const shown = turn.text.length > 0 || !turn.pending;        // the answer first, then the view it built: never a half-drawn screen
           const working = turn.pending && !turn.text;
           const doing = turn.runs.length ? turn.runs[turn.runs.length - 1].title : "";
+          const drawing = turn.pending && !!turn.text && turn.runs.length > 0 && !turn.views.some((view) => view.html);   // the answer is said, its screen is on the way
           return <article className="kc-turn" key={turn.id} data-state={turn.pending ? "working" : "done"}>
-            <div className="kc-user">{turn.question}</div>
+            <div className="kc-user">{keepFigures(turn.question)}</div>
             {working && <div className="kc-working" role="status"><span className="kc-dots" aria-hidden><i /><i /><i /></span><span className="kc-doing">{doing || copy.thinkingShort}</span></div>}
             {turn.text && <div className="kc-answer">{renderBold(turn.text)}</div>}
+            {drawing && <div className="kc-working" role="status"><span className="kc-dots" aria-hidden><i /><i /><i /></span><span className="kc-doing">{copy.drawing}</span></div>}
             {turn.views.map((view) => <div className={`kc-view ${shown && view.html ? "on" : ""}`} key={view.id}><FrameHost view={view} lang={lang} mock={mock} onAsk={(text) => void runQuestion(text)} onTrace={() => undefined} sources={turn.sources} /></div>)}
             {!turn.pending && (() => { const n = (turn.done?.flagged ?? turn.views.find((view) => view.check)?.check?.flagged ?? []).length; return n ? <div className="kc-flag">{copy.warning(n)}</div> : !turn.error && turn.views.some((view) => view.html) ? <div className="kc-checked"><Check size={13} strokeWidth={2.2} aria-hidden />{copy.checked}</div> : null; })()}
             {turn.error && <div className="kc-error">{turn.error} <button type="button" onClick={() => void runQuestion(turn.question)}>{copy.tryAgain}</button></div>}
             {!turn.pending && !turn.views.length && turn.chips.length > 0 && <div className="kc-chips">{turn.chips.map((chip) => <button type="button" key={chip} onClick={() => void runQuestion(chip)}>{chip}</button>)}</div>}
           </article>;
-        })}</div>}
+        })}{queued && <article className="kc-turn" data-state="queued"><div className="kc-user kc-queued">{keepFigures(queued)}</div></article>}</div>}
       </div>
       {turns.length === 0 && <div className="kc-starters">{starters.slice(0, 4).map((starter) => <button type="button" key={starter} onClick={() => void runQuestion(starter)}>{starter}</button>)}</div>}
       <form className="kc-composer" onSubmit={submit}>
         <div className="kc-pill">
-          <textarea ref={inputRef} value={draft} onChange={(e) => { setDraft(e.target.value); if (micNote) setMicNote(""); }} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void runQuestion(draft); } }} placeholder={recording ? copy.listening : hearing ? copy.writingDown : copy.ask} rows={1} aria-label={copy.ask} readOnly={recording || hearing} />
+          <textarea ref={inputRef} value={draft} onChange={(e) => { setDraft(e.target.value); if (micNote) setMicNote(""); }} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(draft); } }} placeholder={recording ? copy.listening : hearing ? copy.writingDown : copy.ask} rows={1} aria-label={copy.ask} readOnly={recording || hearing} />
           {draft.trim() || busy
-            ? <button className="kc-send" type="submit" aria-label={copy.send} disabled={!draft.trim() || busy}><ArrowUp size={18} strokeWidth={2.4} /></button>
+            ? <button className="kc-send" type="submit" aria-label={copy.send} disabled={!draft.trim()}><ArrowUp size={18} strokeWidth={2.4} /></button>
             : <button className={`kc-send kc-mic ${recording ? "on" : ""}`} type="button" aria-label={recording ? copy.micStop : copy.mic} aria-pressed={recording} disabled={hearing} onClick={() => void mic()}>{recording ? <Square size={13} fill="currentColor" strokeWidth={0} /> : hearing ? <Loader2 size={18} className="kc-spin" /> : <Mic size={18} strokeWidth={2} />}</button>}
         </div>
         {micNote && <div className="kc-micnote" role="status">{micNote}</div>}
@@ -402,5 +421,5 @@ export default function LabChat({ onVoice, embed }: { onVoice?: () => void; embe
     </div></div>;
   }
 
-  return <div className="lab-root"><div className="lab-shell"><main className="lab-main"><header className="lab-header"><a className="lab-brand" href="/"><ArrowLeft size={16} /><span className="lab-mark" aria-hidden><i /><i /><i /></span><strong>{copy.name}</strong><span>{copy.tagline}</span></a><div className="lab-actions"><button className="lab-icon" type="button" aria-label={copy.menu} onClick={() => setMenuOpen((open) => !open)}><Menu size={19} /></button>{menuOpen && <div className="lab-menu"><button type="button" className={lang === "en" ? "active" : ""} onClick={() => changeLang("en")}>English{lang === "en" && <Check size={14} />}</button><button type="button" className={lang === "fi" ? "active" : ""} onClick={() => changeLang("fi")}>Suomi{lang === "fi" && <Check size={14} />}</button><button type="button" className="danger" onClick={() => void reset()}>{copy.reset}</button></div>}</div></header><div className="lab-scroll" ref={scrollRef} onScroll={onScroll}><div className="lab-scroll-inner">{turns.length === 0 ? <section className="lab-empty"><h1>{copy.emptyTitle}</h1><p>{copy.emptyIntro}</p><div className="lab-starters">{starters.slice(0, 5).map((starter) => <button className="lab-starter" type="button" key={starter} onClick={() => void runQuestion(starter)}>{starter}<ChevronRight size={17} /></button>)}</div></section> : turns.map((turn) => <article className="lab-turn" key={turn.id}><div className="lab-user">{turn.question}</div><div className="lab-coach">{turn.sandbox && <div className="lab-sandbox"><ShieldCheck size={13} strokeWidth={1.9} />{copy.sandbox(turn.sandbox.rows)}</div>}{!turn.runs.some((run) => !run.done) && <Status status={turn.status} pending={turn.pending} text={copy.thinking} />}<WorkStrip runs={turn.runs} copy={copy} onOpen={(run) => setSheet({ run })} />{turn.text && <div className="lab-answer">{renderBold(turn.text)}</div>}{turn.views.map((view) => <div key={view.id}><FrameHost view={view} lang={lang} mock={mock} onAsk={(text) => void runQuestion(text)} onTrace={(name) => openTrace(turn, name)} sources={turn.sources} /></div>)}{turn.sources.length > 0 && <section><div className="lab-view-title">{copy.sources}</div><div className="lab-sources">{turn.sources.slice(0, 3).map((source) => <a className="lab-source" key={source.url} href={source.url} target="_blank" rel="noreferrer"><ExternalLink size={13} /><span>{source.host || source.title}</span></a>)}</div></section>}<CheckLine turn={turn} copy={copy} onOpen={(run) => setSheet({ run })} />{turn.error && <div className="lab-check warn"><CircleAlert size={15} />{turn.error} <button type="button" onClick={() => void runQuestion(turn.question)}>{copy.tryAgain}</button></div>}{turn.chips.length > 0 && <div className="lab-chips">{turn.chips.map((chip) => <button type="button" className="lab-chip" key={chip} onClick={() => void runQuestion(chip)}>{chip}</button>)}</div>}</div></article>)}</div></div><form className="lab-composer" onSubmit={submit}><div className="lab-input-wrap"><textarea className="lab-input" value={draft} onChange={(e) => setDraft(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void runQuestion(draft); } }} placeholder={copy.placeholder} rows={1} aria-label={copy.placeholder} /></div><button className="lab-mic" type="button" aria-label={copy.voice} onClick={talk}><Mic size={19} /></button><button className="lab-send" type="submit" aria-label={copy.send} disabled={!draft.trim() || !!currentTurn?.pending}><ArrowUp size={20} /></button>{voiceNote && <div className="lab-note" role="status">{voiceNote}</div>}</form></main><UnderHood runs={currentTurn?.runs || []} done={currentTurn?.done} copy={copy} /></div>{sheet && <WorkSheet target={sheet} copy={copy} lang={lang} onClose={() => setSheet(null)} />}</div>;
+  return <div className="lab-root"><div className="lab-shell"><main className="lab-main"><header className="lab-header"><a className="lab-brand" href="/"><ArrowLeft size={16} /><span className="lab-mark" aria-hidden><i /><i /><i /></span><strong>{copy.name}</strong><span>{copy.tagline}</span></a><div className="lab-actions"><button className="lab-icon" type="button" aria-label={copy.menu} onClick={() => setMenuOpen((open) => !open)}><Menu size={19} /></button>{menuOpen && <div className="lab-menu"><button type="button" className={lang === "en" ? "active" : ""} onClick={() => changeLang("en")}>English{lang === "en" && <Check size={14} />}</button><button type="button" className={lang === "fi" ? "active" : ""} onClick={() => changeLang("fi")}>Suomi{lang === "fi" && <Check size={14} />}</button><button type="button" className="danger" onClick={() => void reset()}>{copy.reset}</button></div>}</div></header><div className="lab-scroll" ref={scrollRef} onScroll={onScroll}><div className="lab-scroll-inner">{turns.length === 0 ? <section className="lab-empty"><h1>{copy.emptyTitle}</h1><p>{copy.emptyIntro}</p><div className="lab-starters">{starters.slice(0, 5).map((starter) => <button className="lab-starter" type="button" key={starter} onClick={() => void runQuestion(starter)}>{starter}<ChevronRight size={17} /></button>)}</div></section> : turns.map((turn) => <article className="lab-turn" key={turn.id}><div className="lab-user">{turn.question}</div><div className="lab-coach">{turn.sandbox && <div className="lab-sandbox"><ShieldCheck size={13} strokeWidth={1.9} />{copy.sandbox(turn.sandbox.rows)}</div>}{!turn.runs.some((run) => !run.done) && <Status status={turn.status} pending={turn.pending} text={copy.thinking} />}<WorkStrip runs={turn.runs} copy={copy} onOpen={(run) => setSheet({ run })} />{turn.text && <div className="lab-answer">{renderBold(turn.text)}</div>}{turn.views.map((view) => <div key={view.id}><FrameHost view={view} lang={lang} mock={mock} onAsk={(text) => void runQuestion(text)} onTrace={(name) => openTrace(turn, name)} sources={turn.sources} /></div>)}{turn.sources.length > 0 && <section><div className="lab-view-title">{copy.sources}</div><div className="lab-sources">{turn.sources.slice(0, 3).map((source) => <a className="lab-source" key={source.url} href={source.url} target="_blank" rel="noreferrer"><ExternalLink size={13} /><span>{source.host || source.title}</span></a>)}</div></section>}<CheckLine turn={turn} copy={copy} onOpen={(run) => setSheet({ run })} />{turn.error && <div className="lab-check warn"><CircleAlert size={15} />{turn.error} <button type="button" onClick={() => void runQuestion(turn.question)}>{copy.tryAgain}</button></div>}{turn.chips.length > 0 && <div className="lab-chips">{turn.chips.map((chip) => <button type="button" className="lab-chip" key={chip} onClick={() => void runQuestion(chip)}>{chip}</button>)}</div>}</div></article>)}</div></div><form className="lab-composer" onSubmit={submit}><div className="lab-input-wrap"><textarea className="lab-input" value={draft} onChange={(e) => setDraft(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(draft); } }} placeholder={copy.placeholder} rows={1} aria-label={copy.placeholder} /></div><button className="lab-mic" type="button" aria-label={copy.voice} onClick={talk}><Mic size={19} /></button><button className="lab-send" type="submit" aria-label={copy.send} disabled={!draft.trim() || !!currentTurn?.pending}><ArrowUp size={20} /></button>{voiceNote && <div className="lab-note" role="status">{voiceNote}</div>}</form></main><UnderHood runs={currentTurn?.runs || []} done={currentTurn?.done} copy={copy} /></div>{sheet && <WorkSheet target={sheet} copy={copy} lang={lang} onClose={() => setSheet(null)} />}</div>;
 }

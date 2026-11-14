@@ -10,19 +10,26 @@ import { ScreenHeader } from "../shell/Shell";
 
 function AboutCard({ tool }: { tool: string }) {
   const { customer, lang, version } = useApp();
-  const q = useQuery<Card>(`card|${tool}|${customer}|${lang}|${version}`, customer, () => api.card(customer, lang, tool));
+  const q = useQuery<Card>(`card|${tool}|${customer}|${lang}|${version}`, `${customer}|${lang}`, () => api.card(customer, lang, tool));
   if (q.data) return <CardView card={q.data} />;
   if (q.error) return <ErrorInline onRetry={q.reload} />;
   return <Skel className="h-[280px] !rounded-card" />;
 }
 
+/** The exact number of lessons this person has, never "up to": each lesson needs the data it teaches from. */
+function lessonCount(n: number | undefined, lang: string): string | undefined {
+  if (!n) return undefined;
+  if (lang === "fi") return n === 1 ? "1 oppitunti valittu sinulle" : `${n} oppituntia valittu sinulle`;
+  return n === 1 ? "1 lesson picked for you" : `${n} lessons picked for you`;
+}
+
 export function Learn() {
   const { customer, lang, t, version, openLesson, home } = useApp();
-  const q = useQuery<LessonSummary[]>(`lessons|${customer}|${lang}|${version}`, customer, () => api.lessons(customer, lang));
+  const q = useQuery<LessonSummary[]>(`lessons|${customer}|${lang}|${version}`, `${customer}|${lang}`, () => api.lessons(customer, lang));
   useEffect(() => {
     if (q.data) {
       const first = q.data.find((l) => !l.done);
-      if (first) prefetch(`lesson|${first.id}|${customer}|${lang}|${version}`, customer, () => api.lesson(first.id, customer, lang));
+      if (first) prefetch(`lesson|${first.id}|${customer}|${lang}|${version}`, `${customer}|${lang}`, () => api.lesson(first.id, customer, lang));
     }
   }, [q.data, customer, lang, version]);
   const list = q.data;
@@ -31,7 +38,7 @@ export function Learn() {
 
   return (
     <>
-      <ScreenHeader title={t("learn.title")} sub={t("learn.lessons", { n: home.data?.lessons_total ?? list?.length ?? 8 })} />
+      <ScreenHeader title={t("learn.title")} sub={lessonCount(home.data?.lessons_total ?? list?.length, lang)} />
       <div className="px-5 pb-8 pt-3">
         {!list ? (
           q.error ? (

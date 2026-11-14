@@ -103,7 +103,9 @@ def system_prompt(m: Money, mode: str = "text", action: dict | None = None) -> s
 
 
 TEACHBACK = """You are grading a "say it back" answer in a one-minute money lesson. The learner explains the idea in their own words.
-Be generous: everyday wording, partial sentences and Finnish or English are all fine. They pass if the core idea is there.
+Grade understanding, not vocabulary. The learner does not need the lesson's terms: any plain words that carry the idea pass
+(for example "same every month" means fixed, "come at random times" means surprise, "stuff I can control" means steer).
+Everyday wording, partial sentences and Finnish or English are all fine. Fail only if an idea is wrong or missing.
 
 Lesson: {title}
 Idea: {concept}
@@ -114,6 +116,7 @@ What a good answer contains:
 Learner's answer: "{answer}"
 
 Return JSON: {{"passed": true|false, "got": "one short sentence naming what they got right, quoting their idea",
-"missing": "one short sentence with the one thing to add, or empty if nothing", "encouragement": "one short warm sentence"}}
+"missing": "one short sentence naming the one idea to add, in plain words, or empty if nothing", "encouragement": "one short warm sentence"}}
+Never ask the learner to use the lesson's words or terms.
 Write in {language}. Do not mention any number that is not in the lesson text above.
 No dashes between clauses: use a comma or a full stop."""

@@ -40,7 +40,10 @@ ENGINE: dict[str, tuple[str, list[str]]] = {
     "safe_to_save": ("safe_to_save", []),
     "small_purchases": ("small_purchases", []),
     "notices": ("coach_notices", []),
+    "last_cycle": ("check_in", []),          # the look-back the home screen shows: did the last pay cycle fit, and what did it
+    "income": ("spending", []),              # the pay that lands here and, when it moves to another bank, what stays
 }
+FIXED_ARGS = {"last_cycle": {"part": "look_back"}, "income": {"flow": "income"}}
 DROP = {"how_to_say_it", "how_to_offer", "say", "shown_as", "count_labels"}        # notes written for the old coach
 
 
@@ -189,13 +192,18 @@ class Door:
         if fn not in ENGINE:
             raise PermissionError(f"engine.{fn} is not on the list; engine.help() lists what is")
         tool, names = ENGINE[fn]
-        a = dict(zip(names, args)) | kwargs
+        a = dict(zip(names, args)) | kwargs | FIXED_ARGS.get(fn, {})
         if fn == "forecast":
             a.pop("pace", None)
         out = T.execute(m, self.state, tool, {k: v for k, v in a.items() if v is not None})
         res = dict(out.result)
         if out.cards and isinstance(out.cards[0].get("data"), dict):          # the full figures behind the summary
             res = {**out.cards[0]["data"], **{k: v for k, v in res.items() if k not in out.cards[0]["data"]}}
+        if fn == "profile" and isinstance(res.get("facts"), dict) and "buffer_months" in res["facts"]:
+            # one buffer figure everywhere: the one "safe to save" shows, not the rounded peer feature
+            covered = (T.execute(m, self.state, "safe_to_save", {}).result.get("buffer") or {}).get("months_covered")
+            if covered is not None:
+                res["facts"] = {**res["facts"], "buffer_months": covered}
         return _strip(res)
 
     # -------------------------------------------------------------- world

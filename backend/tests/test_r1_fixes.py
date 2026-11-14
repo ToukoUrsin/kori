@@ -91,4 +91,4 @@ def test_teachback_grades_misconception_good_and_half(monkeypatch, lang, answer,
     out = asyncio.run(agent.grade_teachback(lang, le, answer))
     assert out["grade"] == grade and out["passed"] is passed
     if not passed:
-        assert out["hint"] and out["missing"]
+        assert out["missing"] and "own words" not in out["missing"] + out["hint"]

@@ -98,16 +98,40 @@ def hero_line(m) -> str:
     if m.partial_view:
         return L(f"This account shows {E(bal)}, but most of your salary moves to another bank, so I count only what stays here.",
                  f"Tällä tilillä on {E(bal)}, mutta suurin osa palkastasi siirtyy toiseen pankkiin, joten lasken vain sen, mikä jää tänne.")
+    if s["amount"] <= 0.005 and s["limit"] == "budget" and s["cash"]["free"] > 0.5:
+        # The balance is not all spoken for: the everyday money this pay cycle left is used up, and the rest is
+        # held for bills, the reserve and the cushion, or is money Kori does not count as spending money.
+        b = s["budget"]
+        return L(f"Your account shows {E(bal)}, but this pay cycle's everyday money is used up: there was {E(b['everyday_budget'])} "
+                 f"for it and {E(b['everyday_spent'])} is spent. The rest is held for bills and reserves, or kept as savings.",
+                 f"Tililläsi on {E(bal)}, mutta tämän palkkajakson arkiraha on käytetty: siihen oli {E(b['everyday_budget'])}, "
+                 f"ja arkeen on mennyt {E(b['everyday_spent'])}. Loput on varattu laskuihin ja varoihin tai jää säästöön.")
     if s["amount"] <= 0.005:
         return tidy(L(f"Your account shows {E(bal)}, and all of it is spoken for until payday on {until}.",
                       f"Tililläsi on {E(bal)}, ja se kaikki on jo varattu palkkapäivään {until} asti."))
-    if due > 0.5 and res > 0.5:
-        return L(f"Your account shows {E(bal)}, but {E(due)} of bills and a {E(res)} surprise reserve come first.",
-                 f"Tililläsi on {E(bal)}, mutta siitä menee ensin {E(due)} laskuihin ja {E(res)} yllätysvaraan.")
-    if due > 0.5:
-        return L(f"Your account shows {E(bal)}, but {E(due)} of bills come first.", f"Tililläsi on {E(bal)}, mutta siitä menee ensin {E(due)} laskuihin.")
-    if res > 0.5:
-        return L(f"Your account shows {E(bal)}, but I hold back {E(res)} of it for surprises.", f"Tililläsi on {E(bal)}, mutta varaan siitä {E(res)} yllätyksiin.")
+    # Every euro between the balance and the number is named, so the sentence adds up to the number above it.
+    c = s["cash"]
+    parts = [(due, f"{E(due)} of bills", f"{E(due)} laskuihin"),
+             (res, f"a {E(res)} surprise reserve", f"{E(res)} yllätysvaraan"),
+             (c.get("saving_left", 0.0), f"{E(c.get('saving_left', 0.0))} of planned saving", f"{E(c.get('saving_left', 0.0))} säästöön"),
+             (c.get("cushion", 0.0), f"a {E(c.get('cushion', 0.0))} cushion", f"{E(c.get('cushion', 0.0))} pohjavaraan")]
+    parts = [p for p in parts if p[0] > 0.5]
+    beyond = c["free"] - s["amount"] if s["limit"] == "budget" else 0.0
+    if beyond > 0.5:
+        # in whole euros the last part is what is left of the sum, so a reader who subtracts gets the number on screen
+        left = whole(bal) - sum(whole(p[0]) for p in parts) - whole(s["amount"])
+        beyond = float(left) if abs(left - beyond) <= 1.5 and left > 0 else beyond
+    if parts:
+        def join(items: list[str], last: str) -> str:
+            return items[0] if len(items) == 1 else ", ".join(items[:-1]) + f" {last} " + items[-1]
+        en = f"Your account shows {E(bal)}, but {join([p[1] for p in parts], 'and')} come first."
+        fi = f"Tililläsi on {E(bal)}, mutta siitä menee ensin {join([p[2] for p in parts], 'ja')}."
+        if beyond > 0.5:
+            first = join([p[1] for p in parts], "and")
+            en = f"Your account shows {E(bal)}. {first[0].upper() + first[1:]} come first, and {E(beyond)} more is money this pay cycle does not need."
+            fi = (f"Tililläsi on {E(bal)}. Siitä menee ensin {join([p[2] for p in parts], 'ja')}, "
+                  f"ja {E(beyond)} on rahaa, jota tämä palkkajakso ei tarvitse.")
+        return L(en, fi)
     return tidy(L(f"Your account shows {E(bal)}, and it has to last until payday on {until}.", f"Tililläsi on {E(bal)}, ja sen pitää riittää palkkapäivään {until} asti."))
 
 

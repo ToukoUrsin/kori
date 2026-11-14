@@ -583,7 +583,7 @@ function Skeleton() {
 
 export function Plan() {
   const { customer, lang, t, version } = useApp();
-  const q = useQuery<PlanResponse>(`plan|${customer}|${lang}|${version}`, customer, () => api.plan(customer, lang));
+  const q = useQuery<PlanResponse>(`plan|${customer}|${lang}|${version}`, `${customer}|${lang}`, () => api.plan(customer, lang));
   const d = q.data;
   return (
     <>

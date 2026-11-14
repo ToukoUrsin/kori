@@ -23,7 +23,7 @@ function timed(m: Minute): Minute["words"] {
 /** The money minute: the briefing read out, the word being said marked, and the part of Today it talks about lit up. */
 export function MinutePlayer() {
   const { customer, lang, t, version, setMinuteOn, setMinuteFocus } = useApp();
-  const q = useQuery<Minute>(`minute|${customer}|${lang}|${version}`, customer, () => api.minute(customer, lang));
+  const q = useQuery<Minute>(`minute|${customer}|${lang}|${version}`, `${customer}|${lang}`, () => api.minute(customer, lang));
   const m = q.data;
   const words = useMemo(() => (m ? timed(m) : []), [m]);
   const duration = words.length ? words[words.length - 1].end + 0.5 : 0;
