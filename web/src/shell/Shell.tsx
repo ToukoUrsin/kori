@@ -1,4 +1,4 @@
-import { BookOpen, Check, House, Mic, Rows3, SlidersHorizontal, WifiOff, X, type LucideIcon } from "lucide-react";
+import { BookOpen, Check, ChevronDown, House, Mic, Rows3, SlidersHorizontal, WifiOff, X, type LucideIcon } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import { useCoach } from "../coach/CoachProvider";
@@ -10,6 +10,7 @@ import { Button, Chip, IconButton, LangToggle, Mark, Skel, cx, useLast } from ".
 import { FRAME_ID, Sheet } from "../components/ui/Sheet";
 import { api } from "../lib/api";
 import { initials, longDate, money } from "../lib/format";
+import { isEmbedMode } from "../lib/host";
 import type { Key } from "../lib/i18n";
 import { useApp, type Tab } from "../lib/store";
 import { Baskets } from "../screens/Baskets";
@@ -21,6 +22,7 @@ import { Today } from "../screens/Today";
 /* ---------------------------------------------------------------- headers */
 
 export function AvatarButton() {
+  if (isEmbedMode()) return null;
   const { home, t, setOverlay } = useApp();
   const name = home.data?.persona.name;
   return (
@@ -29,11 +31,13 @@ export function AvatarButton() {
       onClick={() => setOverlay({ kind: "persona" })}
       aria-label={t("today.switchPersona")}
       title={t("today.switchPersona")}
-      className="group -m-1 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full"
+      className="group -m-1 inline-flex h-11 max-w-[180px] shrink-0 items-center gap-2 rounded-full px-1.5 text-left"
     >
       <span className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-soft text-[13px] font-semibold text-brand-strong ring-1 ring-brand-line transition-[box-shadow,background-color] duration-150 group-hover:ring-brand-mid">
         {name ? initials(name) : ""}
       </span>
+      {name && <span className="truncate text-[14px] font-semibold text-ink">{name}</span>}
+      <ChevronDown size={15} strokeWidth={2} className="shrink-0 text-ink-3" aria-hidden />
     </button>
   );
 }
@@ -195,6 +199,7 @@ function PersonaSheet() {
             <X size={21} strokeWidth={2} aria-hidden />
           </IconButton>
         </div>
+        <p className="px-5 pb-2 text-[13px] leading-[18px] text-ink-3">{t("persona.demoNote")}</p>
         <div className="scroll-y min-h-0 px-3 pb-[max(18px,var(--safe-b))]">
           <ul>
             {(personas || []).map((p) => {

@@ -70,7 +70,7 @@ function CoachTurn({ turn, last }: { turn: Turn; last: boolean }) {
   const reduce = useReducedMotion();
   const [why, setWhy] = useState(false);
   const d = turn.done;
-  const checked = d && d.grounded && d.checked > 0 ? d.checked : 0;
+  const checked = d && d.grounded && d.checked > 0 && !(d.consistency && d.consistency.length) ? d.checked : 0;
   const withheld = !!d?.withheld;
   const speech = coach.speech && coach.speech.id === turn.id ? coach.speech.state : null;
   const settled = !turn.pending && !!turn.text;

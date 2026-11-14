@@ -4,7 +4,7 @@ import { useApp } from "../lib/store";
 import type { Card, ChatDone } from "../lib/types";
 import type { Conv } from "./VoiceBridge";
 
-type BridgeProps = { onConv: (c: Conv) => void; onState: (s: { speaking: boolean; muted: boolean }) => void };
+type BridgeProps = { onConv: (c: Conv) => void; onState: (s: { speaking: boolean; muted: boolean }) => void; onTranscript: (text: string, final: boolean) => void };
 
 export interface Turn {
   id: string;
@@ -99,6 +99,7 @@ function Inner({ children }: { children: ReactNode }) {
   const phaseRef = useRef<VoicePhase>("off");
   const esRef = useRef<EventSource | null>(null);
   const voiceTurn = useRef<string | null>(null);
+  const voiceDraft = useRef<string | null>(null);
   const voiceTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const connectTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -284,6 +285,7 @@ function Inner({ children }: { children: ReactNode }) {
     clearTimeout(voiceTimer.current);
     clearTimeout(connectTimer.current);
     voiceTurn.current = null;
+    voiceDraft.current = null;
   }, []);
 
   const openEvents = useCallback(
@@ -301,13 +303,15 @@ function Inner({ children }: { children: ReactNode }) {
         });
       on<{ text: string }>("user", (d) => {
         clearTimeout(voiceTimer.current);
+        const draft = voiceDraft.current;
         const cid = nid();
         voiceTurn.current = cid;
-        setTurns((ts) => [
-          ...closePending(ts),
-          { id: nid(), role: "user", text: d.text, cards: [], pending: false, via: "voice" },
-          { id: cid, role: "coach", text: "", cards: [], pending: true, status: tRef.current("coach.thinking"), via: "voice" },
-        ]);
+        voiceDraft.current = null;
+        setTurns((ts) => {
+          const base = closePending(ts);
+          if (draft && base.some((x) => x.id === draft)) return [...base.map((x) => (x.id === draft ? { ...x, text: d.text } : x)), { id: cid, role: "coach", text: "", cards: [], pending: true, status: tRef.current("coach.thinking"), via: "voice" }];
+          return [...base, { id: nid(), role: "user", text: d.text, cards: [], pending: false, via: "voice" }, { id: cid, role: "coach", text: "", cards: [], pending: true, status: tRef.current("coach.thinking"), via: "voice" }];
+        });
       });
       on<{ label: string }>("status", (d) => voiceTurn.current && patch(voiceTurn.current, { status: d.label }));
       on<{ card: Card }>("card", (d) => voiceTurn.current && patch(voiceTurn.current, (x) => ({ cards: [...x.cards, d.card] })));
@@ -329,6 +333,24 @@ function Inner({ children }: { children: ReactNode }) {
     },
     [closeEvents, effect, patch],
   );
+
+  const onVoiceTranscript = useCallback((text: string) => {
+    if (phaseRef.current !== "live" || !text.trim()) return;
+    const value = text.trim();
+    setTurns((ts) => {
+      const coachIndex = voiceTurn.current ? ts.findIndex((x) => x.id === voiceTurn.current) : -1;
+      const userIndex = coachIndex > 0 ? [...ts.slice(0, coachIndex)].reverse().findIndex((x) => x.role === "user" && x.via === "voice") : -1;
+      if (userIndex >= 0 && coachIndex > 0) {
+        const i = coachIndex - 1 - userIndex;
+        return ts.map((x, j) => (j === i ? { ...x, text: value } : x));
+      }
+      const id = voiceDraft.current || nid();
+      voiceDraft.current = id;
+      const existing = ts.findIndex((x) => x.id === id);
+      if (existing >= 0) return ts.map((x) => (x.id === id ? { ...x, text: value } : x));
+      return [...ts, { id, role: "user", text: value, cards: [], pending: false, via: "voice" }];
+    });
+  }, []);
 
   const endVoice = useCallback(
     (why?: string | null) => {
@@ -535,7 +557,7 @@ function Inner({ children }: { children: ReactNode }) {
   );
   return (
     <Ctx.Provider value={value}>
-      {Bridge && <Bridge onConv={onConv} onState={setLive} />}
+      {Bridge && <Bridge onConv={onConv} onState={setLive} onTranscript={onVoiceTranscript} />}
       {children}
     </Ctx.Provider>
   );

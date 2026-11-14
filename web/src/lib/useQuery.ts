@@ -3,6 +3,12 @@ import { ApiError } from "./api";
 
 const cache = new Map<string, unknown>();
 
+export function prefetch<T>(key: string, scope: string, fn: () => Promise<T>): void {
+  void scope;
+  if (cache.has(key)) return;
+  void fn().then((data) => cache.set(key, data), () => undefined);
+}
+
 export function invalidate(prefix?: string) {
   if (!prefix) return cache.clear();
   for (const k of [...cache.keys()]) if (k.startsWith(prefix)) cache.delete(k);

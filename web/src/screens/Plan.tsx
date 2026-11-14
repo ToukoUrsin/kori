@@ -552,6 +552,7 @@ function Setters({ q }: { q: Query<PlanResponse> }) {
             }}
           />
         </div>
+        {d.reason && <p className="border-t border-line px-1 py-2.5 text-[12px] leading-[17px] text-ink-3">{d.reason}</p>}
         <div className={cx("flex items-center gap-3 border-t border-line py-3 transition-opacity duration-150", busy && "opacity-60")}>
           <div className="min-w-0 flex-1">
             <p className="text-[13px] leading-[18px] text-ink-2">{t("plan.safeEffect")}</p>
@@ -559,7 +560,7 @@ function Setters({ q }: { q: Query<PlanResponse> }) {
               <Money value={d.safe.per_day} cents /> {t("common.aDay")}
             </p>
           </div>
-          <StatusChip status={d.safe.status} />
+          {d.safe.status_label ? <span className="rounded-full bg-warn-soft px-2.5 py-1 text-[12px] font-semibold text-warn-ink">{d.safe.status_label}</span> : <StatusChip status={d.safe.status} />}
           <Money value={d.safe.amount} className="text-[22px] font-semibold leading-7 tracking-[-0.02em] text-ink" />
         </div>
       </div>

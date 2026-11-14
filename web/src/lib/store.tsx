@@ -1,13 +1,13 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { api } from "./api";
+import { isEmbedMode, postToHost } from "./host";
 import { makeT, type TFn } from "./i18n";
 import type { BasketKey, Card, Home, Lang, Persona } from "./types";
-import { invalidate, useQuery, type Query } from "./useQuery";
+import { invalidate, prefetch, useQuery, type Query } from "./useQuery";
 
 export type Tab = "today" | "baskets" | "plan" | "learn";
 const TABS: Tab[] = ["today", "baskets", "plan", "learn"];
 const DEFAULT_CUSTOMER = "CUST00092";
-const PENSION_AGE = 68; // mirrors the API's own wording rule; see FRONTEND_NOTES
 
 export type Overlay = { kind: "card"; card: Card } | { kind: "persona" } | null;
 
@@ -93,9 +93,10 @@ function initial() {
   const q = new URLSearchParams(location.search);
   const ql = q.get("lang");
   const lang: Lang = ql ? (ql.toLowerCase().startsWith("fi") ? "fi" : "en") : read("kori.lang") === "fi" ? "fi" : "en";
-  const customer = q.get("customer") || read("kori.customer") || DEFAULT_CUSTOMER;
+  const storedCustomer = read("kori.customer");
+  const customer = q.get("customer") || storedCustomer || DEFAULT_CUSTOMER;
   const h = location.hash.replace("#", "") as Tab;
-  return { lang, customer, tab: TABS.includes(h) ? h : ("today" as Tab) };
+  return { lang, customer, tab: TABS.includes(h) ? h : ("today" as Tab), firstVisit: !q.has("customer") && !storedCustomer };
 }
 
 export function AppProvider({ children }: { children: ReactNode }) {
@@ -121,6 +122,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const id = setTimeout(() => setToast((cur) => (cur && cur.id === toast.id ? null : cur)), toast.action ? 6000 : 3200);
     return () => clearTimeout(id);
   }, [toast]);
+  useEffect(() => {
+    if (!init.firstVisit) return;
+    const id = setTimeout(() => setOverlay({ kind: "persona" }), 250);
+    return () => clearTimeout(id);
+  }, [init.firstVisit]);
 
   useEffect(() => {
     document.documentElement.lang = lang;
@@ -171,14 +177,29 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const pins = useQuery<Card[]>(`pins|${customer}|${lang}|${version}`, customer, () => api.pins(customer, lang));
   const personasQ = useQuery<Persona[]>(`personas|${lang}|${version}`, "all", () => api.personas(lang));
 
+  useEffect(() => {
+    if (!home.data) return;
+    const run = () => {
+      const key = `lessons|${customer}|${lang}|${version}`;
+      prefetch(key, customer, async () => {
+        const list = await api.lessons(customer, lang);
+        const first = list.find((l) => !l.done);
+        if (first) prefetch(`lesson|${first.id}|${customer}|${lang}|${version}`, customer, () => api.lesson(first.id, customer, lang));
+        return list;
+      });
+    };
+    const ric = (window as unknown as { requestIdleCallback?: (cb: () => void) => number }).requestIdleCallback;
+    const id = ric ? ric(run) : window.setTimeout(run, 250);
+    return () => ric ? undefined : clearTimeout(id as number);
+  }, [home.data, customer, lang, version]);
+
   // an unknown customer in the URL or storage falls back to the demo hero instead of a dead screen
   useEffect(() => {
     const e = home.error as (Error & { status?: number }) | undefined;
     if (e && e.status === 404 && customer !== DEFAULT_CUSTOMER) setCustomer(DEFAULT_CUSTOMER);
   }, [home.error, customer, setCustomer]);
 
-  const pensioner = (home.data?.persona.age ?? 0) >= PENSION_AGE;
-  const t = useMemo(() => makeT(lang, pensioner), [lang, pensioner]);
+  const t = useMemo(() => makeT(lang), [lang]);
 
   const pinIndex = useMemo(() => {
     const m = new Map<string, string>();
@@ -226,11 +247,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const basketOf = useCallback((c: string) => basketMap.get(c), [basketMap]);
 
   const openCoach = useCallback((o?: { ask?: string; voice?: boolean; focus?: boolean }) => {
+    const partialAsk = home.data?.notices.find((notice) => notice.id === "partial_view")?.ask;
+    if (isEmbedMode() && o?.ask && partialAsk === o.ask) {
+      postToHost({ type: "kori:request", v: 1, what: "link_other_bank" });
+      return;
+    }
     setCoachOpen(true);
     setMinuteOn(false);
     setMinuteFocus(null);
     setCoachRequest(o && (o.ask || o.voice || o.focus) ? { id: ++reqId.current, ...o } : null);
-  }, []);
+  }, [home.data]);
   const closeCoach = useCallback(() => setCoachOpen(false), []);
   const openLesson = useCallback((id: string | null) => setLessonId(id), []);
 

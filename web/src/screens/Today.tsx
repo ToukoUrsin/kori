@@ -25,7 +25,7 @@ function Header({ d }: { d?: Home }) {
       <div className="min-w-0 flex-1">
         {d ? (
           <>
-            <h1 className="truncate text-[17px] font-semibold leading-[22px] tracking-[-0.015em] text-ink">{d.greeting}</h1>
+            <h1 className="truncate text-[17px] font-semibold leading-[22px] tracking-[-0.015em] text-ink">{d.greeting.replace(d.persona.name, "").trim() || d.greeting}</h1>
             <p className="num text-[12px] leading-4 text-ink-3">{weekday(d.today, lang)}</p>
           </>
         ) : (
@@ -46,9 +46,10 @@ function Hero({ d }: { d: Home }) {
   const s = d.safe;
   const empty = s.status === "empty";
   const date = day(s.next_payday, lang);
+  const payWord = lang === "fi" ? `${d.pay_word || "palkkapäivä"}än` : d.pay_word || "payday";
   return (
     <section data-focus-key="safe" data-on={minuteFocus === "safe" ? "true" : undefined} className="focus-ring -mx-2.5 rounded-card px-2.5 py-2">
-      <p className="text-[14px] leading-5 text-ink-2">{t("today.safeLabel")}</p>
+      <p className="text-[14px] leading-5 text-ink-2">{t("today.safeLabel", { word: payWord })}</p>
       <p className="mt-0.5">
         <BigMoney value={s.amount} lang={lang} countUp className="text-[56px] font-semibold leading-[62px] tracking-[-0.04em] text-ink" />
       </p>
@@ -58,12 +59,12 @@ function Hero({ d }: { d: Home }) {
             <span className="font-medium text-ink">{money(s.per_day, lang, { cents: true })}</span> {t("common.aDay")} ·{" "}
           </>
         )}
-        {s.days_to_payday === 1 ? t("today.dayTo", { date }) : t("today.daysTo", { n: s.days_to_payday, date })}
+        {s.days_to_payday === 1 ? t("today.dayTo", { word: payWord, date }) : t("today.daysTo", { n: s.days_to_payday, word: payWord, date })}
       </p>
       {/* chip and line flow as one paragraph, so a long line wraps under the chip instead of hanging beside it */}
       <p className="mt-3 text-[14px] leading-[26px] text-ink-2">
         <StatusChip status={s.status} className="mr-2 align-[1px]" />
-        {t(`status.${s.status}.line`)}
+        {s.status_line || t(`status.${s.status}.line`)}
       </p>
       {empty && (
         <p className="mt-1.5 text-[14px] leading-[21px] text-ink-2">
@@ -133,8 +134,8 @@ export function Today() {
     );
   }
 
-  const safeCard: Card = { id: "today-safe", type: "safe", title: t("plan.safeEffect"), data: d.safe, source: { tool: "safe_to_spend", args: {} } };
-  const forecastCard: Card = { id: "today-forecast", type: "forecast", title: t("today.forecast"), data: d.forecast, source: { tool: "balance_forecast", args: {} } };
+  const safeCard: Card = { id: "today-safe", type: "safe", title: t("plan.safeEffect"), data: { ...d.safe, pay_word: d.pay_word }, source: { tool: "safe_to_spend", args: {} } };
+  const forecastCard: Card = { id: "today-forecast", type: "forecast", title: t("today.forecast"), data: { ...d.forecast, pay_word: d.pay_word }, source: { tool: "balance_forecast", args: {} } };
   const next = d.lessons.next;
   const pinned = pins.data;
 
@@ -231,9 +232,9 @@ export function Today() {
             data-on={minuteFocus === "forecast" ? "true" : undefined}
             className="focus-ring relative rounded-card border border-line bg-surface px-4 pb-2.5 pt-3.5 transition-colors duration-150 hover:border-line-strong"
           >
-            <ForecastLegend data={d.forecast} />
+            <ForecastLegend data={{ ...d.forecast, pay_word: d.pay_word }} />
             <div className="mt-1.5">
-              <ForecastChart data={d.forecast} variant="mini" />
+              <ForecastChart data={{ ...d.forecast, pay_word: d.pay_word }} variant="mini" />
             </div>
             <button type="button" aria-label={t("today.forecast")} onClick={() => setOverlay({ kind: "card", card: forecastCard })} className="absolute inset-0 rounded-card" />
           </div>
@@ -272,7 +273,7 @@ export function Today() {
 
         {next && (
           <section className="mt-8">
-            <SectionHead title={t("today.lessonNext")} action={<span className="num shrink-0 text-[13px] leading-5 text-ink-3">{t("learn.progress", { done: d.lessons.done, total: d.lessons.total })}</span>} />
+            <SectionHead title={t("today.lessonNext")} action={<span className="num shrink-0 text-[13px] leading-5 text-ink-3">{t("learn.progress", { done: d.lessons.done, total: d.lessons_total ?? d.lessons.total })}</span>} />
             <button
               type="button"
               onClick={() => openLesson(next.id)}

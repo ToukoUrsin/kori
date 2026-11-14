@@ -55,10 +55,10 @@ const D = {
   "status.very_tight.line": ["It lasts, with little to spare.", "Riittää, mutta varaa on vähän."],
   "status.empty.line": ["Your everyday money is spent.", "Arkirahasi on käytetty."],
 
-  "today.safeLabel": ["Safe to spend until payday", "Turvallista käyttää palkkapäivään asti"],
+  "today.safeLabel": ["Safe to spend until {word}", "Turvallista käyttää {word} asti"],
   "today.perDay": ["{v} a day", "{v} päivässä"],
-  "today.daysTo": ["{n} days to payday on {date}", "{n} päivää palkkapäivään {date}"],
-  "today.dayTo": ["1 day to payday on {date}", "1 päivä palkkapäivään {date}"],
+  "today.daysTo": ["{n} days to {word} on {date}", "{n} päivää {word} asti {date}"],
+  "today.dayTo": ["1 day to {word} on {date}", "1 päivä {word} asti {date}"],
   "today.usualPace": ["Your usual pace is {v} a day.", "Tavallinen tahtisi on {v} päivässä."],
   "today.emptyBudget": [
     "You set aside {budget} for everyday spending this pay cycle and have spent {spent}. Your musts are still covered: {free} stays free on the account after them, so what you spend now comes out of your buffer.",
@@ -143,6 +143,7 @@ const D = {
   "forecast.safe": ["Safe pace", "Turvallinen tahti"],
   "forecast.cushion": ["Cushion", "Pohjavara"],
   "forecast.payday": ["Payday", "Palkkapäivä"],
+  "forecast.payWord": ["{word}", "{word}"],
   "forecast.today": ["Today", "Tänään"],
   "forecast.lowest": ["Lowest", "Alimmillaan"],
   "forecast.usualEnds": ["Usual pace, {v} a day: {low} on {date}", "Tavallinen tahti, {v} päivässä: {low} {date}"],
@@ -248,6 +249,12 @@ const D = {
   "whatif.oneoffHit": ["{v} one-off", "{v} kertameno"],
   "whatif.noEffect": ["No change to your month", "Ei muutosta kuukauteesi"],
   "whatif.changes": ["What changes", "Mikä muuttuu"],
+  "whatif.fullCycle": ["Full pay cycle", "Koko palkkajakso"],
+  "whatif.todayChanges": ["Today's number changes now.", "Tämän päivän luku muuttuu nyt."],
+  "whatif.todayStarts": ["Today's number changes when the change starts on {date}.", "Tämän päivän luku muuttuu, kun muutos alkaa {date}."],
+  "whatif.savingMonthly": ["Saving each month", "Säästö kuukaudessa"],
+  "whatif.savingYearly": ["Saving each year", "Säästö vuodessa"],
+  "whatif.savingSplit": ["{left} comes from what is left over. {trim} has to be trimmed from everyday spending.", "{left} tulee ylijäämästä. {trim} pitää säästää arjen menoista."],
 
   "stat.avg": ["{v} per purchase", "{v} / ostos"],
   "stat.count": ["{n} purchases", "{n} ostosta"],
@@ -295,6 +302,26 @@ const D = {
   "track.over": ["Months you went over it", "Kuukaudet, joina ylitit sen"],
   "track.belowZero": ["below zero in {n}", "miinuksella {n} kertaa"],
   "track.misses": ["When it did not hold", "Kun se ei pitänyt"],
+  "track.population": ["Across {customers} customers the number held {held} of the time. Balance as budget: {budget}.", "{customers} asiakkaan joukossa luku piti {held} ajasta. Saldo budjettina: {budget}."],
+
+  "afford.pace": ["Daily pace", "Päivätahti"],
+  "afford.safe": ["Safe to spend", "Turvallista käyttää"],
+  "afford.account": ["Account", "Tili"],
+  "afford.buffer": ["Buffer", "Puskuri"],
+  "afford.usual": ["Usual pace: {v} a day", "Tavallinen tahti: {v} päivässä"],
+  "afford.short": ["Short by {v}", "Puuttuu {v}"],
+  "afford.reserveCovers": ["Your surprise reserve covers it ({v}).", "Yllätysvarasi kattaa sen ({v})."],
+  "afford.reserveUsed": ["The surprise reserve covers {v}.", "Yllätysvarasta tulee {v}."],
+  "afford.partial": ["I only see part of your money, so this view covers this account.", "Näen vain osan rahoistasi, joten tämä näkymä koskee tätä tiliä."],
+  "afford.wait": ["Wait", "Odota"],
+  "afford.spread": ["Spread it", "Jaa meno"],
+  "afford.rebuild": ["Build the reserve back", "Kokoa varaus takaisin"],
+  "slips.count": ["purchases under {under} in {days} days", "ostosta alle {under} {days} päivässä"],
+  "slips.total": ["They came to {total} in all.", "Yhteensä {total}."],
+  "slips.perYear": ["at this rate per year", "tällä tahdilla vuodessa"],
+  "slips.kinds": ["Kinds", "Tyypit"],
+  "slips.places": ["Places", "Paikat"],
+  "calculate.engine": ["Calculated from the engine's numbers.", "Laskettu moottorin luvuista."],
 
   "lesson.start": ["Start lesson", "Aloita oppitunti"],
   "lesson.again": ["Open again", "Avaa uudelleen"],
@@ -361,7 +388,7 @@ const D = {
 
   "learn.title": ["Learn", "Opi"],
   "learn.progress": ["{done} of {total} lessons done", "{done}/{total} oppituntia tehty"],
-  "learn.lessons": ["One-minute lessons on your own numbers", "Minuutin oppitunnit omilla luvuillasi"],
+  "learn.lessons": ["Up to {n} lessons, picked for you", "Sinulle valitut oppitunnit, enintään {n}"],
   "learn.allDone": ["Every lesson is done. They stay open if you want another look.", "Kaikki oppitunnit on tehty. Ne pysyvät auki, jos haluat palata niihin."],
   "learn.about": ["About you", "Sinusta"],
   "learn.next": ["Next", "Seuraava"],
@@ -378,6 +405,9 @@ const D = {
   "learn.got": ["You got", "Tämä meni perille"],
   "learn.missing": ["Still missing", "Vielä puuttuu"],
   "learn.tryAgain": ["Try once more", "Kokeile vielä kerran"],
+  "learn.notYet": ["Not yet", "Ei vielä"],
+  "learn.almost": ["Almost", "Melkein"],
+  "learn.leaveForNow": ["Leave it for now", "Jätä tähän tällä kertaa"],
   "learn.finish": ["Finish lesson", "Päätä oppitunti"],
   "learn.doneTitle": ["Lesson done", "Oppitunti tehty"],
   "learn.doneNext": ["Next: {title}", "Seuraavaksi: {title}"],
@@ -387,6 +417,7 @@ const D = {
   "learn.leave": ["Leave lesson", "Poistu oppitunnista"],
 
   "persona.title": ["Demo customers", "Demoasiakkaat"],
+  "persona.demoNote": ["These are six demo customers from the hackathon dataset.", "Nämä kuusi demoasiakasta ovat hackathonin aineistosta."],
   "persona.footnote": [
     "Demo customers from S-Pankki's synthetic Junction dataset. First names and merchant names are invented.",
     "Demoasiakkaat ovat S-Pankin synteettisestä Junction-aineistosta. Etunimet ja kauppiaiden nimet on keksitty.",
@@ -417,38 +448,12 @@ const D = {
 
 export type Key = keyof typeof D;
 
-/* The dataset calls every regular income salary. For a pensioner the words change, the same way the API changes its own. */
-const PENSION_EN: [RegExp, string][] = [
-  [/\bpaydays\b/gi, "pension days"],
-  [/\bpayday\b/gi, "pension day"],
-  [/\bpay cycle\b/gi, "pension month"],
-  [/\bsalary\b/gi, "pension"],
-  [/\btypical pay\b/gi, "typical pension"],
-  [/\bif pay\b/gi, "if the pension"],
-];
-const PENSION_FI: [RegExp, string][] = [
-  [/palkkapäiv/gi, "eläkepäiv"],
-  [/palkkajakso/gi, "eläkejakso"],
-  [/\bpalkastasi\b/gi, "eläkkeestäsi"],
-  [/\bpalkka\b/gi, "eläke"],
-];
-
-function keepCase(src: string, repl: string): string {
-  return src[0] === src[0].toUpperCase() ? repl[0].toUpperCase() + repl.slice(1) : repl;
-}
-
-export function pensionText(s: string, lang: Lang): string {
-  for (const [re, rep] of lang === "fi" ? PENSION_FI : PENSION_EN) s = s.replace(re, (m) => keepCase(m, rep));
-  return s;
-}
-
 export type TFn = (key: Key, vars?: Record<string, string | number>) => string;
 
-export function makeT(lang: Lang, pensioner = false): TFn {
+export function makeT(lang: Lang): TFn {
   const i = lang === "fi" ? 1 : 0;
   return (key, vars) => {
     let s: string = D[key][i];
-    if (pensioner) s = pensionText(s, lang);
     if (vars) s = s.replace(/\{(\w+)\}/g, (_, k: string) => (k in vars ? String(vars[k]) : `{${k}}`));
     return s;
   };

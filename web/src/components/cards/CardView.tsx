@@ -3,6 +3,8 @@ import { useEffect, useState, type ReactNode } from "react";
 import { useApp } from "../../lib/store";
 import type {
   BasketsData,
+  AffordData,
+  CalculateData,
   Card,
   ForecastData,
   LessonCardData,
@@ -12,12 +14,15 @@ import type {
   QueryData,
   SafeData,
   SaveData,
+  SlipsData,
   TrackData,
   WhatIfData,
 } from "../../lib/types";
 import { cx } from "../ui/bits";
 import {
   BasketsBody,
+  AffordBody,
+  CalculateBody,
   BreakdownBody,
   ForecastBody,
   LessonBody,
@@ -26,6 +31,7 @@ import {
   ProfileBody,
   SafeBody,
   SaveBody,
+  SlipsBody,
   StatBody,
   TrackBody,
   TrendBody,
@@ -41,6 +47,12 @@ function Body({ card, open }: { card: Card; open: boolean }) {
       return <ForecastBody d={card.data as ForecastData} />;
     case "baskets":
       return <BasketsBody d={card.data as BasketsData} />;
+    case "afford":
+      return <AffordBody d={card.data as AffordData} />;
+    case "slips":
+      return <SlipsBody d={card.data as SlipsData} />;
+    case "calculate":
+      return <CalculateBody d={card.data as CalculateData} />;
     case "stat":
       return <StatBody d={card.data as QueryData} open={open} />;
     case "breakdown":

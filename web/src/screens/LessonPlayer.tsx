@@ -25,6 +25,7 @@ function Player({ id, onClose, onList }: { id: string; onClose: () => void; onLi
   const [grading, setGrading] = useState(false);
   const [note, setNote] = useState<string | null>(null);
   const scroller = useRef<HTMLDivElement>(null);
+  const answerRef = useRef<HTMLTextAreaElement>(null);
   const marked = useRef(false);
 
   const steps: Step[] = d
@@ -37,14 +38,16 @@ function Player({ id, onClose, onList }: { id: string; onClose: () => void; onLi
     scroller.current?.scrollTo({ top: 0 });
   }, [n]);
 
-  // reaching the end counts, whether or not the say-it-back passed
+  // The API is the source of truth. A lesson can only be marked done after a passed teach-back.
   useEffect(() => {
-    if (step?.kind !== "done" || marked.current) return;
+    if (!d || step?.kind !== "done" || marked.current) return;
+    if (d.teach_back && !grade?.passed) return;
     marked.current = true;
-    const after = () => bump();
-    if (grade?.passed) after();
-    else api.lessonDone(id, customer).then(after, after);
-  }, [step?.kind, grade, id, customer, bump]);
+    api.lessonDone(id, customer).then(() => bump(), (e: unknown) => {
+      // A stale or repeated completion is harmless. The list remains unchanged until the API says done.
+      if ((e as { status?: number })?.status !== 409) setNote(t("learn.gradeFail"));
+    });
+  }, [step?.kind, grade, id, customer, bump, d?.teach_back, t]);
 
   const check = async () => {
     const a = answer.trim();
@@ -193,6 +196,7 @@ function Player({ id, onClose, onList }: { id: string; onClose: () => void; onLi
             <p className="mt-2 text-[14px] leading-[21px] text-ink-2">{t("learn.sayBackHint")}</p>
             <div className="mt-4 rounded-[14px] border border-line-strong bg-surface transition-[border-color,box-shadow] duration-150 focus-within:border-brand focus-within:shadow-[0_0_0_3px_oklch(0.42_0.095_158/0.14)]">
               <textarea
+                ref={answerRef}
                 value={answer}
                 onChange={(e) => setAnswer(e.target.value)}
                 rows={4}
@@ -214,10 +218,10 @@ function Player({ id, onClose, onList }: { id: string; onClose: () => void; onLi
         ) : (
           <motion.div className="mt-4" initial={reduce ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
             <blockquote className="rounded-[12px] bg-sunk px-3.5 py-3 text-[15px] leading-[22px] text-ink-2">{answer.trim()}</blockquote>
-            <p className="mt-4 text-[17px] font-semibold leading-6 text-ink">{grade.encouragement}</p>
+            <p className="mt-4 text-[17px] font-semibold leading-6 text-ink">{grade.grade === "got_it" ? grade.encouragement : grade.grade === "partly" ? t("learn.almost") : t("learn.notYet")}</p>
             {grade.got && (
               <div className="mt-3 flex gap-2.5">
-                <CircleCheck size={18} strokeWidth={2} className="mt-0.5 shrink-0 text-brand-mid" aria-hidden />
+                {grade.passed ? <CircleCheck size={18} strokeWidth={2} className="mt-0.5 shrink-0 text-brand-mid" aria-hidden /> : <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full border-[1.5px] border-ink-3" aria-hidden />}
                 <p className="text-[15px] leading-[22px] text-ink">
                   <span className="block text-[12px] leading-4 text-ink-3">{t("learn.got")}</span>
                   {grade.got}
@@ -235,6 +239,7 @@ function Player({ id, onClose, onList }: { id: string; onClose: () => void; onLi
                 </p>
               </div>
             )}
+            {grade.hint && <p className="mt-3 rounded-[10px] bg-sunk px-3 py-2.5 text-[14px] leading-[21px] text-ink-2">{grade.hint}</p>}
           </motion.div>
         )}
       </>
@@ -249,16 +254,7 @@ function Player({ id, onClose, onList }: { id: string; onClose: () => void; onLi
         </Button>
       </div>
     ) : (
-      <div className="flex gap-2">
-        {!grade.passed && (
-          <Button onClick={() => setGrade(null)} className="shrink-0">
-            {t("learn.tryAgain")}
-          </Button>
-        )}
-        <Button variant="primary" onClick={() => go(n + 1)} className="min-w-0 flex-1">
-          {t("learn.finish")}
-        </Button>
-      </div>
+      grade.passed ? <Button variant="primary" block onClick={() => go(n + 1)}>{t("learn.finish")}</Button> : <div className="flex gap-2"><Button variant="ghost" onClick={onClose} className="shrink-0">{t("learn.leaveForNow")}</Button><Button variant="primary" onClick={() => { setGrade(null); setTimeout(() => answerRef.current?.focus(), 0); }} className="min-w-0 flex-1">{t("learn.tryAgain")}</Button></div>
     );
   } else {
     body = (

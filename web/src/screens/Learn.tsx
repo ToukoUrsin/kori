@@ -1,10 +1,11 @@
 import { Check, ChevronRight } from "lucide-react";
+import { useEffect } from "react";
 import { CardView } from "../components/cards/CardView";
 import { Button, ErrorInline, SectionHead, Skel, cx } from "../components/ui/bits";
 import { api } from "../lib/api";
 import { useApp } from "../lib/store";
 import type { Card, LessonSummary } from "../lib/types";
-import { useQuery } from "../lib/useQuery";
+import { prefetch, useQuery } from "../lib/useQuery";
 import { ScreenHeader } from "../shell/Shell";
 
 function AboutCard({ tool }: { tool: string }) {
@@ -16,15 +17,21 @@ function AboutCard({ tool }: { tool: string }) {
 }
 
 export function Learn() {
-  const { customer, lang, t, version, openLesson } = useApp();
+  const { customer, lang, t, version, openLesson, home } = useApp();
   const q = useQuery<LessonSummary[]>(`lessons|${customer}|${lang}|${version}`, customer, () => api.lessons(customer, lang));
+  useEffect(() => {
+    if (q.data) {
+      const first = q.data.find((l) => !l.done);
+      if (first) prefetch(`lesson|${first.id}|${customer}|${lang}|${version}`, customer, () => api.lesson(first.id, customer, lang));
+    }
+  }, [q.data, customer, lang, version]);
   const list = q.data;
   const done = list ? list.filter((l) => l.done).length : 0;
   const next = list?.find((l) => !l.done);
 
   return (
     <>
-      <ScreenHeader title={t("learn.title")} sub={t("learn.lessons")} />
+      <ScreenHeader title={t("learn.title")} sub={t("learn.lessons", { n: home.data?.lessons_total ?? list?.length ?? 8 })} />
       <div className="px-5 pb-8 pt-3">
         {!list ? (
           q.error ? (
@@ -39,8 +46,8 @@ export function Learn() {
         ) : (
           <>
             <div>
-              <p className="num text-[13px] leading-[18px] text-ink-2">{t("learn.progress", { done, total: list.length })}</p>
-              <div className="mt-2 flex gap-1" role="img" aria-label={t("learn.progress", { done, total: list.length })}>
+              <p className="num text-[13px] leading-[18px] text-ink-2">{t("learn.progress", { done, total: home.data?.lessons_total ?? list.length })}</p>
+              <div className="mt-2 flex gap-1" role="img" aria-label={t("learn.progress", { done, total: home.data?.lessons_total ?? list.length })}>
                 {list.map((l) => (
                   <span key={l.id} className={cx("h-1.5 flex-1 rounded-full transition-colors duration-300", l.done ? "bg-brand" : "bg-line-strong")} />
                 ))}

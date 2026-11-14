@@ -4,6 +4,8 @@ import { day, money, monthShort, num, pct } from "../../lib/format";
 import { useApp } from "../../lib/store";
 import type {
   BasketsData,
+  AffordData,
+  CalculateData,
   ForecastData,
   LessonCardData,
   Notice,
@@ -13,6 +15,7 @@ import type {
   QueryData,
   SafeData,
   SaveData,
+  SlipsData,
   TrackData,
   WhatIfData,
 } from "../../lib/types";
@@ -92,21 +95,22 @@ export function SafeMaths({ d }: { d: SafeData }) {
 
 export function SafeBody({ d, open }: { d: SafeData; open: boolean }) {
   const { lang, t } = useApp();
+  const payWord = d.pay_word || (lang === "fi" ? "Palkkapäivä" : "Payday");
   return (
     <div>
       <div className="flex items-start justify-between gap-3">
         <BigMoney value={d.amount} lang={lang} className="text-[36px] font-semibold leading-10 tracking-[-0.03em] text-ink" />
-        <StatusChip status={d.status} className="mt-2" />
+        {d.status_label ? <span className={cx("mt-2 inline-flex h-6 items-center rounded-full px-2.5 text-[12px] font-semibold", d.status === "comfortable" ? "bg-brand-soft text-brand-strong" : d.status === "empty" ? "bg-sunk text-ink-2" : "bg-warn-soft text-warn-ink")}>{d.status_label}</span> : <StatusChip status={d.status} className="mt-2" />}
       </div>
       <div className="mt-3">
         <Cells>
           <Cell label={t("common.perDay")}>{money(d.per_day, lang, { cents: true })}</Cell>
           <Cell label={t("safe.thisWeek")}>{money(d.this_week, lang, { cents: true })}</Cell>
-          <Cell label={t("forecast.payday")}>{day(d.next_payday, lang)}</Cell>
+          <Cell label={t("forecast.payWord", { word: payWord })}>{day(d.next_payday, lang)}</Cell>
         </Cells>
       </div>
       <div className="mt-4">
-        <p className="mb-2 text-[13px] leading-[18px] text-ink-2">{t("today.notBudget", { balance: money(d.balance, lang, { cents: true }) })}</p>
+        <p className="mb-2 text-[13px] leading-[18px] text-ink-2">{d.status_line || t("today.notBudget", { balance: money(d.balance, lang, { cents: true }) })}</p>
         <SpokenBar items={d.spoken_for} />
       </div>
       <Collapse open={open}>
@@ -120,6 +124,7 @@ export function SafeBody({ d, open }: { d: SafeData; open: boolean }) {
 
 export function ForecastBody({ d }: { d: ForecastData }) {
   const { lang, t } = useApp();
+  const payWord = d.pay_word || (lang === "fi" ? "Palkkapäivä" : "Payday");
   const bills = d.usual.series.flatMap((p) => p.events.filter((e) => e.type === "bill").map((e) => ({ ...e, date: p.date })));
   return (
     <div>
@@ -138,7 +143,7 @@ export function ForecastBody({ d }: { d: ForecastData }) {
           ))}
           <li className="flex items-center gap-3 py-2">
             <span className="num w-14 shrink-0 text-ink-3">{day(d.usual.next_payday, lang)}</span>
-            <span className="min-w-0 flex-1 truncate text-ink">{t("forecast.payday")}</span>
+            <span className="min-w-0 flex-1 truncate text-ink">{t("forecast.payWord", { word: payWord })}</span>
             <span className="num shrink-0 font-medium text-brand">{money(d.salary, lang, { cents: true, sign: true })}</span>
           </li>
         </ul>
@@ -346,6 +351,42 @@ export function TrendBody({ d }: { d: QueryData }) {
   );
 }
 
+/* ------------------------------------------------------------- new cards */
+
+export function AffordBody({ d }: { d: AffordData }) {
+  const { lang, t } = useApp();
+  return (
+    <div>
+      <p className="text-[16px] font-semibold leading-[23px] text-ink">{d.headline}</p>
+      <div className="mt-4 rounded-[10px] bg-sunk px-3 py-2.5">
+        <div className="flex items-baseline justify-between gap-3 text-[13px]"><span className="text-ink-2">{t("afford.pace")}</span><Arrow from={money(d.per_day.before, lang)} to={money(d.per_day.after, lang)} /></div>
+        <div className="mt-1 flex items-baseline justify-between gap-3 text-[13px]"><span className="text-ink-2">{t("afford.safe")}</span><Arrow from={money(d.safe.before, lang)} to={money(d.safe.after, lang)} /></div>
+        <div className="mt-1 flex items-baseline justify-between gap-3 text-[13px]"><span className="text-ink-2">{t("afford.account")}</span><Arrow from={money(d.account.balance_before, lang)} to={money(d.account.balance_after, lang)} /></div>
+        <div className="mt-1 flex items-baseline justify-between gap-3 text-[13px]"><span className="text-ink-2">{t("afford.buffer")}</span><Arrow from={money(d.account.buffer_before, lang)} to={money(d.account.buffer_after, lang)} /></div>
+        <p className="mt-1 text-[12px] leading-4 text-ink-3">{t("afford.usual", { v: money(d.usual_per_day, lang) })}</p>
+      </div>
+      {d.short_by > 0 && <p className="mt-3 text-[13px] leading-[18px] text-warn-ink">{t("afford.short", { v: money(d.short_by, lang) })}</p>}
+      {d.reserve && <p className="mt-3 text-[13px] leading-[18px] text-ink-2">{d.reserve.covers_it ? t("afford.reserveCovers", { v: money(d.reserve.available, lang) }) : t("afford.reserveUsed", { v: money(d.reserve.used, lang) })}</p>}
+      {d.partial_view && <p className="mt-3 text-[12px] leading-4 text-ink-3">{t("afford.partial")}</p>}
+      {d.options.length > 0 && <ul className="mt-3 divide-y divide-line border-y border-line text-[13px] leading-[18px]">{d.options.map((o) => <li key={o.key} className="py-2.5 text-ink-2"><span className="font-medium text-ink">{o.key === "wait" ? t("afford.wait") : o.key === "spread" ? t("afford.spread") : t("afford.rebuild")}</span><span className="block mt-0.5">{o.text}</span></li>)}</ul>}
+    </div>
+  );
+}
+
+export function SlipsBody({ d }: { d: SlipsData }) {
+  const { lang, t } = useApp();
+  return <div>
+    <div className="flex items-end justify-between gap-3"><div><p className="num text-[32px] font-semibold leading-9 tracking-[-0.03em] text-ink">{d.count}</p><p className="text-[13px] leading-[18px] text-ink-2">{t("slips.count", { days: d.days, under: money(d.under, lang) })}</p></div><div className="text-right"><p className="num text-[22px] font-semibold leading-7 text-ink">{money(d.per_year, lang)}</p><p className="text-[12px] text-ink-3">{t("slips.perYear")}</p></div></div>
+    <p className="mt-3 text-[13px] leading-[18px] text-ink-2">{t("slips.total", { total: money(d.total, lang) })}</p>
+    <div className="mt-3 grid grid-cols-2 gap-4"><div><h4 className="text-[12px] font-semibold text-ink-3">{t("slips.kinds")}</h4><ul className="mt-1 divide-y divide-line text-[13px]">{d.top_kinds.map((x) => <li key={x.kind} className="flex gap-2 py-1.5"><span className="min-w-0 flex-1 truncate text-ink">{x.label}</span><span className="num text-ink-2">{money(x.total, lang)}</span></li>)}</ul></div><div><h4 className="text-[12px] font-semibold text-ink-3">{t("slips.places")}</h4><ul className="mt-1 divide-y divide-line text-[13px]">{d.top_places.map((x) => <li key={x.merchant} className="flex gap-2 py-1.5"><span className="min-w-0 flex-1 truncate text-ink">{x.merchant}</span><span className="num text-ink-2">{money(x.total, lang)}</span></li>)}</ul></div></div>
+  </div>;
+}
+
+export function CalculateBody({ d }: { d: CalculateData }) {
+  const { lang, t } = useApp();
+  return <div><p className="num text-[30px] font-semibold leading-9 tracking-[-0.03em] text-ink">{d.result_text}</p><p className="mt-1 text-[14px] leading-5 text-ink-2">{d.shown}</p><ul className="mt-3 divide-y divide-line border-y border-line text-[13px] leading-[18px]">{d.inputs.map((x) => <li key={x.name} className="flex items-baseline justify-between gap-3 py-2"><span className="text-ink-2">{x.label}</span><span className="num font-medium text-ink">{money(x.value, lang, { cents: true })}</span></li>)}</ul><p className="mt-2 text-[12px] text-ink-3">{t("calculate.engine")}</p></div>;
+}
+
 /* ----------------------------------------------------------------- what-if */
 
 function Arrow({ from, to, strong = true }: { from: string; to: string; strong?: boolean }) {
@@ -366,7 +407,13 @@ export function WhatIfBody({ d, showChanges }: { d: WhatIfData; showChanges?: bo
   const months = (v: number | null | undefined) => (v == null ? "–" : num(v, lang, 1));
   return (
     <div>
-      {hasMonthly ? (
+      {d.safe_effect ? (
+        <div className="rounded-[10px] bg-sunk px-3 py-2.5">
+          <p className="text-[14px] font-medium leading-5 text-ink">{d.safe_effect.text}</p>
+          <div className="mt-2 grid grid-cols-2 gap-3 text-[13px] leading-[18px]">{d.safe_effect.per_cycle.now != null && <div><p className="text-ink-3">{t("whatif.fullCycle")}</p><p className="num font-semibold text-ink">{money(d.safe_effect.per_cycle.now, lang)} → {money(d.safe_effect.per_cycle.after, lang)}</p></div>}{d.safe_effect.per_day.now != null && <div><p className="text-ink-3">{t("common.perDay")}</p><p className="num font-semibold text-ink">{money(d.safe_effect.per_day.now, lang)} → {money(d.safe_effect.per_day.after, lang)}</p></div>}{d.safe_effect.per_cycle.now == null && <div><p className="text-ink-3">{t("afford.safe")}</p><p className="num font-semibold text-ink">{money(d.safe_effect.safe_to_spend.before, lang)} → {money(d.safe_effect.safe_to_spend.after, lang)}</p></div>}</div>
+          <p className="mt-2 text-[12px] leading-4 text-ink-3">{d.safe_effect.today.changes_now ? t("whatif.todayChanges") : t("whatif.todayStarts", { date: day(d.safe_effect.starts, lang) })}</p>
+        </div>
+      ) : hasMonthly ? (
         <div className="flex flex-wrap items-end gap-x-3 gap-y-1">
           <span className={cx("num text-[34px] font-semibold leading-9 tracking-[-0.03em]", m > 0 ? "text-brand" : "text-ink")}>
             {money(d.yearly_effect, lang, { sign: true })}
@@ -391,6 +438,9 @@ export function WhatIfBody({ d, showChanges }: { d: WhatIfData; showChanges?: bo
       ) : (
         <p className="text-[15px] text-ink-2">{t("whatif.noEffect")}</p>
       )}
+
+      {d.saving && <div className="mt-3 rounded-[10px] border border-line px-3 py-2.5 text-[13px] leading-[18px]"><div className="flex items-baseline justify-between gap-3"><span className="text-ink-2">{t("whatif.savingMonthly")}</span><span className="num font-semibold text-ink">{money(d.saving.monthly, lang)}</span></div><div className="mt-1 flex items-baseline justify-between gap-3"><span className="text-ink-2">{t("whatif.savingYearly")}</span><span className="num font-semibold text-ink">{money(d.saving.yearly, lang)}</span></div><p className="mt-2 text-ink-2">{t("whatif.savingSplit", { left: money(d.saving.from_left_over, lang), trim: money(d.saving.from_trim, lang) })}</p></div>}
+      {d.gap && <p className="mt-3 text-[13px] leading-[18px] text-ink-2">{d.gap.text}</p>}
 
       {showChanges && d.changes.length > 0 && (
         <ul className="mt-3 divide-y divide-line border-y border-line text-[13px] leading-[18px]">
@@ -443,7 +493,7 @@ export function WhatIfBody({ d, showChanges }: { d: WhatIfData; showChanges?: bo
         </div>
       )}
 
-      <div className="mt-3">
+      {d.projection?.meaningful !== false && d.series.length > 1 ? <div className="mt-3">
         <div className="mb-1 flex flex-wrap gap-x-4 gap-y-0.5 text-[12px] leading-4 text-ink-3">
           <span className="inline-flex items-center gap-1.5">
             <span className={cx("h-[2.5px] w-3.5 rounded-full", d.series[d.series.length - 1].scenario >= d.series[d.series.length - 1].baseline ? "bg-brand" : "bg-warn-ink")} aria-hidden />
@@ -455,7 +505,7 @@ export function WhatIfBody({ d, showChanges }: { d: WhatIfData; showChanges?: bo
           </span>
         </div>
         <TwoLine series={d.series} />
-      </div>
+      </div> : d.projection?.reason ? <p className="mt-3 rounded-[10px] bg-info-soft px-3 py-2.5 text-[13px] leading-[18px] text-info-ink">{d.projection.reason}</p> : null}
 
       {d.goal && (
         <div className="mt-3 rounded-[10px] bg-sunk px-3 py-2.5 text-[13px] leading-[18px]">
@@ -708,11 +758,11 @@ export function TrackBody({ d }: { d: TrackData }) {
       </ol>
       <ul className="mt-2.5 flex flex-wrap gap-x-4 gap-y-1 text-[12px] leading-4 text-ink-2">
         <li className="inline-flex items-center gap-1.5">
-          <span className="h-2.5 w-2.5 rounded-[3px] bg-brand" aria-hidden /> {t("track.held")} <span className="num font-semibold text-ink">{d.held}</span>
+          <span className="h-2.5 w-2.5 rounded-[3px] bg-brand" aria-hidden /> {d.count_labels?.[lang].held || t("track.held")} <span className="num font-semibold text-ink">{d.months_number_would_have_held ?? d.held}</span>
         </li>
         <li className="inline-flex items-center gap-1.5">
           <span className="h-2.5 w-2.5 rounded-[3px] border border-warn bg-warn-soft" aria-hidden /> {t("track.missed")}{" "}
-          <span className="num font-semibold text-ink">{d.missed}</span>
+          <span className="num font-semibold text-ink">{d.months_checked - (d.months_number_would_have_held ?? d.held)}</span>
         </li>
         {skipped && (
           <li className="inline-flex items-center gap-1.5">
@@ -722,7 +772,7 @@ export function TrackBody({ d }: { d: TrackData }) {
       </ul>
       <dl className="mt-3 divide-y divide-line border-y border-line text-[13px] leading-[18px]">
         <div className="flex items-baseline justify-between gap-3 py-2">
-          <dt className="text-ink-2">{t("track.within")}</dt>
+          <dt className="text-ink-2">{d.count_labels?.[lang].stayed_within || t("track.within")}</dt>
           <dd className="m-0 shrink-0 text-right">
             <span className="num font-semibold text-ink">{d.stayed_within}</span>
             <span className="text-ink-3"> · {t("track.belowZero", { n: d.below_zero_when_within })}</span>
@@ -736,6 +786,7 @@ export function TrackBody({ d }: { d: TrackData }) {
           </dd>
         </div>
       </dl>
+      {d.population && <p className="mt-3 text-[12px] leading-[17px] text-ink-3">{t("track.population", { customers: num(d.population.customers, lang), held: `${num(d.population.held_pct, lang, 1)}%`, budget: `${num(d.population.balance_as_budget_pct, lang, 1)}%` })}</p>}
       {misses.length > 0 && (
         <div className="mt-3">
           <h4 className="text-[13px] font-semibold text-ink">{t("track.misses")}</h4>

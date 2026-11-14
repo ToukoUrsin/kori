@@ -9,6 +9,7 @@ const clampN = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, 
 /** Balance from today to payday at two paces. Hand-drawn SVG in real pixels so text stays crisp. */
 export function ForecastChart({ data, variant = "full" }: { data: ForecastData; variant?: "mini" | "full" }) {
   const { lang, t } = useApp();
+  const payWord = data.pay_word || (lang === "fi" ? "Palkkapäivä" : "Payday");
   const reduce = useReducedMotion();
   const [ref, w] = useWidth<HTMLDivElement>();
   const H = variant === "mini" ? 138 : 204;
@@ -58,7 +59,7 @@ export function ForecastChart({ data, variant = "full" }: { data: ForecastData; 
 
   // The bill's name goes in the first free spot around its drop: beside it, above the lines or under them.
   // A spot is free when the text touches neither line nor the cushion note. No free spot, no name; the tick stays.
-  const billText = big ? `${big.events.length === 1 ? big.events[0].label : t("forecast.bills")} ${money(-big.total, lang)}` : "";
+  const billText = big ? `${data.usual.bills?.label || (big.events.length === 1 ? big.events[0].label : t("forecast.bills"))} ${money(-(data.usual.bills?.total ?? big.total), lang)}` : "";
   const textW = (str: string) => str.length * 6.3 + 4;
   const cushionText = `${t("forecast.cushion")} ${money(data.cushion, lang)}`;
   const at = (vals: number[], px: number) => {
@@ -159,7 +160,7 @@ export function ForecastChart({ data, variant = "full" }: { data: ForecastData; 
           {/* payday */}
           <line x1={payX} x2={payX} y1={P.t - 6} y2={H - P.b} stroke="var(--color-brand)" strokeOpacity={0.5} strokeDasharray="3 3" />
           <text x={payX} y={H - 6} textAnchor="middle" fill="var(--color-brand)" fontWeight={600}>
-            {t("forecast.payday")} {day(payday, lang)}
+            {t("forecast.payWord", { word: payWord })} {day(payday, lang)}
           </text>
           <text x={P.l} y={H - 6} fill="var(--color-ink-3)">
             {t("forecast.today")}

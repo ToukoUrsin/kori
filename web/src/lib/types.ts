@@ -29,6 +29,7 @@ export interface Upcoming {
 }
 
 export interface SafeData {
+  pay_word?: string;
   amount: number;
   per_day: number;
   this_week: number;
@@ -36,6 +37,8 @@ export interface SafeData {
   days_to_payday: number;
   next_payday: string;
   status: Status;
+  status_label?: string;
+  status_line?: string;
   limit: "budget" | "cash";
   balance: number;
   usual_per_day: number;
@@ -86,8 +89,10 @@ export interface ForecastPace {
   next_payday: string;
   goes_negative: boolean;
   below_cushion: boolean;
+  bills?: { total: number; count: number; label: string; items?: { date: string; category: string; label: string; amount: number }[]; largest_day?: { date: string; total: number; count: number; label: string } };
 }
 export interface ForecastData {
+  pay_word?: string;
   usual: ForecastPace;
   safe: ForecastPace;
   cushion: number;
@@ -181,6 +186,8 @@ export interface Home {
   persona: Persona;
   today: string;
   greeting: string;
+  pay_word?: string;
+  lessons_total?: number;
   safe: SafeData;
   forecast: ForecastData;
   baskets: BasketsData;
@@ -258,9 +265,10 @@ export interface PlanResponse {
   cushion: number;
   savings_plan: number;
   goal: Goal | null;
-  safe: { amount: number; per_day: number; days_to_payday: number; status: Status; usual_per_day: number };
+  safe: { amount: number; per_day: number; days_to_payday: number; status: Status; status_label?: string; status_line?: string; usual_per_day: number };
   save: SaveData;
   balance: number;
+  reason?: string | null;
 }
 
 export type Change =
@@ -299,6 +307,19 @@ export interface WhatIfData {
     note: string;
   };
   goal?: { name: string; amount: number; months_now: number | null; months_after: number | null };
+  safe_effect?: {
+    kind: string;
+    per_cycle: { now: number | null; after: number | null; change: number };
+    per_day: { now: number | null; after: number | null; change: number };
+    safe_to_spend: { before: number; after: number; change: number; per_day_before: number; per_day_after: number };
+    today: { amount: number; per_day: number; until: string; changes_now: boolean };
+    starts: string;
+    partial_view: boolean;
+    text: string;
+  };
+  saving?: { monthly: number; yearly: number; from_left_over: number; from_trim: number; fits: boolean };
+  gap?: { monthly: number; per_day: number; trim_per_day: number; everyday_per_day_before: number; everyday_per_day_after: number; already_short_monthly: number; everyday_usual_monthly: number; everyday_needed_monthly: number; text: string };
+  projection?: { meaningful: boolean; reason: string | null };
   one_off?: {
     balance_now: number;
     balance_after: number;
@@ -385,12 +406,68 @@ export interface TrackData {
   pay_late_months: number;
   items: TrackItem[];
   method?: string;
+  months_number_would_have_held?: number;
+  months_stayed_within_number?: number;
+  count_labels?: { en: { held: string; stayed_within: string }; fi: { held: string; stayed_within: string } };
+  population?: {
+    customers: number;
+    cases: number;
+    held_pct: number;
+    balance_as_budget_pct: number;
+    labels?: { en: { held_pct: string; balance_as_budget_pct: string }; fi: { held_pct: string; balance_as_budget_pct: string } };
+  } | null;
 }
 
 export interface LessonCardData {
   id: string;
   concept: string;
   minutes: number;
+}
+
+export interface AffordData {
+  amount: number;
+  label: string;
+  basket: BasketKey | string;
+  verdict: string;
+  headline: string;
+  short_by: number;
+  safe: { before: number; after: number };
+  per_day: { before: number; after: number };
+  usual_per_day: number;
+  days_to_payday: number;
+  next_payday: string;
+  status: { before: Status; after: Status };
+  from_safe_to_spend: number;
+  reserve: { available: number; used: number; left_after: number; covers_it: boolean; beyond_reserve: number; from_buffer: number; from_safe_to_spend: number } | null;
+  account: { balance_before: number; balance_after: number; can_take_it: boolean; buffer_before: number; buffer_after: number };
+  options: { key: string; date?: string; days?: number; per_day_until_then?: number; per_day_after_buying_then?: number; months?: number; monthly?: number; fits_in_left_over?: boolean; left_over_monthly?: number; per_day?: number; text: string }[];
+  partial_view: boolean;
+}
+
+export interface SlipsData {
+  days: number;
+  under: number;
+  count: number;
+  total: number;
+  per_year: number;
+  per_month: number;
+  average: number;
+  share_of_everyday: number;
+  top_kinds: { kind: string; label: string; total: number; count: number }[];
+  top_places: { merchant: string; total: number; count: number }[];
+  window_label?: string;
+  headline?: string;
+}
+
+export interface CalculateData {
+  expression: string;
+  shown: string;
+  result: number;
+  unit: string;
+  result_text: string;
+  label?: string | null;
+  inputs: { name: string; label: string; value: number; unit: string }[];
+  text: string;
 }
 
 export type CardType =
@@ -406,7 +483,10 @@ export type CardType =
   | "save"
   | "notices"
   | "track"
-  | "lesson";
+  | "lesson"
+  | "afford"
+  | "slips"
+  | "calculate";
 
 export interface Card<T = unknown> {
   id: string;
@@ -438,10 +518,12 @@ export interface Lesson {
   done: boolean;
 }
 export interface TeachBack {
+  grade?: "got_it" | "partly" | "not_yet";
   passed: boolean;
   got: string;
   missing: string;
   encouragement: string;
+  hint?: string;
   by?: string;
 }
 
@@ -472,6 +554,7 @@ export interface ChatDone {
   error?: boolean;
   followups: string[];
   tools: string[];
+  consistency?: { quantity: string; values: number[] }[];
   ms: number;
 }
 
