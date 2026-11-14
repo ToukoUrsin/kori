@@ -121,7 +121,7 @@ function Inner({ children }: { children: ReactNode }) {
   const effect = useCallback(
     (type: string, lesson?: string) => {
       if (type === "open_lesson" && lesson) setTimeout(() => openLesson(lesson), 1100);
-      else if (type === "plan_changed") bump();
+      else if (type === "plan_changed" || type === "action_set" || type === "action_cleared") bump();
     },
     [bump, openLesson],
   );

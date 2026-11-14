@@ -21,6 +21,8 @@ import type {
 import { cx } from "../ui/bits";
 import {
   BasketsBody,
+  CheckinBody,
+  ActionBody,
   AffordBody,
   CalculateBody,
   BreakdownBody,
@@ -47,6 +49,10 @@ function Body({ card, open }: { card: Card; open: boolean }) {
       return <ForecastBody d={card.data as ForecastData} />;
     case "baskets":
       return <BasketsBody d={card.data as BasketsData} />;
+    case "checkin":
+      return <CheckinBody d={card.data as any} />;
+    case "action":
+      return <ActionBody d={card.data as any} />;
     case "afford":
       return <AffordBody d={card.data as AffordData} />;
     case "slips":

@@ -202,6 +202,84 @@ export interface Home {
     next: { id: string; title: string; minutes: number; concept: string } | null;
   };
   pins: number;
+  loop?: LoopData;
+}
+
+export interface LoopHistoryRow {
+  label: string;
+  within: boolean;
+}
+export interface LoopCheckIn {
+  available: boolean;
+  headline: string;
+  what_did_it?: string | null;
+  driver_line?: string | null;
+  history_line?: string | null;
+  period?: string | null;
+  within?: boolean;
+  over_by?: number;
+  difference?: number;
+  partial_view?: boolean;
+  linked_view?: { note?: string; [key: string]: unknown } | null;
+  history?: LoopHistoryRow[];
+}
+export interface LoopReplay {
+  unit?: string;
+  held: number;
+  total: number;
+  rows: { label: string; total: number; held: boolean }[];
+  text: string;
+}
+export interface LoopWorth { amount: number; of_overshoot?: number; text: string }
+export interface LoopQuestion { text: string; answers: { label: string; pick: number; title: string; key?: string }[] }
+export interface LoopSuggestion {
+  kind: "cap_category" | "pause_category" | "daily_pace" | "set_aside" | "none" | string;
+  target?: string | null;
+  target_label?: string | null;
+  cap?: number | null;
+  amount?: number | null;
+  until?: string | null;
+  until_label?: string | null;
+  days_left?: number | null;
+  title: string;
+  why: string;
+  worth?: LoopWorth | null;
+  replay?: LoopReplay | null;
+  reversible?: string | null;
+  alternatives?: (LoopSuggestion & { question?: null })[];
+  question?: LoopQuestion | null;
+  next?: string | null;
+  cycle?: { start: string; end: string; everyday_available?: number; everyday_spent?: number; within?: boolean; over_by?: number; difference?: number; driver?: { label: string; purchases?: LoopPurchase[] } | null };
+}
+export interface LoopPurchase { date: string; merchant?: string | null; amount: number; category?: string }
+export interface LoopAction {
+  kind: string;
+  target?: string | null;
+  target_label?: string | null;
+  cap?: number | null;
+  amount?: number | null;
+  title: string;
+  days_left?: number;
+  until_label?: string | null;
+  verdict: "on_track" | "at_risk" | "over" | "done" | string;
+  limit?: number;
+  spent?: number;
+  left?: number;
+  unit: "cycle" | "day" | string;
+  days_in?: number;
+  left_per_week?: number;
+  lands_at_current_pace?: number;
+  pace_now?: number;
+  saving_monthly?: number;
+  purchases?: LoopPurchase[];
+  why?: string;
+  line: string;
+  follow_up_preview?: { label: string; text: string; held?: boolean; [key: string]: unknown } | null;
+}
+export interface LoopData {
+  check_in: LoopCheckIn;
+  suggestion?: LoopSuggestion | null;
+  action?: LoopAction | null;
 }
 
 export interface Tx {
@@ -442,6 +520,7 @@ export interface AffordData {
   account: { balance_before: number; balance_after: number; can_take_it: boolean; buffer_before: number; buffer_after: number };
   options: { key: string; date?: string; days?: number; per_day_until_then?: number; per_day_after_buying_then?: number; months?: number; monthly?: number; fits_in_left_over?: boolean; left_over_monthly?: number; per_day?: number; text: string }[];
   partial_view: boolean;
+  action_effect?: { line: string; [key: string]: unknown } | null;
 }
 
 export interface SlipsData {
@@ -512,10 +591,42 @@ export interface Lesson {
   title: string;
   concept: string;
   minutes: number;
-  slides: { title: string; body: string; basket?: BasketKey; card?: Card | null }[];
+  slides: LessonSlide[];
   check?: { question: string; options: string[]; correct: number; why: string };
   teach_back?: { prompt: string; rubric?: string[] };
   done: boolean;
+}
+export interface LessonSortItem {
+  id: number;
+  merchant: string | null;
+  date: string;
+  amount: number;
+  category: string;
+  category_label: string;
+  basket: BasketKey;
+  basket_label?: string;
+  why: string;
+}
+export interface LessonSortSlide {
+  title: string;
+  body: string;
+  kind: "sort";
+  items: LessonSortItem[];
+}
+export interface LessonSlide {
+  title: string;
+  body: string;
+  basket?: BasketKey;
+  card?: Card | null;
+  kind?: "sort";
+  items?: LessonSortItem[];
+}
+export interface LessonSortResult {
+  lesson: string;
+  score: { right: number; total: number; percent: number };
+  items: { id: number; picked: BasketKey | null; correct: BasketKey; right: boolean; explanation: string; payment: LessonSortItem }[];
+  stored: boolean;
+  basket_overrides?: string;
 }
 export interface TeachBack {
   grade?: "got_it" | "partly" | "not_yet";
@@ -556,6 +667,7 @@ export interface ChatDone {
   tools: string[];
   consistency?: { quantity: string; values: number[] }[];
   ms: number;
+  figures?: { text: string; label: string; source: string; rounded?: boolean; [key: string]: unknown }[];
 }
 
 export type ChatEvent =

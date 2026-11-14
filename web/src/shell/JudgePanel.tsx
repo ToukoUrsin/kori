@@ -67,6 +67,10 @@ function Try() {
               </li>
             ))}
       </ul>
+      <div className="mt-3 space-y-2 text-[13px] leading-[18px]">
+        <a href="/host" target="_blank" rel="noreferrer" className="block text-ink-2 hover:text-brand">{t("judge.bankApp")}</a>
+        <p className="text-ink-3">{t("judge.firstStep")}</p>
+      </div>
       <div className="mt-3 flex flex-wrap gap-2">
         <button
           type="button"

@@ -1,7 +1,9 @@
 import { ArrowDownRight, ArrowRight, ArrowUpRight, CircleCheck, Info, TriangleAlert } from "lucide-react";
 import { useState } from "react";
 import { day, money, monthShort, num, pct } from "../../lib/format";
+import { api } from "../../lib/api";
 import { useApp } from "../../lib/store";
+import { isEmbedMode, postToHost } from "../../lib/host";
 import type {
   BasketsData,
   AffordData,
@@ -18,6 +20,9 @@ import type {
   SlipsData,
   TrackData,
   WhatIfData,
+  LoopAction,
+  LoopCheckIn,
+  LoopSuggestion,
 } from "../../lib/types";
 import { MonthsMeter, Radar, RangeStrip, TrendBars, TwoLine } from "../charts/Charts";
 import { ForecastChart, ForecastLegend } from "../charts/ForecastChart";
@@ -218,6 +223,41 @@ export function BasketsBody({ d }: { d: BasketsData }) {
   );
 }
 
+export function CheckinBody({ d }: { d: LoopCheckIn & { cycle?: { everyday_available: number; everyday_spent: number; within?: boolean; over_by?: number; difference?: number; driver?: { label: string; purchases?: { merchant?: string | null; amount: number }[] } | null }; history?: { label: string; within: boolean }[]; note?: string } }) {
+  const { lang, t } = useApp();
+  const cycle = d.cycle;
+  const history = d.history || [];
+  return <div>
+    <p className="text-[15px] font-medium leading-[22px] text-ink">{d.headline}</p>
+    {cycle && <dl className="mt-3 divide-y divide-line border-y border-line text-[13px] leading-[18px]">
+      <div className="flex justify-between gap-3 py-2"><dt className="text-ink-2">{t("loop.payLeft")}</dt><dd className="num m-0 font-medium text-ink">{money(cycle.everyday_available, lang)}</dd></div>
+      <div className="flex justify-between gap-3 py-2"><dt className="text-ink-2">{t("loop.everydayTook")}</dt><dd className="num m-0 font-medium text-ink">{money(cycle.everyday_spent, lang)}</dd></div>
+      <div className="flex justify-between gap-3 py-2"><dt className="text-ink-2">{cycle.within ? t("loop.leftOver") : t("loop.over")}</dt><dd className="num m-0 font-medium text-ink">{money(cycle.within ? cycle.difference || 0 : cycle.over_by || cycle.difference || 0, lang)}</dd></div>
+    </dl>}
+    {d.driver_line && <p className="mt-3 text-[13px] leading-[18px] text-ink-2">{d.driver_line}</p>}
+    {cycle?.driver?.purchases && <ul className="mt-2 space-y-1 text-[12px] leading-4 text-ink-3">{cycle.driver.purchases.slice(0, 3).map((p, i) => <li key={`${p.merchant}-${i}`} className="flex justify-between gap-3"><span className="truncate">{p.merchant || cycle.driver?.label}</span><span className="num shrink-0">{money(p.amount, lang)}</span></li>)}</ul>}
+    {history.length > 0 && <div className="mt-3 flex gap-1.5">{history.map((h, i) => <span key={`${h.label}-${i}`} title={h.label} className={cx("h-2 flex-1 rounded-full", h.within ? "bg-brand" : "bg-warn-soft border border-warn")} />)}</div>}
+    {d.note && <p className="mt-3 text-[12px] leading-4 text-ink-3">{d.note}</p>}
+  </div>;
+}
+
+export function ActionBody({ d }: { d: { state: "suggested" | "active" | "none"; suggestion?: LoopSuggestion; progress?: LoopAction; why?: string } }) {
+  const { customer, lang, t, bump, showToast } = useApp();
+  const suggestion = d.suggestion;
+  const set = async (pick?: number) => { try { await apiSetAction({ customer, lang, pick }); bump(); } catch (e) { showToast((e as Error).message || t("loop.saveFail")); } };
+  const link = async () => { if (isEmbedMode()) return postToHost({ type: "kori:request", v: 1, what: "link_other_bank" }); try { await api.consent(customer, lang, true); bump(); } catch (e) { showToast((e as Error).message || t("loop.saveFail")); } };
+  return <div>
+    {d.state === "none" ? <><p className="text-[14px] leading-5 text-ink-2">{d.why || suggestion?.why}</p><Button variant="primary" size="sm" className="mt-3" onClick={() => void link()}>{t("loop.link")}</Button></> : d.state === "suggested" && suggestion ? <>
+      <p className="text-[17px] font-semibold leading-6 text-ink">{suggestion.title}</p><p className="mt-1 text-[13px] leading-[18px] text-ink-2">{suggestion.why}</p>
+      {suggestion.question ? <><p className="mt-3 text-[13px] leading-[18px] text-ink-2">{suggestion.question.text}</p><div className="mt-2 grid grid-cols-2 gap-2">{suggestion.question.answers.map((a) => <button key={a.label} type="button" data-loop-answer={a.pick} onClick={() => void set(a.pick || undefined)} className="min-h-10 rounded-[10px] border border-line-strong px-2 py-1.5 text-left text-[12px] text-ink"><span className="block font-medium">{a.label}</span><span className="block text-[11px] text-ink-3">{a.title}</span></button>)}</div></> : <Button variant="primary" size="sm" data-loop-try className="mt-3" onClick={() => void set()}>{t("loop.tryCycle")}</Button>}
+    </> : d.progress ? <><p className="text-[17px] font-semibold leading-6 text-ink">{d.progress.title}</p><p className="mt-2 text-[13px] leading-[18px] text-ink-2">{d.progress.line}</p></> : null}
+  </div>;
+}
+
+async function apiSetAction(body: { customer: string; lang: "en" | "fi"; pick?: number }) {
+  return api.setAction(body.pick === undefined ? { ...body, accept_suggestion: true } : body);
+}
+
 /* ---------------------------------------------------------- stat / breakdown / trend */
 
 export function StatBody({ d, open }: { d: QueryData; open: boolean }) {
@@ -368,6 +408,7 @@ export function AffordBody({ d }: { d: AffordData }) {
       {d.short_by > 0 && <p className="mt-3 text-[13px] leading-[18px] text-warn-ink">{t("afford.short", { v: money(d.short_by, lang) })}</p>}
       {d.reserve && <p className="mt-3 text-[13px] leading-[18px] text-ink-2">{d.reserve.covers_it ? t("afford.reserveCovers", { v: money(d.reserve.available, lang) }) : t("afford.reserveUsed", { v: money(d.reserve.used, lang) })}</p>}
       {d.partial_view && <p className="mt-3 text-[12px] leading-4 text-ink-3">{t("afford.partial")}</p>}
+      {d.action_effect?.line && <p className="mt-3 border-t border-line pt-2 text-[12px] leading-4 text-ink-3">{d.action_effect.line}</p>}
       {d.options.length > 0 && <ul className="mt-3 divide-y divide-line border-y border-line text-[13px] leading-[18px]">{d.options.map((o) => <li key={o.key} className="py-2.5 text-ink-2"><span className="font-medium text-ink">{o.key === "wait" ? t("afford.wait") : o.key === "spread" ? t("afford.spread") : t("afford.rebuild")}</span><span className="block mt-0.5">{o.text}</span></li>)}</ul>}
     </div>
   );
@@ -738,6 +779,7 @@ export function LessonBody({ d }: { d: LessonCardData }) {
 
 export function TrackBody({ d }: { d: TrackData }) {
   const { lang, t } = useApp();
+  const cap = (s: string) => s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
   const misses = d.items.filter((x) => x.counted && !x.held && x.why);
   const skipped = d.items.some((x) => !x.counted);
   return (
@@ -758,7 +800,7 @@ export function TrackBody({ d }: { d: TrackData }) {
       </ol>
       <ul className="mt-2.5 flex flex-wrap gap-x-4 gap-y-1 text-[12px] leading-4 text-ink-2">
         <li className="inline-flex items-center gap-1.5">
-          <span className="h-2.5 w-2.5 rounded-[3px] bg-brand" aria-hidden /> {d.count_labels?.[lang].held || t("track.held")} <span className="num font-semibold text-ink">{d.months_number_would_have_held ?? d.held}</span>
+          <span className="h-2.5 w-2.5 rounded-[3px] bg-brand" aria-hidden /> {cap(d.count_labels?.[lang].held || t("track.held"))} <span className="num font-semibold text-ink">{d.months_number_would_have_held ?? d.held}</span>
         </li>
         <li className="inline-flex items-center gap-1.5">
           <span className="h-2.5 w-2.5 rounded-[3px] border border-warn bg-warn-soft" aria-hidden /> {t("track.missed")}{" "}
@@ -772,7 +814,7 @@ export function TrackBody({ d }: { d: TrackData }) {
       </ul>
       <dl className="mt-3 divide-y divide-line border-y border-line text-[13px] leading-[18px]">
         <div className="flex items-baseline justify-between gap-3 py-2">
-          <dt className="text-ink-2">{d.count_labels?.[lang].stayed_within || t("track.within")}</dt>
+          <dt className="text-ink-2">{cap(d.count_labels?.[lang].stayed_within || t("track.within"))}</dt>
           <dd className="m-0 shrink-0 text-right">
             <span className="num font-semibold text-ink">{d.stayed_within}</span>
             <span className="text-ink-3"> · {t("track.belowZero", { n: d.below_zero_when_within })}</span>

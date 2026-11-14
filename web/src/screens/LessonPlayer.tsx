@@ -6,11 +6,12 @@ import { Button, Dot, ErrorInline, IconButton, Skel, cx, useLast } from "../comp
 import { HoldToTalk } from "../components/ui/HoldToTalk";
 import { Sheet } from "../components/ui/Sheet";
 import { api } from "../lib/api";
+import { day, money } from "../lib/format";
 import { useApp } from "../lib/store";
-import type { Lesson, LessonSummary, TeachBack } from "../lib/types";
+import type { BasketKey, Lesson, LessonSortResult, LessonSummary, TeachBack } from "../lib/types";
 import { useQuery } from "../lib/useQuery";
 
-type Step = { kind: "slide"; i: number } | { kind: "check" } | { kind: "teach" } | { kind: "done" };
+type Step = { kind: "slide"; i: number } | { kind: "sort"; i: number } | { kind: "check" } | { kind: "teach" } | { kind: "done" };
 
 function Player({ id, onClose, onList }: { id: string; onClose: () => void; onList: () => void }) {
   const { customer, lang, t, bump, openLesson, version } = useApp();
@@ -24,12 +25,16 @@ function Player({ id, onClose, onList }: { id: string; onClose: () => void; onLi
   const [grade, setGrade] = useState<TeachBack | null>(null);
   const [grading, setGrading] = useState(false);
   const [note, setNote] = useState<string | null>(null);
+  const [sortIndex, setSortIndex] = useState(0);
+  const [sortPicks, setSortPicks] = useState<Record<number, BasketKey>>({});
+  const [sortFeedback, setSortFeedback] = useState<{ right: boolean; why: string } | null>(null);
+  const [sortResult, setSortResult] = useState<LessonSortResult | null>(null);
   const scroller = useRef<HTMLDivElement>(null);
   const answerRef = useRef<HTMLTextAreaElement>(null);
   const marked = useRef(false);
 
   const steps: Step[] = d
-    ? [...d.slides.map((_, i) => ({ kind: "slide", i }) as Step), ...(d.check ? [{ kind: "check" } as Step] : []), ...(d.teach_back ? [{ kind: "teach" } as Step] : []), { kind: "done" }]
+    ? [...d.slides.map((s, i) => (s.kind === "sort" ? ({ kind: "sort", i } as Step) : ({ kind: "slide", i } as Step))), ...(d.check ? [{ kind: "check" } as Step] : []), ...(d.teach_back ? [{ kind: "teach" } as Step] : []), { kind: "done" }]
     : [];
   const step = steps[Math.min(n, steps.length - 1)];
   const total = Math.max(1, steps.length - 1);
@@ -64,6 +69,21 @@ function Player({ id, onClose, onList }: { id: string; onClose: () => void; onLi
   };
 
   const go = (to: number) => setN(Math.max(0, Math.min(steps.length - 1, to)));
+  const chooseBasket = (basket: BasketKey) => {
+    if (step.kind !== "sort" || sortFeedback || sortResult) return;
+    if (!d) return;
+    const slide = d.slides[step.i];
+    const item = slide.items?.[sortIndex];
+    if (!item) return;
+    const next = { ...sortPicks, [item.id]: basket };
+    setSortPicks(next);
+    setSortFeedback({ right: basket === item.basket, why: item.why });
+    window.setTimeout(() => {
+      setSortFeedback(null);
+      if (sortIndex + 1 < (slide.items?.length || 0)) setSortIndex((v) => v + 1);
+      else void api.sortBaskets(customer, lang, next).then(setSortResult, () => setNote(t("learn.sortFail")));
+    }, 750);
+  };
   const nextLesson = list.data?.find((l) => !l.done && l.id !== id);
 
   const header = (
@@ -119,7 +139,18 @@ function Player({ id, onClose, onList }: { id: string; onClose: () => void; onLi
   let body: React.ReactNode = null;
   let footer: React.ReactNode = null;
 
-  if (step.kind === "slide") {
+  if (step.kind === "sort") {
+    const s = d.slides[step.i];
+    const item = s.items?.[sortIndex];
+    const labels: Record<BasketKey, string> = { fixed: t("learn.fixedMusts"), surprise: t("learn.surpriseMusts"), everyday: t("learn.everyday") };
+    if (sortResult) {
+      body = <><h2 className="text-[24px] font-semibold leading-8 tracking-[-0.03em] text-ink">{t("learn.sortScore", { right: sortResult.score.right, total: sortResult.score.total })}</h2><p className="mt-2 text-[15px] leading-[23px] text-ink-2">{t("learn.sortKind")}</p><ul className="mt-5 divide-y divide-line border-y border-line">{sortResult.items.filter((x) => !x.right).map((x) => <li key={x.id} className="py-3"><div className="flex items-start gap-3"><div className="min-w-0 flex-1"><p className="text-[14px] font-medium text-ink">{x.payment.merchant || x.payment.category_label}</p><p className="mt-0.5 text-[12px] text-ink-3">{labels[x.correct]} · {x.explanation}</p></div><button type="button" className="shrink-0 text-[12px] font-medium text-ink-2" onClick={() => api.putPlan({ customer, lang, basket_overrides: { [x.payment.category]: x.picked || x.correct } }).then(() => setNote(t("learn.basketsChanged")), () => setNote(t("learn.sortFail")))}>{t("learn.moveIt")}</button></div></li>)}</ul></>;
+      footer = <Button variant="primary" block onClick={() => go(n + 1)}>{t("learn.continue")}</Button>;
+    } else if (item) {
+      body = <><h2 className="text-[22px] font-semibold leading-7 tracking-[-0.02em] text-ink">{s.title}</h2><p className="mt-1 text-[13px] leading-[18px] text-ink-2">{s.body}</p><p className="mt-4 text-[12px] font-medium text-ink-3">{t("learn.sortProgress", { n: sortIndex + 1 })}</p><h3 className="mt-2 text-[26px] font-semibold leading-8 tracking-[-0.03em] text-ink">{item.merchant || item.category_label}</h3><p className="mt-1 text-[14px] text-ink-2">{day(item.date, lang)} · <span className="num">{money(item.amount, lang, { cents: true })}</span></p><div className="mt-6 space-y-2">{(Object.keys(labels) as BasketKey[]).map((k) => <button key={k} type="button" disabled={!!sortFeedback} onClick={() => chooseBasket(k)} className={cx("flex min-h-[54px] w-full items-center rounded-[12px] px-4 text-left text-[15px] font-medium transition-colors", k === "fixed" ? "bg-fixed-soft text-ink" : k === "surprise" ? "bg-surprise-soft text-ink" : "bg-everyday-soft text-ink")}>{labels[k]}</button>)}</div>{sortFeedback && <motion.p className="mt-4 text-[14px] leading-[21px] text-ink-2" initial={{ opacity: 0 }} animate={{ opacity: 1 }}><span className="font-semibold text-ink">{sortFeedback.right ? t("learn.correct") : t("learn.sortNotQuite")}</span> {sortFeedback.why}</motion.p>}</>;
+      footer = <Button variant="primary" block disabled>{t("learn.next")}</Button>;
+    }
+  } else if (step.kind === "slide") {
     const s = d.slides[step.i];
     body = (
       <>

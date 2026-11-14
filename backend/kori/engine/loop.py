@@ -411,6 +411,8 @@ def suggest(m: Money) -> dict:
                                   f"{w.cycle} unusual, or is this the new normal?",
                                   f"{FI_ILLATIVE.get(h['category'], w.cat_low(h['category'])).capitalize()} meni {E(h['spent'])}, kun "
                                   f"tavallisesti {E(h['usual'])}. Oliko viime jakso poikkeus vai uusi tavallinen?"),
+                        "short": L(f"Was last {w.cycle} unusual, or is this the new normal?",
+                                   "Oliko viime jakso poikkeus vai uusi tavallinen?"),
                         "answers": [{"key": "unusual", "label": L("It was unusual", "Se oli poikkeus"), "pick": 0},
                                     {"key": "new_normal", "label": L("It is the new normal", "Se on uusi tavallinen"), "pick": 1}]}
         else:
@@ -422,6 +424,8 @@ def suggest(m: Money) -> dict:
             question = {"text": L(f"{what[:1].upper() + what[1:]} for {E(b['amount'])} did it. Will something like it come again "
                                   f"within a year?",
                                   f"Syy oli {what}, {E(b['amount'])}. Tuleeko samanlainen meno uudestaan vuoden sisällä?"),
+                        "short": L("Will something like it come again within a year?",
+                                   "Tuleeko samanlainen meno uudestaan vuoden sisällä?"),
                         "answers": [{"key": "one_off", "label": L("No, it was a one-off", "Ei, se oli kertameno"), "pick": 0},
                                     {"key": "again", "label": L("Yes, probably", "Kyllä, luultavasti"), "pick": 1}]}
     else:
