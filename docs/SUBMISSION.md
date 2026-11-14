@@ -27,7 +27,7 @@ Elli asks "can my grocery shopping be cheaper?" Kori writes code, runs it on her
 
 - "I need a new laptop. What can I afford?" A price picker against her payday, then laptops on sale today at Prisma.fi and Verkkokauppa.com.
 - "What if I save €150 a month for ten years?" 4,000 outcomes with one of S-Pankki's own funds and its real fee. An illustration, not investment advice.
-- Any other question works too.
+- Or any other question.
 
 No number is guessed. Gemini writes the code, it runs in a locked sandbox on that one customer's data, Claude builds the screen from what the code produced, and a check flags any figure that didn't come from a run. Add &dev=1 to the chat link to see the code.
 
@@ -65,7 +65,7 @@ Gemini picks which calculation to run and explains the result. Our own engine co
 
 ## How we used ElevenLabs and Gemini
 
-- ElevenLabs Agents do the listening, turn-taking and speaking. The agent's brain is our own server (custom LLM), so the voice runs through the same engine and number check. It can't say a number the engine didn't produce. In the chat you can speak the question too.
+- ElevenLabs Agents do the listening, turn-taking and speaking. The agent's brain is our own server (custom LLM), so the voice runs through the same engine and number check. It can't say a number the engine didn't produce. The chat takes spoken questions too.
 - Gemini function calling picks from 22 tools, writes the answers in two languages and grades the say-it-back answers.
 - In the chat, Gemini (gemini-4-hydrogen) writes and runs Python on the customer's transactions and searches the web with Google Search. A larger Gemini (gemini-4-carbon) builds the heavy models. Claude (claude-fable-5-2) builds the screen.
 
