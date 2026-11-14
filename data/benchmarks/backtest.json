@@ -1,0 +1,12 @@
+{
+  "cases": 89619,
+  "customers": 4850,
+  "safe_held_pct": 95.9,
+  "balance_as_budget_held_pct": 28.6,
+  "status_words": {
+    "comfortable": 2.3,
+    "tight": 13.3,
+    "very_tight": 30.3,
+    "empty": 34.2
+  }
+}

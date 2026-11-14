@@ -1,0 +1,109 @@
+import { Check, ChevronRight } from "lucide-react";
+import { CardView } from "../components/cards/CardView";
+import { Button, ErrorInline, SectionHead, Skel, cx } from "../components/ui/bits";
+import { api } from "../lib/api";
+import { useApp } from "../lib/store";
+import type { Card, LessonSummary } from "../lib/types";
+import { useQuery } from "../lib/useQuery";
+import { ScreenHeader } from "../shell/Shell";
+
+function AboutCard({ tool }: { tool: string }) {
+  const { customer, lang, version } = useApp();
+  const q = useQuery<Card>(`card|${tool}|${customer}|${lang}|${version}`, customer, () => api.card(customer, lang, tool));
+  if (q.data) return <CardView card={q.data} />;
+  if (q.error) return <ErrorInline onRetry={q.reload} />;
+  return <Skel className="h-[280px] !rounded-card" />;
+}
+
+export function Learn() {
+  const { customer, lang, t, version, openLesson } = useApp();
+  const q = useQuery<LessonSummary[]>(`lessons|${customer}|${lang}|${version}`, customer, () => api.lessons(customer, lang));
+  const list = q.data;
+  const done = list ? list.filter((l) => l.done).length : 0;
+  const next = list?.find((l) => !l.done);
+
+  return (
+    <>
+      <ScreenHeader title={t("learn.title")} sub={t("learn.lessons")} />
+      <div className="px-5 pb-8 pt-3">
+        {!list ? (
+          q.error ? (
+            <ErrorInline onRetry={q.reload} />
+          ) : (
+            <div aria-hidden>
+              <Skel className="h-3 w-40" />
+              <Skel className="mt-3 h-[150px] !rounded-card" />
+              <Skel className="mt-3 h-[300px] !rounded-card" />
+            </div>
+          )
+        ) : (
+          <>
+            <div>
+              <p className="num text-[13px] leading-[18px] text-ink-2">{t("learn.progress", { done, total: list.length })}</p>
+              <div className="mt-2 flex gap-1" role="img" aria-label={t("learn.progress", { done, total: list.length })}>
+                {list.map((l) => (
+                  <span key={l.id} className={cx("h-1.5 flex-1 rounded-full transition-colors duration-300", l.done ? "bg-brand" : "bg-line-strong")} />
+                ))}
+              </div>
+            </div>
+
+            {next ? (
+              <section className="mt-4 rounded-card bg-brand px-4 pb-4 pt-3.5 text-white">
+                <p className="num text-[13px] leading-[18px] text-white/80">
+                  {t("learn.next")} · {t("lesson.min", { n: next.minutes })}
+                </p>
+                <h2 className="mt-1 text-[22px] font-semibold leading-7 tracking-[-0.02em]">{next.title}</h2>
+                <p className="mt-1.5 text-[14px] leading-[21px] text-white/90">{next.concept}</p>
+                <Button onClick={() => openLesson(next.id)} className="mt-3.5 !border-transparent !bg-white !text-brand-strong hover:!bg-brand-soft">
+                  {t("lesson.start")}
+                </Button>
+              </section>
+            ) : (
+              <p className="mt-4 rounded-card bg-brand-soft px-4 py-3 text-[14px] leading-[21px] text-brand-strong">{t("learn.allDone")}</p>
+            )}
+
+            <ul className="mt-3 divide-y divide-line rounded-card border border-line bg-surface">
+              {list.map((l, i) => (
+                <li key={l.id}>
+                  <button
+                    type="button"
+                    onClick={() => openLesson(l.id)}
+                    className={cx(
+                      "group flex min-h-[60px] w-full items-center gap-3 px-4 py-2.5 text-left transition-colors duration-150 hover:bg-sunk/60 active:bg-sunk",
+                      i === 0 && "rounded-t-card",
+                      i === list.length - 1 && "rounded-b-card",
+                    )}
+                  >
+                    <span
+                      className={cx(
+                        "num flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[12px] font-semibold",
+                        l.done ? "bg-brand text-white" : "border border-line-strong text-ink-2",
+                      )}
+                    >
+                      {l.done ? <Check size={15} strokeWidth={2.5} aria-label={t("lesson.done")} /> : i + 1}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-[15px] font-medium leading-5 text-ink">{l.title}</span>
+                      <span className="num block text-[12px] leading-4 text-ink-3">
+                        {l.done ? t("lesson.done") : t("lesson.min", { n: l.minutes })}
+                      </span>
+                    </span>
+                    <ChevronRight size={17} strokeWidth={2} className="shrink-0 text-ink-3 transition-transform duration-150 group-hover:translate-x-0.5" aria-hidden />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
+
+        <section className="mt-7">
+          <SectionHead title={t("learn.about")} />
+          <div className="space-y-3">
+            <AboutCard tool="spender_profile" />
+            <AboutCard tool="compare_with_peers" />
+          </div>
+        </section>
+      </div>
+    </>
+  );
+}

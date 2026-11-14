@@ -1,0 +1,17 @@
+# data is not committed: see scripts/fetch_data.sh
+dataset/
+data/build/
+data/state/
+data/audio/
+.env*
+__pycache__/
+*.pyc
+.venv/
+node_modules/
+web/dist/
+backend/scratch/
+.pytest_cache/
+*.log
+research/
+docs/FRONTEND_*.md
+film/out/

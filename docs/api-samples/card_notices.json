@@ -1,0 +1,55 @@
+{
+    "id": "e60bb7d16b",
+    "type": "notices",
+    "title": "Worth knowing today",
+    "subtitle": null,
+    "data": {
+        "items": [
+            {
+                "id": "runway",
+                "tone": "warn",
+                "priority": 90,
+                "title": "At your usual pace you'd be down to \u20ac117 the day before payday",
+                "body": "Payday is 15 Oct. \u20ac1,030 of housing leaves around 8 Oct, before payday. Your safe pace is \u20ac45.58 a day; your usual is \u20ac53.93.",
+                "ask": "What is safe for me to spend this week?",
+                "card": "forecast",
+                "metric": 116.53
+            },
+            {
+                "id": "hot_Transportation",
+                "tone": "warn",
+                "priority": 80,
+                "title": "Getting around is at \u20ac621 this month. Your usual whole month is \u20ac225",
+                "body": "15 purchases so far, with 9 days of the month left.",
+                "ask": "Show me my getting around spending this month",
+                "card": null,
+                "metric": 396.31
+            },
+            {
+                "id": "late_pay",
+                "tone": "info",
+                "priority": 70,
+                "title": "Your pay came late in 7 of the last 24 months",
+                "body": "If it lands on 30 Oct instead of the 15th, you'd need about \u20ac907 more to cover those 15 days.",
+                "ask": "What happens if my pay is late this month?",
+                "card": null,
+                "metric": 907.13
+            },
+            {
+                "id": "below_zero",
+                "tone": "warn",
+                "priority": 65,
+                "title": "Your balance was below zero on 35 days in the past year",
+                "body": "It touched 8 different months, lowest \u2212\u20ac468. The pattern: housing leaves early in the month, pay arrives on the 15th.",
+                "ask": "Why does my balance go below zero before payday?",
+                "card": null,
+                "metric": 35
+            }
+        ]
+    },
+    "source": {
+        "tool": "coach_notices",
+        "args": {}
+    },
+    "note": null
+}

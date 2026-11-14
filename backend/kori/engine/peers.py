@@ -1,0 +1,137 @@
+"""People like you: anonymous comparison with other customers, plus Statistics Finland.
+
+Groups are never smaller than MIN_GROUP people; when a group is too small it widens.
+"""
+from __future__ import annotations
+
+import json
+from functools import lru_cache
+
+import numpy as np
+import pandas as pd
+
+from .. import config
+from ..taxonomy import BASKETS, CATEGORIES, cat_label
+from .core import Money, r2
+
+MIN_GROUP = 30
+
+METRICS = {**{f"cat_{c}": c for c in CATEGORIES}, "fixed": "fixed", "surprise": "surprise", "everyday": "everyday",
+           "spend": "spend", "invested": "invested", "salary": "salary"}
+
+
+@lru_cache(maxsize=1)
+def table() -> pd.DataFrame:
+    return pd.read_parquet(config.BUILD_DIR / "peers.parquet").set_index("customer_id")
+
+
+@lru_cache(maxsize=1)
+def statfin() -> dict | None:
+    p = config.BENCH_DIR / "statfin.json"
+    if not p.exists():
+        return None
+    try:
+        return json.loads(p.read_text())
+    except Exception:
+        return None
+
+
+def row(customer_id: str) -> pd.Series:
+    return table().loc[customer_id]
+
+
+def group_of(customer_id: str, by: str = "age") -> tuple[pd.DataFrame, str, str]:
+    """Peer group for a customer -> (rows, key, human label)."""
+    t = table()
+    me = t.loc[customer_id]
+    full = t[t["sweep_share"] < 0.5]          # leave out people whose money mostly lives elsewhere
+    if by == "age_income":
+        g = full[(full["age_band"] == me["age_band"]) & (full["income_band"] == me["income_band"])]
+        if len(g) >= MIN_GROUP:
+            return g, by, f"aged {me['age_band']} with a similar income"
+        by = "age"
+    if by == "income":
+        g = full[full["income_band"] == me["income_band"]]
+        if len(g) >= MIN_GROUP:
+            return g, by, "with a similar income"
+        by = "everyone"
+    if by == "area":
+        g = full[full["area"] == me["area"]]
+        if len(g) >= MIN_GROUP:
+            return g, by, f"in {me['area']}"
+        by = "everyone"
+    if by == "age":
+        g = full[full["age_band"] == me["age_band"]]
+        if len(g) >= MIN_GROUP:
+            return g, by, f"aged {me['age_band']}"
+    return full, "everyone", "of all ages"
+
+
+def _statfin_age_key(age: int) -> str:
+    for hi, k in ((25, "17-24"), (35, "25-34"), (45, "35-44"), (55, "45-54"), (65, "55-64"), (75, "65-74"), (85, "75-84")):
+        if age < hi:
+            return k
+    return "85-"
+
+
+def national(age: int, category: str) -> dict | None:
+    """Statistics Finland Household Budget Survey 2022, per consumption unit, in 2026 euros."""
+    s = statfin()
+    if not s:
+        return None
+    try:
+        k = _statfin_age_key(age)
+        g = s["by_age_group"][k]
+        v = g["per_consumption_unit"]["app_categories"][category]
+        eur = v.get("eur_month_2026_category_cpi") or v.get("eur_month_2026")
+        if eur is None:
+            return None
+        return {"eur_month": r2(eur), "group": g.get("label", k).replace(" ", ""), "survey_year": s["meta"].get("survey_year", 2022),
+                "source": "Statistics Finland, Household Budget Survey", "basis": "per consumption unit, 2026 prices"}
+    except (KeyError, TypeError):
+        return None
+
+
+def compare(m: Money, by: str = "age", categories: list[str] | None = None) -> dict:
+    """You vs people like you, per category and basket (monthly averages over the last 12 full months)."""
+    lang = m.prefs.lang
+    g, key, label = group_of(m.customer_id, by)
+    me = row(m.customer_id)
+    cats = categories or list(CATEGORIES)
+    items = []
+
+    def one(col: str, name: str, lab: str, icon: str | None = None, cat: str | None = None):
+        vals = g[col].to_numpy(dtype=float)
+        you = float(me[col])
+        med = float(np.median(vals))
+        item = {"key": name, "label": lab, "you": r2(you), "median": r2(med),
+                "p25": r2(np.percentile(vals, 25)), "p75": r2(np.percentile(vals, 75)),
+                "percentile": int(round(100 * float((vals < you).mean()))),
+                "diff": r2(you - med), "diff_pct": round(100 * (you - med) / med) if med > 0 else None}
+        if icon:
+            item["icon"] = icon
+        if cat:
+            nat = national(m.customer.age, cat)
+            if nat:
+                item["finland"] = nat
+        return item
+
+    for c in cats:
+        if c in CATEGORIES:
+            items.append(one(f"cat_{c}", c, cat_label(c, lang), CATEGORIES[c]["icon"], c))
+    baskets = [one(b, b, BASKETS[b][lang]) for b in BASKETS]
+    extra = {"saving": one("invested", "invested", {"en": "Moved to savings", "fi": "Säästöön siirretty"}[lang]),
+             "income": one("salary", "salary", {"en": "Salary", "fi": "Palkka"}[lang])}
+    items.sort(key=lambda x: -(x["diff"]))
+    return {"group": {"by": key, "label": label, "size": int(len(g)), "min_group_size": MIN_GROUP},
+            "window": "monthly averages over the last 12 full months",
+            "categories": items, "baskets": baskets, **extra,
+            "note": {"en": "Peers are other customers in this dataset; nobody is identifiable and groups are never smaller than 30 people.",
+                     "fi": "Vertailuryhmä on muita asiakkaita; ketään ei voi tunnistaa eikä ryhmä ole koskaan alle 30 henkeä."}[lang]}
+
+
+def percentile_of(customer_id: str, col: str, group: pd.DataFrame | None = None) -> int:
+    t = group if group is not None else table()
+    vals = t[col].dropna().to_numpy(dtype=float)
+    you = float(table().loc[customer_id, col]) if pd.notna(table().loc[customer_id, col]) else 0.0
+    return int(round(100 * float((vals < you).mean())))

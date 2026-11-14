@@ -1,0 +1,85 @@
+{
+    "id": "f645272cee",
+    "type": "profile",
+    "title": "Your spender profile",
+    "subtitle": null,
+    "data": {
+        "archetype": {
+            "key": "tightrope",
+            "name": "The Tightrope Walker",
+            "tagline": "Your balance often runs close to zero in the days before payday."
+        },
+        "traits": [
+            {
+                "key": "tightrope",
+                "name": "The Tightrope Walker",
+                "percentile": 97,
+                "evidence": "Your balance was below zero on 35 days in the past 12 months."
+            },
+            {
+                "key": "shopper",
+                "name": "The Treat Shopper",
+                "percentile": 83,
+                "evidence": "Shopping is 9% of your spending (\u20ac274 a month)."
+            },
+            {
+                "key": "sprinter",
+                "name": "The Payday Sprinter",
+                "percentile": 82,
+                "evidence": "30% of your everyday spending happens within 7 days of payday."
+            }
+        ],
+        "shape": [
+            {
+                "key": "cushion",
+                "label": "Cushion",
+                "score": 26
+            },
+            {
+                "key": "saving",
+                "label": "Saving habit",
+                "score": 36
+            },
+            {
+                "key": "steady",
+                "label": "Steadiness",
+                "score": 48
+            },
+            {
+                "key": "room",
+                "label": "Breathing room",
+                "score": 65
+            },
+            {
+                "key": "pacing",
+                "label": "Pacing",
+                "score": 18
+            }
+        ],
+        "fitness": 39,
+        "strongest": {
+            "key": "room",
+            "label": "Breathing room",
+            "score": 65
+        },
+        "weakest": {
+            "key": "pacing",
+            "label": "Pacing",
+            "score": 18
+        },
+        "facts": {
+            "everyday_monthly": 1727.12,
+            "fixed_share_of_income": 0.34,
+            "buffer_months": 2.0,
+            "payday_week_share": 0.3,
+            "weekend_share": 0.32,
+            "purchases_per_month": 33.9
+        },
+        "compared_with": "all 5,100 customers, last 12 full months"
+    },
+    "source": {
+        "tool": "spender_profile",
+        "args": {}
+    },
+    "note": null
+}

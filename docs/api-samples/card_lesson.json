@@ -1,0 +1,18 @@
+{
+    "id": "1846a1d3cf",
+    "type": "lesson",
+    "title": "A buffer buys time",
+    "subtitle": null,
+    "data": {
+        "id": "buffer",
+        "concept": "A buffer isn't measured in euros. It's measured in months you could keep paying your musts.",
+        "minutes": 1
+    },
+    "source": {
+        "tool": "start_lesson",
+        "args": {
+            "lesson": "buffer"
+        }
+    },
+    "note": null
+}

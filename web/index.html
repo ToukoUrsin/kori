@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content" />
+    <meta name="theme-color" content="#f6f4ef" />
+    <meta name="description" content="Kori is a voice and text money coach for your own transactions. Your balance is not your budget." />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>Kori</title>
+    <script>
+      // On a bad connection the app's own files can fail to load. Try again, three times at most.
+      addEventListener("error", function (e) {
+        var t = e.target;
+        if (!t || (t.tagName !== "SCRIPT" && t.tagName !== "LINK")) return;
+        try {
+          var n = +(sessionStorage.getItem("kori.reload") || 0);
+          if (n >= 3) return;
+          sessionStorage.setItem("kori.reload", n + 1);
+          setTimeout(function () { location.reload(); }, 400 * (n + 1));
+        } catch (_) {}
+      }, true);
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

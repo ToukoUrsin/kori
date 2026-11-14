@@ -1,0 +1,68 @@
+{
+  "cases": 106553,
+  "customers": 4850,
+  "as_of": {
+    "days_of_month": [
+      5,
+      21
+    ],
+    "months": [
+      "2025-10",
+      "2025-11",
+      "2025-12",
+      "2026-01",
+      "2026-02",
+      "2026-03",
+      "2026-04",
+      "2026-05",
+      "2026-06",
+      "2026-07",
+      "2026-08"
+    ]
+  },
+  "payday": {
+    "exact_pct": 73.8,
+    "late_pct": 22.5
+  },
+  "bills": {
+    "cases": 76820,
+    "median_abs_error_eur": 42.04,
+    "within_50_eur_pct": 56.9,
+    "median_rel_error_pct": 5.6
+  },
+  "promise": {
+    "cases": 89619,
+    "safe_held_pct": 95.9,
+    "safe_held_when_pay_on_time_pct": 98.4,
+    "safe_held_when_pay_late_pct": 87.0,
+    "balance_as_budget_held_pct": 28.6
+  },
+  "real_life": {
+    "stayed_within_safe": {
+      "cases": 58248,
+      "went_below_zero_pct": 2.8
+    },
+    "spent_more_than_safe": {
+      "cases": 44912,
+      "went_below_zero_pct": 25.9
+    }
+  },
+  "status_words": {
+    "comfortable": {
+      "cases": 55085,
+      "really_went_below_zero_pct": 2.3
+    },
+    "tight": {
+      "cases": 17917,
+      "really_went_below_zero_pct": 13.3
+    },
+    "very_tight": {
+      "cases": 16617,
+      "really_went_below_zero_pct": 30.3
+    },
+    "empty": {
+      "cases": 13541,
+      "really_went_below_zero_pct": 34.2
+    }
+  }
+}

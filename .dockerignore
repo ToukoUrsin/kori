@@ -1,0 +1,11 @@
+dataset
+data/state
+data/audio
+**/node_modules
+**/.venv
+**/__pycache__
+backend/scratch
+.git
+research
+docs/api-samples
+film

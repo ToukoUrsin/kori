@@ -1,0 +1,62 @@
+[
+    {
+        "id": "CUST00092",
+        "name": "Aino",
+        "age": 31,
+        "area": "Helsinki",
+        "blurb": "Runs close to zero before payday",
+        "partial_view": false,
+        "safe": 1093.94,
+        "status": "tight"
+    },
+    {
+        "id": "CUST00248",
+        "name": "Eetu",
+        "age": 23,
+        "area": "Vantaa",
+        "blurb": "First job, tight months",
+        "partial_view": false,
+        "safe": 832.21,
+        "status": "tight"
+    },
+    {
+        "id": "CUST01051",
+        "name": "Mikko",
+        "age": 39,
+        "area": "Helsinki",
+        "blurb": "Family-size bills",
+        "partial_view": false,
+        "safe": 0.0,
+        "status": "empty"
+    },
+    {
+        "id": "CUST00332",
+        "name": "Sanna",
+        "age": 39,
+        "area": "Vantaa",
+        "blurb": "Saves and invests every month",
+        "partial_view": false,
+        "safe": 2037.65,
+        "status": "comfortable"
+    },
+    {
+        "id": "CUST02957",
+        "name": "Jari",
+        "age": 36,
+        "area": "Helsinki",
+        "blurb": "Salary moves to another bank",
+        "partial_view": true,
+        "safe": 5688.51,
+        "status": "comfortable"
+    },
+    {
+        "id": "CUST00706",
+        "name": "Helena",
+        "age": 82,
+        "area": "Helsinki",
+        "blurb": "Retired, steady income",
+        "partial_view": false,
+        "safe": 682.53,
+        "status": "very_tight"
+    }
+]

@@ -1,0 +1,163 @@
+{
+    "id": "8933b51104",
+    "type": "whatif",
+    "title": "What if: Eating out \u221220%",
+    "subtitle": null,
+    "data": {
+        "changes": [
+            {
+                "type": "cut",
+                "target": "Restaurants",
+                "label": "Eating out",
+                "basket": "everyday",
+                "pct": 20,
+                "from_monthly": 252.67,
+                "to_monthly": 202.14,
+                "monthly_change": 50.53
+            }
+        ],
+        "months": 12,
+        "monthly_effect": 50.53,
+        "yearly_effect": 606.36,
+        "one_off_total": 0.0,
+        "total_effect_over_period": 606.36,
+        "left_over": {
+            "now": 122.5,
+            "after": 173.03
+        },
+        "everyday_per_day": {
+            "now": 50.54,
+            "after": 50.54
+        },
+        "series": [
+            {
+                "month": 0,
+                "baseline": 0.0,
+                "scenario": 0.0
+            },
+            {
+                "month": 1,
+                "baseline": 122.5,
+                "scenario": 173.03
+            },
+            {
+                "month": 2,
+                "baseline": 245.0,
+                "scenario": 346.06
+            },
+            {
+                "month": 3,
+                "baseline": 367.5,
+                "scenario": 519.09
+            },
+            {
+                "month": 4,
+                "baseline": 490.0,
+                "scenario": 692.12
+            },
+            {
+                "month": 5,
+                "baseline": 612.5,
+                "scenario": 865.15
+            },
+            {
+                "month": 6,
+                "baseline": 735.0,
+                "scenario": 1038.18
+            },
+            {
+                "month": 7,
+                "baseline": 857.5,
+                "scenario": 1211.21
+            },
+            {
+                "month": 8,
+                "baseline": 980.0,
+                "scenario": 1384.24
+            },
+            {
+                "month": 9,
+                "baseline": 1102.5,
+                "scenario": 1557.27
+            },
+            {
+                "month": 10,
+                "baseline": 1225.0,
+                "scenario": 1730.3
+            },
+            {
+                "month": 11,
+                "baseline": 1347.5,
+                "scenario": 1903.33
+            },
+            {
+                "month": 12,
+                "baseline": 1470.0,
+                "scenario": 2076.36
+            }
+        ],
+        "usual_month": {
+            "income": 2994.62,
+            "fixed": 1231.47,
+            "surprise": 224.6,
+            "everyday": 1416.05,
+            "saving": 0.0
+        },
+        "yearly_equals": [
+            {
+                "what": "months of housing costs",
+                "count": 0.6
+            },
+            {
+                "what": "weeks of groceries",
+                "count": 5.1
+            },
+            {
+                "what": "months of your surprise reserve",
+                "count": 2.7
+            }
+        ],
+        "if_set_aside": {
+            "monthly": 50.53,
+            "years": [
+                {
+                    "years": 1,
+                    "no_return": 606.36,
+                    "example_4pct": 617.6
+                },
+                {
+                    "years": 5,
+                    "no_return": 3031.8,
+                    "example_4pct": 3350.09
+                },
+                {
+                    "years": 10,
+                    "no_return": 6063.6,
+                    "example_4pct": 7440.53
+                }
+            ],
+            "note": "The 4% line is an example for learning how compounding works, not a forecast or advice."
+        },
+        "goal": {
+            "name": "Trip to Lisbon",
+            "amount": 2000.0,
+            "months_now": 16.3,
+            "months_after": 11.6
+        }
+    },
+    "source": {
+        "tool": "what_if",
+        "args": {
+            "changes": [
+                {
+                    "type": "cut",
+                    "target": "Restaurants",
+                    "pct": 20
+                }
+            ],
+            "goal_amount": 2000,
+            "goal_name": "Trip to Lisbon"
+        }
+    },
+    "note": null
+}

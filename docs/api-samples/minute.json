@@ -1,0 +1,521 @@
+{
+    "beats": [
+        {
+            "key": "balance",
+            "focus": "safe",
+            "text": "Good morning Aino. Your account shows 2,621 euros. After housing, bills and a reserve for surprises, 1,094 euros of that is safe to spend before payday on the 15th of October.",
+            "word_from": 0,
+            "word_to": 31
+        },
+        {
+            "key": "pace",
+            "focus": "forecast",
+            "text": "That is 46 euros a day. Your usual pace is 54 euros a day, which would leave you with 117 euros the day before payday.",
+            "word_from": 31,
+            "word_to": 56
+        },
+        {
+            "key": "notice",
+            "focus": "notice:hot_Transportation",
+            "text": "Getting around is at 621 euros this month. Your usual whole month is 225 euros. 15 purchases so far, with 9 days of the month left.",
+            "word_from": 56,
+            "word_to": 82
+        },
+        {
+            "key": "close",
+            "focus": "ask",
+            "text": "That's your money minute. Ask me anything about your own spending, or try a what-if.",
+            "word_from": 82,
+            "word_to": 97
+        }
+    ],
+    "text": "Good morning Aino. Your account shows 2,621 euros. After housing, bills and a reserve for surprises, 1,094 euros of that is safe to spend before payday on the 15th of October. That is 46 euros a day. Your usual pace is 54 euros a day, which would leave you with 117 euros the day before payday. Getting around is at 621 euros this month. Your usual whole month is 225 euros. 15 purchases so far, with 9 days of the month left. That's your money minute. Ask me anything about your own spending, or try a what-if.",
+    "audio": "/api/audio/b88f27e8ecdbbc37.mp3",
+    "words": [
+        {
+            "w": "Good",
+            "start": 0.0,
+            "end": 0.209
+        },
+        {
+            "w": "morning",
+            "start": 0.255,
+            "end": 0.511
+        },
+        {
+            "w": "Aino.",
+            "start": 0.557,
+            "end": 1.057
+        },
+        {
+            "w": "Your",
+            "start": 1.382,
+            "end": 1.544
+        },
+        {
+            "w": "account",
+            "start": 1.591,
+            "end": 1.892
+        },
+        {
+            "w": "shows",
+            "start": 1.939,
+            "end": 2.299
+        },
+        {
+            "w": "2,621",
+            "start": 2.38,
+            "end": 3.634
+        },
+        {
+            "w": "euros.",
+            "start": 3.715,
+            "end": 4.458
+        },
+        {
+            "w": "After",
+            "start": 4.702,
+            "end": 4.981
+        },
+        {
+            "w": "housing,",
+            "start": 5.027,
+            "end": 5.631
+        },
+        {
+            "w": "bills",
+            "start": 5.805,
+            "end": 6.211
+        },
+        {
+            "w": "and",
+            "start": 6.258,
+            "end": 6.339
+        },
+        {
+            "w": "a",
+            "start": 6.374,
+            "end": 6.397
+        },
+        {
+            "w": "reserve",
+            "start": 6.444,
+            "end": 6.757
+        },
+        {
+            "w": "for",
+            "start": 6.78,
+            "end": 6.885
+        },
+        {
+            "w": "surprises,",
+            "start": 6.943,
+            "end": 7.814
+        },
+        {
+            "w": "1,094",
+            "start": 8.057,
+            "end": 8.812
+        },
+        {
+            "w": "euros",
+            "start": 8.87,
+            "end": 9.172
+        },
+        {
+            "w": "of",
+            "start": 9.218,
+            "end": 9.276
+        },
+        {
+            "w": "that",
+            "start": 9.323,
+            "end": 9.497
+        },
+        {
+            "w": "is",
+            "start": 9.555,
+            "end": 9.636
+        },
+        {
+            "w": "safe",
+            "start": 9.694,
+            "end": 9.961
+        },
+        {
+            "w": "to",
+            "start": 9.996,
+            "end": 10.043
+        },
+        {
+            "w": "spend",
+            "start": 10.101,
+            "end": 10.391
+        },
+        {
+            "w": "before",
+            "start": 10.461,
+            "end": 10.704
+        },
+        {
+            "w": "payday",
+            "start": 10.751,
+            "end": 11.122
+        },
+        {
+            "w": "on",
+            "start": 11.192,
+            "end": 11.273
+        },
+        {
+            "w": "the",
+            "start": 11.32,
+            "end": 11.389
+        },
+        {
+            "w": "15th",
+            "start": 11.424,
+            "end": 11.854
+        },
+        {
+            "w": "of",
+            "start": 11.889,
+            "end": 11.935
+        },
+        {
+            "w": "October.",
+            "start": 11.981,
+            "end": 12.725
+        },
+        {
+            "w": "That",
+            "start": 13.235,
+            "end": 13.41
+        },
+        {
+            "w": "is",
+            "start": 13.456,
+            "end": 13.526
+        },
+        {
+            "w": "46",
+            "start": 13.584,
+            "end": 14.118
+        },
+        {
+            "w": "euros",
+            "start": 14.199,
+            "end": 14.489
+        },
+        {
+            "w": "a",
+            "start": 14.536,
+            "end": 14.559
+        },
+        {
+            "w": "day.",
+            "start": 14.605,
+            "end": 15.081
+        },
+        {
+            "w": "Your",
+            "start": 15.523,
+            "end": 15.697
+        },
+        {
+            "w": "usual",
+            "start": 15.766,
+            "end": 16.045
+        },
+        {
+            "w": "pace",
+            "start": 16.115,
+            "end": 16.451
+        },
+        {
+            "w": "is",
+            "start": 16.498,
+            "end": 16.591
+        },
+        {
+            "w": "54",
+            "start": 16.66,
+            "end": 17.101
+        },
+        {
+            "w": "euros",
+            "start": 17.16,
+            "end": 17.427
+        },
+        {
+            "w": "a",
+            "start": 17.473,
+            "end": 17.496
+        },
+        {
+            "w": "day,",
+            "start": 17.543,
+            "end": 18.007
+        },
+        {
+            "w": "which",
+            "start": 18.123,
+            "end": 18.298
+        },
+        {
+            "w": "would",
+            "start": 18.332,
+            "end": 18.449
+        },
+        {
+            "w": "leave",
+            "start": 18.495,
+            "end": 18.657
+        },
+        {
+            "w": "you",
+            "start": 18.692,
+            "end": 18.774
+        },
+        {
+            "w": "with",
+            "start": 18.832,
+            "end": 18.994
+        },
+        {
+            "w": "117",
+            "start": 19.052,
+            "end": 19.993
+        },
+        {
+            "w": "euros",
+            "start": 20.051,
+            "end": 20.457
+        },
+        {
+            "w": "the",
+            "start": 20.527,
+            "end": 20.608
+        },
+        {
+            "w": "day",
+            "start": 20.666,
+            "end": 20.794
+        },
+        {
+            "w": "before",
+            "start": 20.852,
+            "end": 21.119
+        },
+        {
+            "w": "payday.",
+            "start": 21.165,
+            "end": 21.839
+        },
+        {
+            "w": "Getting",
+            "start": 22.651,
+            "end": 22.907
+        },
+        {
+            "w": "around",
+            "start": 22.942,
+            "end": 23.232
+        },
+        {
+            "w": "is",
+            "start": 23.29,
+            "end": 23.371
+        },
+        {
+            "w": "at",
+            "start": 23.429,
+            "end": 23.534
+        },
+        {
+            "w": "621",
+            "start": 23.615,
+            "end": 24.346
+        },
+        {
+            "w": "euros",
+            "start": 24.416,
+            "end": 24.753
+        },
+        {
+            "w": "this",
+            "start": 24.811,
+            "end": 24.962
+        },
+        {
+            "w": "month.",
+            "start": 25.031,
+            "end": 25.519
+        },
+        {
+            "w": "Your",
+            "start": 25.96,
+            "end": 26.146
+        },
+        {
+            "w": "usual",
+            "start": 26.216,
+            "end": 26.529
+        },
+        {
+            "w": "whole",
+            "start": 26.575,
+            "end": 26.75
+        },
+        {
+            "w": "month",
+            "start": 26.784,
+            "end": 27.005
+        },
+        {
+            "w": "is",
+            "start": 27.051,
+            "end": 27.144
+        },
+        {
+            "w": "225",
+            "start": 27.214,
+            "end": 27.957
+        },
+        {
+            "w": "euros.",
+            "start": 28.015,
+            "end": 28.677
+        },
+        {
+            "w": "15",
+            "start": 29.002,
+            "end": 29.408
+        },
+        {
+            "w": "purchases",
+            "start": 29.455,
+            "end": 29.931
+        },
+        {
+            "w": "so",
+            "start": 29.977,
+            "end": 30.105
+        },
+        {
+            "w": "far,",
+            "start": 30.175,
+            "end": 30.639
+        },
+        {
+            "w": "with",
+            "start": 30.755,
+            "end": 30.941
+        },
+        {
+            "w": "9",
+            "start": 31.034,
+            "end": 31.208
+        },
+        {
+            "w": "days",
+            "start": 31.254,
+            "end": 31.44
+        },
+        {
+            "w": "of",
+            "start": 31.486,
+            "end": 31.545
+        },
+        {
+            "w": "the",
+            "start": 31.579,
+            "end": 31.649
+        },
+        {
+            "w": "month",
+            "start": 31.684,
+            "end": 31.87
+        },
+        {
+            "w": "left.",
+            "start": 31.928,
+            "end": 32.473
+        },
+        {
+            "w": "That's",
+            "start": 33.077,
+            "end": 33.298
+        },
+        {
+            "w": "your",
+            "start": 33.321,
+            "end": 33.414
+        },
+        {
+            "w": "money",
+            "start": 33.449,
+            "end": 33.623
+        },
+        {
+            "w": "minute.",
+            "start": 33.658,
+            "end": 34.134
+        },
+        {
+            "w": "Ask",
+            "start": 34.83,
+            "end": 35.097
+        },
+        {
+            "w": "me",
+            "start": 35.155,
+            "end": 35.26
+        },
+        {
+            "w": "anything",
+            "start": 35.329,
+            "end": 35.689
+        },
+        {
+            "w": "about",
+            "start": 35.736,
+            "end": 35.91
+        },
+        {
+            "w": "your",
+            "start": 35.945,
+            "end": 36.049
+        },
+        {
+            "w": "own",
+            "start": 36.107,
+            "end": 36.247
+        },
+        {
+            "w": "spending,",
+            "start": 36.293,
+            "end": 36.885
+        },
+        {
+            "w": "or",
+            "start": 36.932,
+            "end": 37.094
+        },
+        {
+            "w": "try",
+            "start": 37.164,
+            "end": 37.373
+        },
+        {
+            "w": "a",
+            "start": 37.408,
+            "end": 37.431
+        },
+        {
+            "w": "what-if.",
+            "start": 37.477,
+            "end": 38.22
+        }
+    ]
+}

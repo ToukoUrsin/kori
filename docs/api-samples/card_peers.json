@@ -1,0 +1,270 @@
+{
+    "id": "f107dbccdc",
+    "type": "peers",
+    "title": "You and people like you",
+    "subtitle": "650 customers aged 25-34",
+    "data": {
+        "group": {
+            "by": "age",
+            "label": "aged 25-34",
+            "size": 650,
+            "min_group_size": 30
+        },
+        "window": "monthly averages over the last 12 full months",
+        "categories": [
+            {
+                "key": "Groceries",
+                "label": "Groceries",
+                "you": 668.27,
+                "median": 349.55,
+                "p25": 207.2,
+                "p75": 539.97,
+                "percentile": 86,
+                "diff": 318.72,
+                "diff_pct": 91,
+                "icon": "basket",
+                "finland": {
+                    "eur_month": 416.84,
+                    "group": "25-34",
+                    "survey_year": 2022,
+                    "source": "Statistics Finland, Household Budget Survey",
+                    "basis": "per consumption unit, 2026 prices"
+                }
+            },
+            {
+                "key": "Lifestyle",
+                "label": "Shopping",
+                "you": 274.24,
+                "median": 113.88,
+                "p25": 61.89,
+                "p75": 207.22,
+                "percentile": 87,
+                "diff": 160.36,
+                "diff_pct": 141,
+                "icon": "bag",
+                "finland": {
+                    "eur_month": 198.64,
+                    "group": "25-34",
+                    "survey_year": 2022,
+                    "source": "Statistics Finland, Household Budget Survey",
+                    "basis": "per consumption unit, 2026 prices"
+                }
+            },
+            {
+                "key": "Transportation",
+                "label": "Getting around",
+                "you": 270.8,
+                "median": 153.49,
+                "p25": 87.83,
+                "p75": 241.06,
+                "percentile": 80,
+                "diff": 117.31,
+                "diff_pct": 76,
+                "icon": "tram",
+                "finland": {
+                    "eur_month": 152.49,
+                    "group": "25-34",
+                    "survey_year": 2022,
+                    "source": "Statistics Finland, Household Budget Survey",
+                    "basis": "per consumption unit, 2026 prices"
+                }
+            },
+            {
+                "key": "Entertainment",
+                "label": "Fun",
+                "you": 211.66,
+                "median": 110.18,
+                "p25": 64.17,
+                "p75": 169.85,
+                "percentile": 86,
+                "diff": 101.48,
+                "diff_pct": 92,
+                "icon": "ticket",
+                "finland": {
+                    "eur_month": 44.62,
+                    "group": "25-34",
+                    "survey_year": 2022,
+                    "source": "Statistics Finland, Household Budget Survey",
+                    "basis": "per consumption unit, 2026 prices"
+                }
+            },
+            {
+                "key": "Housing",
+                "label": "Housing",
+                "you": 872.67,
+                "median": 796.06,
+                "p25": 662.69,
+                "p75": 959.23,
+                "percentile": 64,
+                "diff": 76.61,
+                "diff_pct": 10,
+                "icon": "home",
+                "finland": {
+                    "eur_month": 501.79,
+                    "group": "25-34",
+                    "survey_year": 2022,
+                    "source": "Statistics Finland, Household Budget Survey",
+                    "basis": "per consumption unit, 2026 prices"
+                }
+            },
+            {
+                "key": "Utilities",
+                "label": "Utilities",
+                "you": 181.49,
+                "median": 111.52,
+                "p25": 87.31,
+                "p75": 140.88,
+                "percentile": 89,
+                "diff": 69.98,
+                "diff_pct": 63,
+                "icon": "bolt",
+                "finland": {
+                    "eur_month": 130.57,
+                    "group": "25-34",
+                    "survey_year": 2022,
+                    "source": "Statistics Finland, Household Budget Survey",
+                    "basis": "per consumption unit, 2026 prices"
+                }
+            },
+            {
+                "key": "Restaurants",
+                "label": "Eating out",
+                "you": 225.92,
+                "median": 163.55,
+                "p25": 93.87,
+                "p75": 256.67,
+                "percentile": 68,
+                "diff": 62.36,
+                "diff_pct": 38,
+                "icon": "cup",
+                "finland": {
+                    "eur_month": 130.07,
+                    "group": "25-34",
+                    "survey_year": 2022,
+                    "source": "Statistics Finland, Household Budget Survey",
+                    "basis": "per consumption unit, 2026 prices"
+                }
+            },
+            {
+                "key": "Travel",
+                "label": "Trips",
+                "you": 76.23,
+                "median": 30.75,
+                "p25": 13.12,
+                "p75": 68.24,
+                "percentile": 78,
+                "diff": 45.48,
+                "diff_pct": 148,
+                "icon": "plane",
+                "finland": {
+                    "eur_month": 53.23,
+                    "group": "25-34",
+                    "survey_year": 2022,
+                    "source": "Statistics Finland, Household Budget Survey",
+                    "basis": "per consumption unit, 2026 prices"
+                }
+            },
+            {
+                "key": "Home & Tech",
+                "label": "Home & tech",
+                "you": 143.06,
+                "median": 103.34,
+                "p25": 60.39,
+                "p75": 176.96,
+                "percentile": 65,
+                "diff": 39.72,
+                "diff_pct": 38,
+                "icon": "wrench",
+                "finland": {
+                    "eur_month": 165.95,
+                    "group": "25-34",
+                    "survey_year": 2022,
+                    "source": "Statistics Finland, Household Budget Survey",
+                    "basis": "per consumption unit, 2026 prices"
+                }
+            },
+            {
+                "key": "Health",
+                "label": "Health",
+                "you": 81.54,
+                "median": 52.21,
+                "p25": 20.43,
+                "p75": 109.31,
+                "percentile": 64,
+                "diff": 29.33,
+                "diff_pct": 56,
+                "icon": "heart",
+                "finland": {
+                    "eur_month": 51.04,
+                    "group": "25-34",
+                    "survey_year": 2022,
+                    "source": "Statistics Finland, Household Budget Survey",
+                    "basis": "per consumption unit, 2026 prices"
+                }
+            }
+        ],
+        "baskets": [
+            {
+                "key": "fixed",
+                "label": "Fixed musts",
+                "you": 1054.16,
+                "median": 903.41,
+                "p25": 771.92,
+                "p75": 1090.22,
+                "percentile": 71,
+                "diff": 150.75,
+                "diff_pct": 17
+            },
+            {
+                "key": "surprise",
+                "label": "Surprise musts",
+                "you": 224.6,
+                "median": 170.8,
+                "p25": 98.83,
+                "p75": 272.42,
+                "percentile": 65,
+                "diff": 53.8,
+                "diff_pct": 32
+            },
+            {
+                "key": "everyday",
+                "label": "Everyday",
+                "you": 1727.12,
+                "median": 999.36,
+                "p25": 636.78,
+                "p75": 1443.24,
+                "percentile": 87,
+                "diff": 727.76,
+                "diff_pct": 73
+            }
+        ],
+        "saving": {
+            "key": "invested",
+            "label": "Moved to savings",
+            "you": 0.0,
+            "median": 0.0,
+            "p25": 0.0,
+            "p75": 1.32,
+            "percentile": 1,
+            "diff": 0.0,
+            "diff_pct": null
+        },
+        "income": {
+            "key": "salary",
+            "label": "Salary",
+            "you": 3091.54,
+            "median": 2231.18,
+            "p25": 1796.56,
+            "p75": 2866.5,
+            "percentile": 81,
+            "diff": 860.36,
+            "diff_pct": 39
+        },
+        "note": "Peers are other customers in this dataset; nobody is identifiable and groups are never smaller than 30 people."
+    },
+    "source": {
+        "tool": "compare_with_peers",
+        "args": {}
+    },
+    "note": null
+}

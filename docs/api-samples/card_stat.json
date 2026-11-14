@@ -1,0 +1,73 @@
+{
+    "id": "bbdaeea488",
+    "type": "stat",
+    "title": "Taxis",
+    "subtitle": "August 2026",
+    "data": {
+        "period": {
+            "label": "August 2026",
+            "from": "2026-08-01",
+            "to": "2026-08-31",
+            "days": 31
+        },
+        "filters": {
+            "kinds": [
+                "taxi"
+            ],
+            "flow": "spend"
+        },
+        "total": 100.92,
+        "count": 2,
+        "average_per_purchase": 50.46,
+        "per_month": null,
+        "per_day": 3.26,
+        "comparison": {
+            "label": "July 2026",
+            "from": "2026-07-01",
+            "to": "2026-07-31",
+            "total": 44.42,
+            "count": 1,
+            "delta": 56.5,
+            "pct": 127
+        },
+        "transactions": [
+            {
+                "id": 831,
+                "date": "2026-08-20",
+                "time": "15:51",
+                "amount": -72.61,
+                "category": "Transportation",
+                "category_label": "Getting around",
+                "kind": "taxi",
+                "kind_label": "Taxis",
+                "merchant": "Taksi Tori",
+                "basket": "everyday",
+                "balance_after": 2822.47
+            },
+            {
+                "id": 803,
+                "date": "2026-08-06",
+                "time": "18:47",
+                "amount": -28.31,
+                "category": "Transportation",
+                "category_label": "Getting around",
+                "kind": "taxi",
+                "kind_label": "Taxis",
+                "merchant": "Taksi Reitti",
+                "basket": "everyday",
+                "balance_after": 2364.42
+            }
+        ]
+    },
+    "source": {
+        "tool": "spending",
+        "args": {
+            "period": "last_month",
+            "kinds": [
+                "taxi"
+            ],
+            "compare": "previous"
+        }
+    },
+    "note": null
+}

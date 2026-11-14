@@ -1,0 +1,66 @@
+[
+    {
+        "id": "baskets",
+        "title": "Three baskets",
+        "concept": "Every euro you spend falls into one of three baskets. Each basket needs a different kind of attention.",
+        "minutes": 1,
+        "done": false,
+        "slides": 3
+    },
+    {
+        "id": "safe",
+        "title": "Your balance is not your budget",
+        "concept": "Part of the money on your account already belongs to rent, bills and surprises. What's left is safe to spend.",
+        "minutes": 1,
+        "done": false,
+        "slides": 3
+    },
+    {
+        "id": "surprise",
+        "title": "Surprises are predictable in bulk",
+        "concept": "You can't know which month the surprise comes. You can know roughly how much a year of them costs.",
+        "minutes": 1,
+        "done": false,
+        "slides": 2
+    },
+    {
+        "id": "slips",
+        "title": "The money that slips through your fingers",
+        "concept": "Small purchases don't register one by one. Counted together they are a real line in your year.",
+        "minutes": 1,
+        "done": false,
+        "slides": 2
+    },
+    {
+        "id": "paycycle",
+        "title": "Think in pay cycles, not calendar months",
+        "concept": "Your money doesn't reset on the 1st. It resets on payday, and the tight days are the ones just before it.",
+        "minutes": 1,
+        "done": false,
+        "slides": 2
+    },
+    {
+        "id": "buffer",
+        "title": "A buffer buys time",
+        "concept": "A buffer isn't measured in euros. It's measured in months you could keep paying your musts.",
+        "minutes": 1,
+        "done": false,
+        "slides": 2
+    },
+    {
+        "id": "payfirst",
+        "title": "Pay yourself first",
+        "concept": "Money moved aside on payday gets saved. Money you plan to save 'if something is left' rarely is.",
+        "minutes": 1,
+        "done": false,
+        "slides": 2
+    },
+    {
+        "id": "whatif",
+        "title": "Small percentage, big year",
+        "concept": "You don't have to give anything up. Trimming one habit by a fifth is hard to feel and easy to see after a year.",
+        "minutes": 1,
+        "done": false,
+        "slides": 2
+    }
+]

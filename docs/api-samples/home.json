@@ -1,0 +1,682 @@
+{
+    "persona": {
+        "id": "CUST00092",
+        "name": "Aino",
+        "age": 31,
+        "area": "Helsinki",
+        "blurb": "Runs close to zero before payday",
+        "partial_view": false
+    },
+    "today": "2026-09-21",
+    "greeting": "Hi Aino",
+    "safe": {
+        "amount": 1093.94,
+        "per_day": 45.58,
+        "this_week": 319.06,
+        "week_days": 7,
+        "days_to_payday": 24,
+        "next_payday": "2026-10-15",
+        "status": "tight",
+        "limit": "budget",
+        "balance": 2620.74,
+        "usual_per_day": 53.93,
+        "pace_ratio": 0.85,
+        "budget": {
+            "income": 2994.62,
+            "fixed": 1231.47,
+            "surprise": 224.6,
+            "saving": 0.0,
+            "everyday_monthly": 1538.55,
+            "cycle_days": 30,
+            "everyday_budget": 1516.31,
+            "everyday_spent": 422.37,
+            "left": 1093.94,
+            "cycle_start": "2026-09-15"
+        },
+        "cash": {
+            "balance": 2620.74,
+            "fixed_due": 1078.85,
+            "surprise_reserve": 177.08,
+            "saving_left": 0.0,
+            "cushion": 100.0,
+            "free": 1264.81
+        },
+        "upcoming": [
+            {
+                "date": "2026-10-08",
+                "category": "Housing",
+                "amount": 1029.76,
+                "window": [
+                    "2026-10-01",
+                    "2026-10-08"
+                ],
+                "label": "Housing"
+            },
+            {
+                "date": "2026-10-08",
+                "category": "Utilities",
+                "amount": 49.09,
+                "label": "Utilities"
+            }
+        ],
+        "spoken_for": [
+            {
+                "key": "fixed",
+                "label": "Fixed musts",
+                "amount": 1078.85
+            },
+            {
+                "key": "surprise",
+                "label": "Surprise reserve",
+                "amount": 177.08
+            },
+            {
+                "key": "saving",
+                "label": "Planned saving",
+                "amount": 0.0
+            },
+            {
+                "key": "cushion",
+                "label": "Cushion",
+                "amount": 100.0
+            },
+            {
+                "key": "safe",
+                "label": "Safe to spend",
+                "amount": 1093.94
+            },
+            {
+                "key": "buffer",
+                "label": "Your buffer",
+                "amount": 170.87
+            }
+        ],
+        "late_pay": {
+            "date": "2026-10-30",
+            "extra_days": 15,
+            "rate": 0.292,
+            "extra_needed": 907.13,
+            "covered": false
+        },
+        "partial_view": false,
+        "cushion": 100.0
+    },
+    "forecast": {
+        "usual": {
+            "pace": "usual",
+            "series": [
+                {
+                    "date": "2026-09-21",
+                    "balance": 2620.74,
+                    "events": []
+                },
+                {
+                    "date": "2026-09-22",
+                    "balance": 2518.57,
+                    "events": []
+                },
+                {
+                    "date": "2026-09-23",
+                    "balance": 2492.18,
+                    "events": []
+                },
+                {
+                    "date": "2026-09-24",
+                    "balance": 2428.28,
+                    "events": []
+                },
+                {
+                    "date": "2026-09-25",
+                    "balance": 2342.1,
+                    "events": []
+                },
+                {
+                    "date": "2026-09-26",
+                    "balance": 2294.65,
+                    "events": []
+                },
+                {
+                    "date": "2026-09-27",
+                    "balance": 2249.7,
+                    "events": []
+                },
+                {
+                    "date": "2026-09-28",
+                    "balance": 2188.47,
+                    "events": []
+                },
+                {
+                    "date": "2026-09-29",
+                    "balance": 2086.3,
+                    "events": []
+                },
+                {
+                    "date": "2026-09-30",
+                    "balance": 2059.91,
+                    "events": []
+                },
+                {
+                    "date": "2026-10-01",
+                    "balance": 1996.02,
+                    "events": []
+                },
+                {
+                    "date": "2026-10-02",
+                    "balance": 1909.83,
+                    "events": []
+                },
+                {
+                    "date": "2026-10-03",
+                    "balance": 1862.38,
+                    "events": []
+                },
+                {
+                    "date": "2026-10-04",
+                    "balance": 1817.43,
+                    "events": []
+                },
+                {
+                    "date": "2026-10-05",
+                    "balance": 1756.2,
+                    "events": []
+                },
+                {
+                    "date": "2026-10-06",
+                    "balance": 1654.03,
+                    "events": []
+                },
+                {
+                    "date": "2026-10-07",
+                    "balance": 1627.64,
+                    "events": []
+                },
+                {
+                    "date": "2026-10-08",
+                    "balance": 484.9,
+                    "events": [
+                        {
+                            "type": "bill",
+                            "category": "Housing",
+                            "label": "Housing",
+                            "amount": 1029.76
+                        },
+                        {
+                            "type": "bill",
+                            "category": "Utilities",
+                            "label": "Utilities",
+                            "amount": 49.09
+                        }
+                    ]
+                },
+                {
+                    "date": "2026-10-09",
+                    "balance": 398.71,
+                    "events": []
+                },
+                {
+                    "date": "2026-10-10",
+                    "balance": 351.26,
+                    "events": []
+                },
+                {
+                    "date": "2026-10-11",
+                    "balance": 306.31,
+                    "events": []
+                },
+                {
+                    "date": "2026-10-12",
+                    "balance": 245.08,
+                    "events": []
+                },
+                {
+                    "date": "2026-10-13",
+                    "balance": 142.91,
+                    "events": []
+                },
+                {
+                    "date": "2026-10-14",
+                    "balance": 116.53,
+                    "events": []
+                },
+                {
+                    "date": "2026-10-15",
+                    "balance": 3111.15,
+                    "events": [
+                        {
+                            "type": "payday",
+                            "amount": 2994.62
+                        }
+                    ]
+                }
+            ],
+            "lowest": {
+                "balance": 116.53,
+                "date": "2026-10-14"
+            },
+            "before_payday": 116.53,
+            "next_payday": "2026-10-15",
+            "goes_negative": false,
+            "below_cushion": false
+        },
+        "safe": {
+            "pace": "safe",
+            "series": [
+                {
+                    "date": "2026-09-21",
+                    "balance": 2620.74,
+                    "events": []
+                },
+                {
+                    "date": "2026-09-22",
+                    "balance": 2567.78,
+                    "events": []
+                },
+                {
+                    "date": "2026-09-23",
+                    "balance": 2514.82,
+                    "events": []
+                },
+                {
+                    "date": "2026-09-24",
+                    "balance": 2461.86,
+                    "events": []
+                },
+                {
+                    "date": "2026-09-25",
+                    "balance": 2408.91,
+                    "events": []
+                },
+                {
+                    "date": "2026-09-26",
+                    "balance": 2355.95,
+                    "events": []
+                },
+                {
+                    "date": "2026-09-27",
+                    "balance": 2302.99,
+                    "events": []
+                },
+                {
+                    "date": "2026-09-28",
+                    "balance": 2250.03,
+                    "events": []
+                },
+                {
+                    "date": "2026-09-29",
+                    "balance": 2197.07,
+                    "events": []
+                },
+                {
+                    "date": "2026-09-30",
+                    "balance": 2144.11,
+                    "events": []
+                },
+                {
+                    "date": "2026-10-01",
+                    "balance": 2091.16,
+                    "events": []
+                },
+                {
+                    "date": "2026-10-02",
+                    "balance": 2038.2,
+                    "events": []
+                },
+                {
+                    "date": "2026-10-03",
+                    "balance": 1985.24,
+                    "events": []
+                },
+                {
+                    "date": "2026-10-04",
+                    "balance": 1932.28,
+                    "events": []
+                },
+                {
+                    "date": "2026-10-05",
+                    "balance": 1879.32,
+                    "events": []
+                },
+                {
+                    "date": "2026-10-06",
+                    "balance": 1826.36,
+                    "events": []
+                },
+                {
+                    "date": "2026-10-07",
+                    "balance": 1773.4,
+                    "events": []
+                },
+                {
+                    "date": "2026-10-08",
+                    "balance": 641.6,
+                    "events": [
+                        {
+                            "type": "bill",
+                            "category": "Housing",
+                            "label": "Housing",
+                            "amount": 1029.76
+                        },
+                        {
+                            "type": "bill",
+                            "category": "Utilities",
+                            "label": "Utilities",
+                            "amount": 49.09
+                        }
+                    ]
+                },
+                {
+                    "date": "2026-10-09",
+                    "balance": 588.64,
+                    "events": []
+                },
+                {
+                    "date": "2026-10-10",
+                    "balance": 535.68,
+                    "events": []
+                },
+                {
+                    "date": "2026-10-11",
+                    "balance": 482.72,
+                    "events": []
+                },
+                {
+                    "date": "2026-10-12",
+                    "balance": 429.76,
+                    "events": []
+                },
+                {
+                    "date": "2026-10-13",
+                    "balance": 376.8,
+                    "events": []
+                },
+                {
+                    "date": "2026-10-14",
+                    "balance": 323.85,
+                    "events": []
+                },
+                {
+                    "date": "2026-10-15",
+                    "balance": 3318.47,
+                    "events": [
+                        {
+                            "type": "payday",
+                            "amount": 2994.62
+                        }
+                    ]
+                }
+            ],
+            "lowest": {
+                "balance": 323.85,
+                "date": "2026-10-14"
+            },
+            "before_payday": 323.85,
+            "next_payday": "2026-10-15",
+            "goes_negative": false,
+            "below_cushion": false
+        },
+        "cushion": 100.0,
+        "per_day": {
+            "usual": 53.93,
+            "safe": 45.58
+        },
+        "salary": 2994.62,
+        "today": "2026-09-21"
+    },
+    "baskets": {
+        "month": "2026-09",
+        "is_current": true,
+        "days_elapsed": 21,
+        "days_in_month": 30,
+        "income": 3285.36,
+        "baskets": [
+            {
+                "key": "fixed",
+                "label": "Fixed musts",
+                "short": "Fixed",
+                "desc": "Mandatory and regular: rent, housing costs, utilities. Same size, same time, every month.",
+                "amount": 1124.34,
+                "usual": 1231.47,
+                "vs_usual_pct": -9,
+                "categories": [
+                    {
+                        "category": "Housing",
+                        "label": "Housing",
+                        "icon": "home",
+                        "amount": 1029.76,
+                        "count": 1,
+                        "usual": 1046.62
+                    },
+                    {
+                        "category": "Utilities",
+                        "label": "Utilities",
+                        "icon": "bolt",
+                        "amount": 94.58,
+                        "count": 3,
+                        "usual": 171.75
+                    }
+                ],
+                "share": 0.364
+            },
+            {
+                "key": "surprise",
+                "label": "Surprise musts",
+                "short": "Surprises",
+                "desc": "Mandatory but irregular: a broken washing machine, a dentist bill, a new phone when the old one dies. You can't skip them and you can't time them.",
+                "amount": 256.75,
+                "usual": 224.6,
+                "vs_usual_pct": 14,
+                "categories": [
+                    {
+                        "category": "Health",
+                        "label": "Health",
+                        "icon": "heart",
+                        "amount": 163.32,
+                        "count": 3,
+                        "usual": 92.05
+                    },
+                    {
+                        "category": "Home & Tech",
+                        "label": "Home & tech",
+                        "icon": "wrench",
+                        "amount": 93.43,
+                        "count": 1,
+                        "usual": 177.0
+                    }
+                ],
+                "share": 0.083
+            },
+            {
+                "key": "everyday",
+                "label": "Everyday",
+                "short": "Everyday",
+                "desc": "Everyday spending that slips through your fingers: food, coffees, eating out, rides, fun. Small amounts, many times. This is the basket you steer.",
+                "amount": 1709.43,
+                "usual": 1416.05,
+                "vs_usual_pct": 21,
+                "categories": [
+                    {
+                        "category": "Groceries",
+                        "label": "Groceries",
+                        "icon": "basket",
+                        "amount": 773.26,
+                        "count": 11,
+                        "usual": 521.4
+                    },
+                    {
+                        "category": "Transportation",
+                        "label": "Getting around",
+                        "icon": "tram",
+                        "amount": 621.13,
+                        "count": 15,
+                        "usual": 224.82
+                    },
+                    {
+                        "category": "Lifestyle",
+                        "label": "Shopping",
+                        "icon": "bag",
+                        "amount": 200.66,
+                        "count": 1,
+                        "usual": 193.61
+                    },
+                    {
+                        "category": "Restaurants",
+                        "label": "Eating out",
+                        "icon": "cup",
+                        "amount": 114.38,
+                        "count": 6,
+                        "usual": 252.67
+                    },
+                    {
+                        "category": "Entertainment",
+                        "label": "Fun",
+                        "icon": "ticket",
+                        "amount": 0.0,
+                        "count": 0,
+                        "usual": 118.92
+                    },
+                    {
+                        "category": "Travel",
+                        "label": "Trips",
+                        "icon": "plane",
+                        "amount": 0.0,
+                        "count": 0,
+                        "usual": 66.55
+                    }
+                ],
+                "share": 0.553
+            }
+        ],
+        "spend": 3090.52,
+        "usual_spend": 2872.12,
+        "saved": 0.0,
+        "left_over": 194.84
+    },
+    "notices": [
+        {
+            "id": "runway",
+            "tone": "warn",
+            "priority": 90,
+            "title": "At your usual pace you'd be down to \u20ac117 the day before payday",
+            "body": "Payday is 15 Oct. \u20ac1,030 of housing leaves around 8 Oct, before payday. Your safe pace is \u20ac45.58 a day; your usual is \u20ac53.93.",
+            "ask": "What is safe for me to spend this week?",
+            "card": "forecast",
+            "metric": 116.53
+        },
+        {
+            "id": "hot_Transportation",
+            "tone": "warn",
+            "priority": 80,
+            "title": "Getting around is at \u20ac621 this month. Your usual whole month is \u20ac225",
+            "body": "15 purchases so far, with 9 days of the month left.",
+            "ask": "Show me my getting around spending this month",
+            "card": null,
+            "metric": 396.31
+        },
+        {
+            "id": "late_pay",
+            "tone": "info",
+            "priority": 70,
+            "title": "Your pay came late in 7 of the last 24 months",
+            "body": "If it lands on 30 Oct instead of the 15th, you'd need about \u20ac907 more to cover those 15 days.",
+            "ask": "What happens if my pay is late this month?",
+            "card": null,
+            "metric": 907.13
+        },
+        {
+            "id": "below_zero",
+            "tone": "warn",
+            "priority": 65,
+            "title": "Your balance was below zero on 35 days in the past year",
+            "body": "It touched 8 different months, lowest \u2212\u20ac468. The pattern: housing leaves early in the month, pay arrives on the 15th.",
+            "ask": "Why does my balance go below zero before payday?",
+            "card": null,
+            "metric": 35
+        },
+        {
+            "id": "slips",
+            "tone": "info",
+            "priority": 60,
+            "title": "17 small purchases added up to \u20ac146",
+            "body": "All under \u20ac15 each, over the last 90 days. At this rate that's \u20ac592 a year from the basket that slips through your fingers.",
+            "ask": "Show me my small purchases from the last 90 days",
+            "card": null,
+            "metric": 145.97
+        }
+    ],
+    "save": {
+        "now": 0.0,
+        "monthly_capacity": 122.5,
+        "already_saving_monthly": 0.0,
+        "extra_monthly": 122.5,
+        "buffer": {
+            "balance": 2620.74,
+            "musts_monthly": 1456.07,
+            "months_covered": 1.8,
+            "target_months": 3,
+            "target": 4368.21,
+            "gap": 1747.47
+        },
+        "needed_until_payday": {
+            "everyday": 1684.56,
+            "fixed": 1078.85,
+            "surprise_reserve": 177.08,
+            "cushion": 100.0
+        },
+        "partial_view": false
+    },
+    "profile": {
+        "archetype": {
+            "key": "tightrope",
+            "name": "The Tightrope Walker",
+            "tagline": "Your balance often runs close to zero in the days before payday."
+        },
+        "fitness": 39,
+        "shape": [
+            {
+                "key": "cushion",
+                "label": "Cushion",
+                "score": 26
+            },
+            {
+                "key": "saving",
+                "label": "Saving habit",
+                "score": 36
+            },
+            {
+                "key": "steady",
+                "label": "Steadiness",
+                "score": 48
+            },
+            {
+                "key": "room",
+                "label": "Breathing room",
+                "score": 65
+            },
+            {
+                "key": "pacing",
+                "label": "Pacing",
+                "score": 18
+            }
+        ]
+    },
+    "suggestions": [
+        "How much did I spend on taxis last month?",
+        "What is safe for me to spend this week?",
+        "What kind of spender am I?",
+        "How much could I save if I reduced eating out by 20%?",
+        "Where does my money slip through my fingers?",
+        "What if my washing machine breaks?"
+    ],
+    "goal": null,
+    "lessons": {
+        "done": 0,
+        "total": 8,
+        "next": {
+            "id": "baskets",
+            "title": "Three baskets",
+            "minutes": 1,
+            "concept": "Every euro you spend falls into one of three baskets. Each basket needs a different kind of attention."
+        }
+    },
+    "pins": 0
+}

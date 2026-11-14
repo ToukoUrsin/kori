@@ -1,0 +1,15 @@
+event: session
+data: {"session": "sample1"}
+
+event: status
+data: {"tool": "spending", "label": "Going through your transactions", "first": true}
+
+event: card
+data: {"card": {"id": "db46628f9c", "type": "stat", "title": "Taxis", "subtitle": "August 2026", "data": {"period": {"label": "August 2026", "from": "2026-08-01", "to": "2026-08-31", "days": 31}, "filters": {"kinds": ["taxi"], "flow": "spend"}, "total": 100.92, "count": 2, "average_per_purchase": 50.46, "per_month": null, "per_day": 3.26, "transactions": [{"date": "2026-08-20", "time": "15:51", "amount": -72.61, "category_label": "Getting around", "kind_label": "Taxis", "merchant": "Taksi Tori"}, {"date": "2026-08-06", "time": "18:47", "amount": -28.31, "category_label": "Getting around", "kind_label": "Taxis", "merchant": "Taksi Reitti"}]}, "source": {"tool": "spending", "args": {"period": "last_month", "kinds": ["taxi"]}}, "note": null}}
+
+event: text
+data: {"text": "Last month (August 2026), you spent **€101** on taxis across 2 rides. That averages €50 per trip, coming out of your everyday basket. You can see both rides in the breakdown."}
+
+event: done
+data: {"grounded": true, "flagged": [], "checked": 4, "followups": ["Is that a lot for someone my age?", "What if I cut it by 20%?", "Show it month by month"], "tools": ["spending"], "ms": 3293}
+

@@ -1,0 +1,120 @@
+{
+    "usual": {
+        "income": 2994.62,
+        "fixed": 1231.47,
+        "surprise": 224.6,
+        "everyday": 1416.05,
+        "saving": 0.0,
+        "left_over": 122.5
+    },
+    "categories": [
+        {
+            "key": "Housing",
+            "label": "Housing",
+            "icon": "home",
+            "basket": "fixed",
+            "usual": 1046.62
+        },
+        {
+            "key": "Groceries",
+            "label": "Groceries",
+            "icon": "basket",
+            "basket": "everyday",
+            "usual": 521.4
+        },
+        {
+            "key": "Restaurants",
+            "label": "Eating out",
+            "icon": "cup",
+            "basket": "everyday",
+            "usual": 252.67
+        },
+        {
+            "key": "Transportation",
+            "label": "Getting around",
+            "icon": "tram",
+            "basket": "everyday",
+            "usual": 224.82
+        },
+        {
+            "key": "Lifestyle",
+            "label": "Shopping",
+            "icon": "bag",
+            "basket": "everyday",
+            "usual": 193.61
+        },
+        {
+            "key": "Home & Tech",
+            "label": "Home & tech",
+            "icon": "wrench",
+            "basket": "surprise",
+            "usual": 177.0
+        },
+        {
+            "key": "Utilities",
+            "label": "Utilities",
+            "icon": "bolt",
+            "basket": "fixed",
+            "usual": 171.75
+        },
+        {
+            "key": "Entertainment",
+            "label": "Fun",
+            "icon": "ticket",
+            "basket": "everyday",
+            "usual": 118.92
+        },
+        {
+            "key": "Health",
+            "label": "Health",
+            "icon": "heart",
+            "basket": "surprise",
+            "usual": 92.05
+        },
+        {
+            "key": "Travel",
+            "label": "Trips",
+            "icon": "plane",
+            "basket": "everyday",
+            "usual": 66.55
+        }
+    ],
+    "prefs": {
+        "cushion": null,
+        "savings_goal_monthly": null,
+        "basket_overrides": {},
+        "goal": null
+    },
+    "cushion": 100.0,
+    "savings_plan": 0.0,
+    "goal": null,
+    "safe": {
+        "amount": 1093.94,
+        "per_day": 45.58,
+        "days_to_payday": 24,
+        "status": "tight",
+        "usual_per_day": 53.93
+    },
+    "save": {
+        "now": 0.0,
+        "monthly_capacity": 122.5,
+        "already_saving_monthly": 0.0,
+        "extra_monthly": 122.5,
+        "buffer": {
+            "balance": 2620.74,
+            "musts_monthly": 1456.07,
+            "months_covered": 1.8,
+            "target_months": 3,
+            "target": 4368.21,
+            "gap": 1747.47
+        },
+        "needed_until_payday": {
+            "everyday": 1684.56,
+            "fixed": 1078.85,
+            "surprise_reserve": 177.08,
+            "cushion": 100.0
+        },
+        "partial_view": false
+    },
+    "balance": 2620.74
+}

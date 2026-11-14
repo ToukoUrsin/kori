@@ -1,0 +1,332 @@
+{
+    "id": "7f8ac898bd",
+    "type": "forecast",
+    "title": "Balance until payday",
+    "subtitle": null,
+    "data": {
+        "usual": {
+            "pace": "usual",
+            "series": [
+                {
+                    "date": "2026-09-21",
+                    "balance": 2620.74,
+                    "events": []
+                },
+                {
+                    "date": "2026-09-22",
+                    "balance": 2518.57,
+                    "events": []
+                },
+                {
+                    "date": "2026-09-23",
+                    "balance": 2492.18,
+                    "events": []
+                },
+                {
+                    "date": "2026-09-24",
+                    "balance": 2428.28,
+                    "events": []
+                },
+                {
+                    "date": "2026-09-25",
+                    "balance": 2342.1,
+                    "events": []
+                },
+                {
+                    "date": "2026-09-26",
+                    "balance": 2294.65,
+                    "events": []
+                },
+                {
+                    "date": "2026-09-27",
+                    "balance": 2249.7,
+                    "events": []
+                },
+                {
+                    "date": "2026-09-28",
+                    "balance": 2188.47,
+                    "events": []
+                },
+                {
+                    "date": "2026-09-29",
+                    "balance": 2086.3,
+                    "events": []
+                },
+                {
+                    "date": "2026-09-30",
+                    "balance": 2059.91,
+                    "events": []
+                },
+                {
+                    "date": "2026-10-01",
+                    "balance": 1996.02,
+                    "events": []
+                },
+                {
+                    "date": "2026-10-02",
+                    "balance": 1909.83,
+                    "events": []
+                },
+                {
+                    "date": "2026-10-03",
+                    "balance": 1862.38,
+                    "events": []
+                },
+                {
+                    "date": "2026-10-04",
+                    "balance": 1817.43,
+                    "events": []
+                },
+                {
+                    "date": "2026-10-05",
+                    "balance": 1756.2,
+                    "events": []
+                },
+                {
+                    "date": "2026-10-06",
+                    "balance": 1654.03,
+                    "events": []
+                },
+                {
+                    "date": "2026-10-07",
+                    "balance": 1627.64,
+                    "events": []
+                },
+                {
+                    "date": "2026-10-08",
+                    "balance": 484.9,
+                    "events": [
+                        {
+                            "type": "bill",
+                            "category": "Housing",
+                            "label": "Housing",
+                            "amount": 1029.76
+                        },
+                        {
+                            "type": "bill",
+                            "category": "Utilities",
+                            "label": "Utilities",
+                            "amount": 49.09
+                        }
+                    ]
+                },
+                {
+                    "date": "2026-10-09",
+                    "balance": 398.71,
+                    "events": []
+                },
+                {
+                    "date": "2026-10-10",
+                    "balance": 351.26,
+                    "events": []
+                },
+                {
+                    "date": "2026-10-11",
+                    "balance": 306.31,
+                    "events": []
+                },
+                {
+                    "date": "2026-10-12",
+                    "balance": 245.08,
+                    "events": []
+                },
+                {
+                    "date": "2026-10-13",
+                    "balance": 142.91,
+                    "events": []
+                },
+                {
+                    "date": "2026-10-14",
+                    "balance": 116.53,
+                    "events": []
+                },
+                {
+                    "date": "2026-10-15",
+                    "balance": 3111.15,
+                    "events": [
+                        {
+                            "type": "payday",
+                            "amount": 2994.62
+                        }
+                    ]
+                }
+            ],
+            "lowest": {
+                "balance": 116.53,
+                "date": "2026-10-14"
+            },
+            "before_payday": 116.53,
+            "next_payday": "2026-10-15",
+            "goes_negative": false,
+            "below_cushion": false
+        },
+        "safe": {
+            "pace": "safe",
+            "series": [
+                {
+                    "date": "2026-09-21",
+                    "balance": 2620.74,
+                    "events": []
+                },
+                {
+                    "date": "2026-09-22",
+                    "balance": 2567.78,
+                    "events": []
+                },
+                {
+                    "date": "2026-09-23",
+                    "balance": 2514.82,
+                    "events": []
+                },
+                {
+                    "date": "2026-09-24",
+                    "balance": 2461.86,
+                    "events": []
+                },
+                {
+                    "date": "2026-09-25",
+                    "balance": 2408.91,
+                    "events": []
+                },
+                {
+                    "date": "2026-09-26",
+                    "balance": 2355.95,
+                    "events": []
+                },
+                {
+                    "date": "2026-09-27",
+                    "balance": 2302.99,
+                    "events": []
+                },
+                {
+                    "date": "2026-09-28",
+                    "balance": 2250.03,
+                    "events": []
+                },
+                {
+                    "date": "2026-09-29",
+                    "balance": 2197.07,
+                    "events": []
+                },
+                {
+                    "date": "2026-09-30",
+                    "balance": 2144.11,
+                    "events": []
+                },
+                {
+                    "date": "2026-10-01",
+                    "balance": 2091.16,
+                    "events": []
+                },
+                {
+                    "date": "2026-10-02",
+                    "balance": 2038.2,
+                    "events": []
+                },
+                {
+                    "date": "2026-10-03",
+                    "balance": 1985.24,
+                    "events": []
+                },
+                {
+                    "date": "2026-10-04",
+                    "balance": 1932.28,
+                    "events": []
+                },
+                {
+                    "date": "2026-10-05",
+                    "balance": 1879.32,
+                    "events": []
+                },
+                {
+                    "date": "2026-10-06",
+                    "balance": 1826.36,
+                    "events": []
+                },
+                {
+                    "date": "2026-10-07",
+                    "balance": 1773.4,
+                    "events": []
+                },
+                {
+                    "date": "2026-10-08",
+                    "balance": 641.6,
+                    "events": [
+                        {
+                            "type": "bill",
+                            "category": "Housing",
+                            "label": "Housing",
+                            "amount": 1029.76
+                        },
+                        {
+                            "type": "bill",
+                            "category": "Utilities",
+                            "label": "Utilities",
+                            "amount": 49.09
+                        }
+                    ]
+                },
+                {
+                    "date": "2026-10-09",
+                    "balance": 588.64,
+                    "events": []
+                },
+                {
+                    "date": "2026-10-10",
+                    "balance": 535.68,
+                    "events": []
+                },
+                {
+                    "date": "2026-10-11",
+                    "balance": 482.72,
+                    "events": []
+                },
+                {
+                    "date": "2026-10-12",
+                    "balance": 429.76,
+                    "events": []
+                },
+                {
+                    "date": "2026-10-13",
+                    "balance": 376.8,
+                    "events": []
+                },
+                {
+                    "date": "2026-10-14",
+                    "balance": 323.85,
+                    "events": []
+                },
+                {
+                    "date": "2026-10-15",
+                    "balance": 3318.47,
+                    "events": [
+                        {
+                            "type": "payday",
+                            "amount": 2994.62
+                        }
+                    ]
+                }
+            ],
+            "lowest": {
+                "balance": 323.85,
+                "date": "2026-10-14"
+            },
+            "before_payday": 323.85,
+            "next_payday": "2026-10-15",
+            "goes_negative": false,
+            "below_cushion": false
+        },
+        "cushion": 100.0,
+        "per_day": {
+            "usual": 53.93,
+            "safe": 45.58
+        },
+        "salary": 2994.62,
+        "today": "2026-09-21"
+    },
+    "source": {
+        "tool": "balance_forecast",
+        "args": {}
+    },
+    "note": null
+}

@@ -1,0 +1,141 @@
+{
+    "id": "safe",
+    "title": "Your balance is not your budget",
+    "concept": "Part of the money on your account already belongs to rent, bills and surprises. What's left is safe to spend.",
+    "minutes": 1,
+    "slides": [
+        {
+            "title": "What the balance says",
+            "body": "Your account shows \u20ac2,620.74. It feels like that's what you have."
+        },
+        {
+            "title": "What is already spoken for",
+            "body": "Before payday on 15 Oct: \u20ac1,079 of fixed musts will leave, \u20ac177 is held for surprises and \u20ac100 stays as a cushion.",
+            "card": {
+                "id": "2f6deee670",
+                "type": "safe",
+                "title": "Safe to spend",
+                "subtitle": null,
+                "data": {
+                    "amount": 1093.94,
+                    "per_day": 45.58,
+                    "this_week": 319.06,
+                    "week_days": 7,
+                    "days_to_payday": 24,
+                    "next_payday": "2026-10-15",
+                    "status": "tight",
+                    "limit": "budget",
+                    "balance": 2620.74,
+                    "usual_per_day": 53.93,
+                    "pace_ratio": 0.85,
+                    "budget": {
+                        "income": 2994.62,
+                        "fixed": 1231.47,
+                        "surprise": 224.6,
+                        "saving": 0.0,
+                        "everyday_monthly": 1538.55,
+                        "cycle_days": 30,
+                        "everyday_budget": 1516.31,
+                        "everyday_spent": 422.37,
+                        "left": 1093.94,
+                        "cycle_start": "2026-09-15"
+                    },
+                    "cash": {
+                        "balance": 2620.74,
+                        "fixed_due": 1078.85,
+                        "surprise_reserve": 177.08,
+                        "saving_left": 0.0,
+                        "cushion": 100.0,
+                        "free": 1264.81
+                    },
+                    "upcoming": [
+                        {
+                            "date": "2026-10-08",
+                            "category": "Housing",
+                            "amount": 1029.76,
+                            "window": [
+                                "2026-10-01",
+                                "2026-10-08"
+                            ],
+                            "label": "Housing"
+                        },
+                        {
+                            "date": "2026-10-08",
+                            "category": "Utilities",
+                            "amount": 49.09,
+                            "label": "Utilities"
+                        }
+                    ],
+                    "spoken_for": [
+                        {
+                            "key": "fixed",
+                            "label": "Fixed musts",
+                            "amount": 1078.85
+                        },
+                        {
+                            "key": "surprise",
+                            "label": "Surprise reserve",
+                            "amount": 177.08
+                        },
+                        {
+                            "key": "saving",
+                            "label": "Planned saving",
+                            "amount": 0.0
+                        },
+                        {
+                            "key": "cushion",
+                            "label": "Cushion",
+                            "amount": 100.0
+                        },
+                        {
+                            "key": "safe",
+                            "label": "Safe to spend",
+                            "amount": 1093.94
+                        },
+                        {
+                            "key": "buffer",
+                            "label": "Your buffer",
+                            "amount": 170.87
+                        }
+                    ],
+                    "late_pay": {
+                        "date": "2026-10-30",
+                        "extra_days": 15,
+                        "rate": 0.292,
+                        "extra_needed": 907.13,
+                        "covered": false
+                    },
+                    "partial_view": false,
+                    "cushion": 100.0
+                },
+                "source": {
+                    "tool": "safe_to_spend",
+                    "args": {}
+                },
+                "note": null
+            }
+        },
+        {
+            "title": "What is safe",
+            "body": "Safe to spend: \u20ac1,094, or \u20ac45.58 a day for 24 days. One number to remember instead of a budget spreadsheet."
+        }
+    ],
+    "check": {
+        "question": "Your balance is \u20ac2,621. Why isn't that what you can spend?",
+        "options": [
+            "Some of it is already promised to rent, bills and surprises before payday",
+            "The bank holds part of it back",
+            "Balances are always a few days out of date"
+        ],
+        "correct": 0,
+        "why": "The money is yours, but its job is already decided. Safe to spend is what has no job yet."
+    },
+    "teach_back": {
+        "prompt": "Explain to a friend why 'safe to spend' is smaller than the balance.",
+        "rubric": [
+            "says upcoming musts (rent/bills) and/or a reserve for surprises are subtracted from the balance",
+            "understands the number runs until the next payday"
+        ]
+    },
+    "done": false
+}

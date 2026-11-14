@@ -1,0 +1,32 @@
+{
+    "id": "8895e610e7",
+    "type": "save",
+    "title": "Safe to save",
+    "subtitle": null,
+    "data": {
+        "now": 0.0,
+        "monthly_capacity": 122.5,
+        "already_saving_monthly": 0.0,
+        "extra_monthly": 122.5,
+        "buffer": {
+            "balance": 2620.74,
+            "musts_monthly": 1456.07,
+            "months_covered": 1.8,
+            "target_months": 3,
+            "target": 4368.21,
+            "gap": 1747.47
+        },
+        "needed_until_payday": {
+            "everyday": 1684.56,
+            "fixed": 1078.85,
+            "surprise_reserve": 177.08,
+            "cushion": 100.0
+        },
+        "partial_view": false
+    },
+    "source": {
+        "tool": "safe_to_save",
+        "args": {}
+    },
+    "note": null
+}
