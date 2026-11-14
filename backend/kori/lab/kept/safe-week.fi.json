@@ -1,0 +1,69 @@
+{
+ "question": "Paljonko voin turvallisesti käyttää tällä viikolla?",
+ "lang": "fi",
+ "kept": "2026-11-14",
+ "by": {
+  "analyst": "kept view",
+  "designer": "kept view"
+ },
+ "title": "Turvallista tällä viikolla",
+ "chips": [],
+ "cells": [
+  {
+   "title": "Turvallista käyttää, tällä viikolla ja palkkapäivään",
+   "by": "kept view",
+   "code": "PENSION = (me.get(\"age\") or 0) >= 68\nPAY = \"eläkepäivä\" if PENSION else \"palkkapäivä\"\nPAY_TO = \"eläkepäivään\" if PENSION else \"palkkapäivään\"\nCYCLE = \"eläkejakso\" if PENSION else \"palkkajakso\"\ndef day(s):\n    d = datetime.date.fromisoformat(str(s)[:10])\n    return f\"{d.day}.{d.month}.\"\nemit(\"pay_word\", PAY, \"text\", \"Päivä, jona rahat tulevat\")\nemit(\"pay_to\", PAY_TO, \"text\", \"Päivä, jona rahat tulevat\")\n\ns = kori.safe_to_spend()\nemit(\"this_week\", s[\"this_week\"], \"eur\", \"Turvallista käyttää tällä viikolla\")\nemit(\"week_days\", s[\"week_days\"], \"days\", \"Tämän viikon päivät\")\nemit(\"per_day\", s[\"per_day\"], \"eur_per_day\", \"Turvallista päivässä palkkapäivään asti\")\nemit(\"safe_to_spend\", s[\"amount\"], \"eur\", \"Turvallista käyttää palkkapäivään asti\")\nemit(\"days_to_payday\", s[\"days_to_payday\"], \"days\", \"Päiviä palkkapäivään\")\nemit(\"next_payday\", s[\"next_payday\"], \"date\", \"Seuraava palkkapäivä\")\nemit(\"usual_per_day\", s[\"usual_per_day\"], \"eur_per_day\", \"Tavallinen päiväsi\")\nemit(\"status_line\", s[\"status_line\"], \"text\", \"Miltä tahti näyttää\")\nif s[\"amount\"] > 0 and s[\"this_week\"] > 0:        # nothing safe to spend: no kept answer, the question is worked out fresh\n    say(f\"Tällä viikolla voit käyttää turvallisesti **{eur(s['this_week'], True)}**: {eur(s['per_day'], True)} päivässä {s['week_days']} päivän ajan. Samalla tahdilla rahat riittävät {PAY_TO} {day(s['next_payday'])} asti.\")\n"
+  }
+ ],
+ "html": "<style>.kw .k-n{white-space:normal;color:inherit;font-weight:inherit}</style>\n<p class=\"k-lede\">Päivä kerrallaan sama tahti kantaa <b>{{pay_to|raw}}</b> asti.</p>\n<div class=\"k-stats\"><div class=\"k-fig\"><span>{{per_day|eur}}</span><small>päivässä</small></div><div class=\"k-fig\"><span>{{week_days|int}}</span><small>päivää tällä viikolla</small></div><div class=\"k-fig\"><span>{{usual_per_day|eur}}</span><small>tavallinen päiväsi</small></div></div>\n<div class=\"k-rows\"><div class=\"k-row\"><div>Tällä viikolla</div><b>{{this_week|eur}}</b></div><div class=\"k-row\"><div>Yhteensä {{pay_to|raw}} asti<small>{{next_payday|date}},  {{days_to_payday|int}} päivän päästä</small></div><b>{{safe_to_spend|eur}}</b></div></div>\n<p class=\"k-note kw\">{{status_line|raw}}</p>\n<div class=\"k-chips\"><button class=\"k-chip\" data-ask=\"Mitä laskuja on tulossa ennen palkkapäivää?\">Laskut ennen palkkapäivää</button><button class=\"k-chip\" data-ask=\"Miksi saldoni ei ole budjettini?\">Miksi ei saldo</button></div>",
+ "wordings": [
+  "Paljonko voin turvallisesti käyttää tällä viikolla?",
+  "paljon mul on varaa käyttää tällä viikolla",
+  "paljonko voin käyttää tällä viikolla",
+  "mikä on mun budjetti tälle viikolle",
+  "paljonko rahaa tälle viikolle",
+  "paljon mä voin tuhlata tällä viikolla",
+  "viikon budjetti?",
+  "paljonko on turvallista käyttää tällä viikolla",
+  "kuinka paljon voin kuluttaa tällä viikolla",
+  "paljon mulla on rahaa käytettävissä tällä viikolla"
+ ],
+ "match": [
+  [
+   "viiko",
+   "viikk",
+   "vk"
+  ],
+  [
+   "käyt",
+   "varaa",
+   "turvall",
+   "kulut",
+   "kuluttaa",
+   "budjet",
+   "rahaa",
+   "tuhla",
+   "törsä",
+   "jäljellä",
+   "jää",
+   "saan",
+   "voin"
+  ]
+ ],
+ "unless": [
+  "viikonlop",
+  "viime viiko",
+  "viime viikk",
+  "ensi viiko",
+  "ensi viikk",
+  "joka viikko",
+  "viikossa",
+  "käytin",
+  "kulutin",
+  "meni",
+  "tavallisesti",
+  "keskimäärin",
+  "säästä",
+  "sijoit"
+ ]
+}

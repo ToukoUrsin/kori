@@ -115,12 +115,31 @@ def minute_script(m: Money) -> list[dict]:
     notes = [n for n in insights.notices(m, 6) if n["id"] != "runway"]
     f = m.forecast("usual")
     L = lambda en, fi: en if lang == "en" else fi
+    if m.partial_view:
+        # the same reason Today gives: most of the pay moves to another bank, and only what stays here is counted
+        opening_beat = L(
+            f"Good morning {name}. This account shows {spoken_eur(m.balance, 'en')}, but most of your salary moves to another bank, "
+            f"so I count only what stays here. Of that, {spoken_eur(s['amount'], 'en')} is safe to spend on this account before payday "
+            f"on {spoken_day(pay, 'en')}.",
+            f"Huomenta {name}. Tällä tilillä on {spoken_eur(m.balance, 'fi')}, mutta suurin osa palkastasi siirtyy toiseen pankkiin, "
+            f"joten lasken vain sen, mikä jää tänne. Siitä on {spoken_eur(s['amount'], 'fi')} turvallista käyttää tältä tililtä ennen "
+            f"palkkapäivää, joka on {spoken_day(pay, 'fi')}.")
+    else:
+        opening_beat = L(
+            f"Good morning {name}. Your account shows {spoken_eur(m.balance, 'en')}. After housing, bills and a reserve for surprises, "
+            f"{spoken_eur(s['amount'], 'en')} of that is safe to spend before payday on {spoken_day(pay, 'en')}.",
+            f"Huomenta {name}. Tililläsi on {spoken_eur(m.balance, 'fi')}. Asumisen, laskujen ja yllätysvaran jälkeen siitä on "
+            f"{spoken_eur(s['amount'], 'fi')} turvallista käyttää ennen palkkapäivää, joka on {spoken_day(pay, 'fi')}.")
+        if m.linked_view:
+            opening_beat = L(
+                f"Good morning {name}. With the simulated account at your other bank counted in, you have {spoken_eur(m.balance, 'en')}. "
+                f"After housing, bills and a reserve for surprises, {spoken_eur(s['amount'], 'en')} of that is safe to spend before payday "
+                f"on {spoken_day(pay, 'en')}.",
+                f"Huomenta {name}. Kun toisen pankkisi simuloitu tili lasketaan mukaan, sinulla on {spoken_eur(m.balance, 'fi')}. "
+                f"Asumisen, laskujen ja yllätysvaran jälkeen siitä on {spoken_eur(s['amount'], 'fi')} turvallista käyttää ennen "
+                f"palkkapäivää, joka on {spoken_day(pay, 'fi')}.")
     beats = [
-        {"key": "balance", "focus": "safe",
-         "text": L(f"Good morning {name}. Your account shows {spoken_eur(m.balance, 'en')}. After housing, bills and a reserve for surprises, "
-                   f"{spoken_eur(s['amount'], 'en')} of that is safe to spend before payday on {spoken_day(pay, 'en')}.",
-                   f"Huomenta {name}. Tililläsi on {spoken_eur(m.balance, 'fi')}. Asumisen, laskujen ja yllätysvaran jälkeen siitä on "
-                   f"{spoken_eur(s['amount'], 'fi')} turvallista käyttää ennen palkkapäivää, joka on {spoken_day(pay, 'fi')}.")},
+        {"key": "balance", "focus": "safe", "text": opening_beat},
         {"key": "pace", "focus": "forecast",
          "text": L(f"That is {spoken_eur(s['per_day'], 'en')} a day. Your usual pace is {spoken_eur(s['usual_per_day'], 'en')} a day, "
                    f"which would leave you with {spoken_eur(f['before_payday'], 'en')} when your pay lands."
@@ -225,6 +244,33 @@ async def stt(audio: bytes, filename: str, lang: str | None) -> str:
         r = await cx.post(f"{API}/v1/speech-to-text", headers=_headers(), data=data, files={"file": (filename, audio)})
         r.raise_for_status()
         return (r.json().get("text") or "").strip()
+
+
+_credits: tuple[float, bool] = (0.0, True)
+
+
+async def has_credits() -> bool:
+    """False when the speech account has used its month and may not go over: a call would connect and drop at once, and
+    speech-to-text would fail too. Asked at most once a minute; if the question itself fails, the answer is yes."""
+    global _credits
+    import time
+    if time.time() - _credits[0] < 60:
+        return _credits[1]
+    ok = True
+    try:
+        async with httpx.AsyncClient(timeout=6) as cx:
+            r = await cx.get(f"{API}/v1/user/subscription", headers=_headers())
+        if r.status_code == 200:
+            d = r.json()
+            used, limit = d.get("character_count"), d.get("character_limit")
+            if isinstance(used, (int, float)) and isinstance(limit, (int, float)) and limit > 0:
+                ok = used < limit or bool(d.get("can_extend_character_limit"))
+    except Exception as e:   # noqa: BLE001 - not knowing is not a reason to refuse
+        log.warning("speech credit check failed: %s", e)
+    if not ok:
+        log.error("speech account is out of credits: live voice, the microphone and new narration are off until it is topped up")
+    _credits = (time.time(), ok)
+    return ok
 
 
 class VoiceBusy(Exception):

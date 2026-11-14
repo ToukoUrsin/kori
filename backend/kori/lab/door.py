@@ -22,7 +22,7 @@ from urllib.parse import urlparse
 from .. import config
 from ..ai import tools as T
 from ..engine import trackrecord
-from ..engine.core import Money
+from ..engine.core import Money, r2
 
 log = logging.getLogger("kori.lab.door")
 
@@ -30,7 +30,8 @@ log = logging.getLogger("kori.lab.door")
 ENGINE: dict[str, tuple[str, list[str]]] = {
     "safe_to_spend": ("safe_to_spend", []),
     "forecast": ("balance_forecast", []),
-    "afford": ("can_i_afford", ["amount", "label"]),
+    "afford": ("can_i_afford", ["amount", "label", "basket"]),
+    "breaks": ("can_i_afford", ["amount", "label"]),     # a must that just happened: the surprise reserve pays first, as in Plan
     "baskets": ("baskets", ["month"]),
     "what_if": ("what_if", ["changes", "months", "goal_amount", "goal_name"]),
     "goal": ("goal_plan", ["amount", "name", "months", "by"]),
@@ -43,7 +44,7 @@ ENGINE: dict[str, tuple[str, list[str]]] = {
     "last_cycle": ("check_in", []),          # the look-back the home screen shows: did the last pay cycle fit, and what did it
     "income": ("spending", []),              # the pay that lands here and, when it moves to another bank, what stays
 }
-FIXED_ARGS = {"last_cycle": {"part": "look_back"}, "income": {"flow": "income"}}
+FIXED_ARGS = {"last_cycle": {"part": "look_back"}, "income": {"flow": "income"}, "breaks": {"basket": "surprise"}}
 DROP = {"how_to_say_it", "how_to_offer", "say", "shown_as", "count_labels"}        # notes written for the old coach
 
 
@@ -81,6 +82,70 @@ def afford_range(m: Money) -> dict:
             "possible_up_to": top(lambda r: r["verdict"] != "no"),
             "safe_to_spend": a["safe"]["before"], "per_day_now": a["per_day"]["before"], "usual_per_day": a["usual_per_day"],
             "days_to_payday": a["days_to_payday"], "next_payday": a["next_payday"]}
+
+
+def repeating(m: Money) -> dict:
+    """The one list behind "my subscriptions", "payments that repeat", "standing charges": what the bank can see repeating
+    on this account. Two kinds: the bills (housing, utilities), at the usual-month figure every other screen uses, and
+    purchases that look like a subscription: one merchant, about once a month, nearly the same amount each time, in at
+    least six of the last twelve complete months. A shop someone visits often is neither."""
+    lang = m.prefs.lang
+    L = lambda en, fi: en if lang == "en" else fi
+    df = m.df
+    months = list(m.full_months[-12:])
+    d = df[df["is_spend"] & df["month"].isin(months)]
+    bills = []
+    for cat in ("Housing", "Utilities"):
+        g = d[d["category"] == cat]
+        if len(g):
+            bills.append({"what": L(cat, {"Housing": "Asuminen", "Utilities": "Käyttömaksut (sähkö, vesi, netti)"}[cat]),
+                          "per_month": m.usual["categories"].get(cat, 0.0), "payments_12_months": int(len(g)),
+                          "months_seen": int(g["month"].nunique()), "last_paid": str(g["date"].max()), "basket": "fixed"})
+    subs = []
+    shops = d[(d["type"] == "purchase") & d["merchant"].notna()]
+    for merchant, g in shops.groupby("merchant"):
+        per_month = g.groupby("month")["spend"].agg(["count", "sum"])
+        if len(per_month) < 6 or per_month["count"].max() > 1:
+            continue                                            # a subscription is charged once a month
+        mean = float(g["spend"].mean())
+        if mean <= 0 or float(g["spend"].std(ddof=0)) / mean > 0.05:
+            continue                                            # and at the same amount: a shop visit never is
+        subs.append({"what": str(merchant), "per_month": round(float(g["spend"].median()), 2), "months_seen": int(len(per_month)),
+                     "last_paid": str(g["date"].max()), "category": str(g["category"].iloc[0])})
+    subs.sort(key=lambda x: -x["per_month"])
+    total = round(sum(b["per_month"] for b in bills) + sum(x["per_month"] for x in subs), 2)
+    return {
+        "definition": L("A payment that repeats is charged about once a month at nearly the same amount, in at least 6 of the last 12 months. "
+                        "A shop visited often is not one.",
+                        "Toistuva maksu veloitetaan noin kerran kuussa lähes samansuuruisena, vähintään kuutena kuukautena viimeisestä 12:sta. "
+                        "Kauppa, jossa käydään usein, ei ole toistuva maksu."),
+        "bills": bills, "subscriptions": subs, "subscription_count": len(subs), "total_per_month": total,
+        "note": (L("Nothing on this account looks like a subscription: no merchant charges the same amount each month. "
+                   "The payments that repeat are the bills. A subscription paid from another account or card would not show here.",
+                   "Tällä tilillä ei näy tilausmaksuja: mikään kauppias ei veloita samaa summaa joka kuukausi. "
+                   "Toistuvia maksuja ovat laskut. Toiselta tililtä tai kortilta maksettu tilaus ei näy tässä.") if not subs else
+                 L("The bank sees the merchant and the amount, not what the payment is for.",
+                   "Pankki näkee kauppiaan ja summan, ei sitä, mistä maksu on.")),
+        "window": L("last 12 complete months", "viimeiset 12 täyttä kuukautta"),
+    }
+
+
+def balance_to_safe(m: Money) -> list[dict]:
+    """How the balance becomes safe to spend, as rows that add up exactly: the balance, minus every part that is set aside,
+    is the number on the home screen. A view that shows this sum shows all of these rows."""
+    s, lang = m.safe, m.prefs.lang
+    L = lambda en, fi: en if lang == "en" else fi
+    cash = s["cash"]
+    rows = [{"label": L("On your account", "Tililläsi"), "amount": r2(m.balance), "sign": "+"}]
+    for key, en, fi in (("fixed_due", "Bills before payday", "Laskut ennen palkkapäivää"), ("surprise_reserve", "Surprise reserve", "Yllätysvara"),
+                        ("saving_left", "Planned saving", "Suunniteltu säästö"), ("cushion", "Cushion", "Pohjavara")):
+        if cash.get(key, 0) > 0.005:
+            rows.append({"label": L(en, fi), "amount": r2(cash[key]), "sign": "-"})
+    beyond = r2(m.balance - sum(r["amount"] for r in rows[1:]) - s["amount"])
+    if beyond > 0.005:
+        rows.append({"label": L("Not needed this pay cycle", "Ei tarvita tällä palkkajaksolla"), "amount": beyond, "sign": "-"})
+    rows.append({"label": L("Safe to spend", "Turvallista käyttää"), "amount": r2(s["amount"]), "sign": "="})
+    return rows
 
 
 def _strip(v: Any) -> Any:
@@ -186,9 +251,11 @@ class Door:
             return trackrecord.story(m)
         if fn == "afford_range":
             return afford_range(m)
+        if fn == "repeating":
+            return repeating(m)
         if fn == "help":
             return {k: {"calculation": v[0], "arguments": v[1]} for k, v in ENGINE.items()} | {
-                "usual_month": {}, "bills": {}, "replay": {}, "afford_range": {}}
+                "usual_month": {}, "bills": {}, "replay": {}, "afford_range": {}, "repeating": {}}
         if fn not in ENGINE:
             raise PermissionError(f"engine.{fn} is not on the list; engine.help() lists what is")
         tool, names = ENGINE[fn]
@@ -199,6 +266,8 @@ class Door:
         res = dict(out.result)
         if out.cards and isinstance(out.cards[0].get("data"), dict):          # the full figures behind the summary
             res = {**out.cards[0]["data"], **{k: v for k, v in res.items() if k not in out.cards[0]["data"]}}
+        if fn == "safe_to_spend" and not m.partial_view:
+            res["from_balance"] = balance_to_safe(m)             # the sum under the number, row by row
         if fn == "profile" and isinstance(res.get("facts"), dict) and "buffer_months" in res["facts"]:
             # one buffer figure everywhere: the one "safe to save" shows, not the rounded peer feature
             covered = (T.execute(m, self.state, "safe_to_save", {}).result.get("buffer") or {}).get("months_covered")

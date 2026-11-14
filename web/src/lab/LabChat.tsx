@@ -397,13 +397,15 @@ export default function LabChat({ onVoice, embed }: { onVoice?: () => void; embe
           const shown = turn.text.length > 0 || !turn.pending;        // the answer first, then the view it built: never a half-drawn screen
           const working = turn.pending && !turn.text;
           const doing = turn.runs.length ? turn.runs[turn.runs.length - 1].title : "";
-          const drawing = turn.pending && !!turn.text && turn.runs.length > 0 && !turn.views.some((view) => view.html);   // the answer is said, its screen is on the way
+          // the answer is said and its screen is on the way: the line and the placeholder stay until every view is finished
+          const drawing = turn.pending && !!turn.text && (turn.runs.length > 0 || turn.views.length > 0) && !(turn.views.length > 0 && turn.views.every((view) => view.done));
           return <article className="kc-turn" key={turn.id} data-state={turn.pending ? "working" : "done"}>
             <div className="kc-user">{keepFigures(turn.question)}</div>
             {working && <div className="kc-working" role="status"><span className="kc-dots" aria-hidden><i /><i /><i /></span><span className="kc-doing">{doing || copy.thinkingShort}</span></div>}
             {turn.text && <div className="kc-answer">{renderBold(turn.text)}</div>}
             {drawing && <div className="kc-working" role="status"><span className="kc-dots" aria-hidden><i /><i /><i /></span><span className="kc-doing">{copy.drawing}</span></div>}
             {turn.views.map((view) => <div className={`kc-view ${shown && view.html ? "on" : ""}`} key={view.id}><FrameHost view={view} lang={lang} mock={mock} onAsk={(text) => void runQuestion(text)} onTrace={() => undefined} sources={turn.sources} /></div>)}
+            {drawing && <div className="kc-ghost" aria-hidden><div className="kc-ghost-row"><i /><i /><i /></div><i className="kc-ghost-bar" /><i className="kc-ghost-line" /><i className="kc-ghost-line" /><i className="kc-ghost-line" /></div>}
             {!turn.pending && (() => { const n = (turn.done?.flagged ?? turn.views.find((view) => view.check)?.check?.flagged ?? []).length; return n ? <div className="kc-flag">{copy.warning(n)}</div> : !turn.error && turn.views.some((view) => view.html) ? <div className="kc-checked"><Check size={13} strokeWidth={2.2} aria-hidden />{copy.checked}</div> : null; })()}
             {turn.error && <div className="kc-error">{turn.error} <button type="button" onClick={() => void runQuestion(turn.question)}>{copy.tryAgain}</button></div>}
             {!turn.pending && !turn.views.length && turn.chips.length > 0 && <div className="kc-chips">{turn.chips.map((chip) => <button type="button" key={chip} onClick={() => void runQuestion(chip)}>{chip}</button>)}</div>}

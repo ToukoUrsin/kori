@@ -1,0 +1,93 @@
+{
+ "question": "What's my balance?",
+ "lang": "en",
+ "kept": "2026-11-14",
+ "by": {
+  "analyst": "kept view",
+  "designer": "kept view"
+ },
+ "title": "Your balance, row by row",
+ "chips": [],
+ "cells": [
+  {
+   "title": "From the balance to safe to spend",
+   "by": "kept view",
+   "code": "PENSION = (me.get(\"age\") or 0) >= 68\nPAY = \"pension day\" if PENSION else \"payday\"\nPAY_TO = \"pension day\" if PENSION else \"payday\"\nCYCLE = \"pension cycle\" if PENSION else \"pay cycle\"\ndef day(s):\n    d = datetime.date.fromisoformat(str(s)[:10])\n    return f\"{d.day} {d:%b}\"\nemit(\"pay_word\", PAY, \"text\", \"The day money comes in\")\nemit(\"pay_to\", PAY_TO, \"text\", \"The day money comes in\")\n\ns = kori.safe_to_spend()\nrows = s.get(\"from_balance\") or []                # missing when only part of the money is on this account\nparts = [{\"label\": r[\"label\"], \"amount\": r[\"amount\"]} for r in rows if r[\"sign\"] == \"-\"]\nif rows:\n    emit(\"balance\", rows[0][\"amount\"], \"eur\", rows[0][\"label\"])\n    emit(\"balance_label\", rows[0][\"label\"], \"text\", \"What the first row is\")\n    emit(\"safe_to_spend\", rows[-1][\"amount\"], \"eur\", rows[-1][\"label\"])\n    emit(\"safe_label\", rows[-1][\"label\"], \"text\", \"What the last row is\")\n    emit(\"next_payday\", s[\"next_payday\"], \"date\", \"Next payday\")\n    buffer = next((x for x in s.get(\"spoken_for\") or [] if x.get(\"key\") == \"buffer\" and x.get(\"detail\")), None)\n    emit(\"note\", buffer[\"detail\"] if buffer else s[\"status_line\"], \"text\", \"About the money kept back\")\n    if parts:\n        table(\"parts\", parts, \"Already spoken for, until payday\")\nadds_up = bool(rows) and bool(parts) and rows[0][\"sign\"] == \"+\" and rows[-1][\"sign\"] == \"=\" and \\\n    abs(rows[0][\"amount\"] - sum(p[\"amount\"] for p in parts) - rows[-1][\"amount\"]) < 0.005\nif adds_up:                                       # the screen shows a sum, so it must add up to the cent\n    if rows[-1][\"amount\"] > 0:\n        say(f\"Your balance is **{eur(rows[0]['amount'], True)}**. Until {PAY} on {day(s['next_payday'])}, {eur(rows[-1]['amount'], True)} of it is safe to spend: the rest is already spoken for.\")\n    else:\n        say(f\"Your balance is **{eur(rows[0]['amount'], True)}**, but none of it is safe to spend until {PAY} on {day(s['next_payday'])}. \" + s[\"status_line\"])\n"
+  }
+ ],
+ "html": "<style>.kw .k-n{white-space:normal;color:inherit;font-weight:inherit}</style>\n<p class=\"k-lede\">Your balance pays for what is already coming first. What is left is safe to spend.</p>\n<div class=\"k-rows\"><div class=\"k-row\"><div>{{balance_label|raw}}</div><b>{{balance|eur}}</b></div>\n<k-each table=\"parts\"><template><div class=\"k-row\"><div class=\"k-dim\">{label}</div><b class=\"k-dim\">−{amount|eur}</b></div></template></k-each>\n<div class=\"k-row total\"><div>{{safe_label|raw}}<small>until {{next_payday|date}}</small></div><b>{{safe_to_spend|eur}}</b></div></div>\n<p class=\"k-note kw\">{{note|raw}}</p>\n<div class=\"k-chips\"><button class=\"k-chip\" data-ask=\"What bills are coming before payday?\">Bills before payday</button><button class=\"k-chip\" data-ask=\"Can I trust the safe to spend number?\">Can I trust it</button></div>",
+ "wordings": [
+  "What's my balance?",
+  "balance?",
+  "whats my balance",
+  "what is my account balance",
+  "how much money do I have",
+  "how much money is in my account",
+  "my balance pls",
+  "Why is my balance not my budget?",
+  "why isn't my balance what I can spend",
+  "why is safe to spend lower than my balance",
+  "how much is on my account right now",
+  "current balance"
+ ],
+ "match": [
+  [
+   "balance",
+   "how much money do i have",
+   "how much money have i got",
+   "how much is in my account",
+   "how much is on my account",
+   "money in my account",
+   "money on my account",
+   "money in the bank",
+   "money is in my account",
+   "on my account right now"
+  ]
+ ],
+ "unless": [
+  "trust",
+  "right before",
+  "accurate",
+  "reliable",
+  "held",
+  "will",
+  "forecast",
+  "end of",
+  "be on",
+  "be at",
+  "last month",
+  "last year",
+  "history",
+  "was my",
+  "lowest",
+  "highest",
+  "transfer",
+  "other bank",
+  "save",
+  "saving",
+  "invest",
+  "week",
+  "1",
+  "2",
+  "3",
+  "4",
+  "5",
+  "6",
+  "7",
+  "8",
+  "9",
+  "€1",
+  "€2",
+  "€3",
+  "€4",
+  "€5",
+  "€6",
+  "€7",
+  "€8",
+  "€9"
+ ],
+ "also": [
+  "Why is my balance not my budget?",
+  "What is my balance?"
+ ]
+}

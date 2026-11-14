@@ -13,6 +13,12 @@ import { SortBaskets, SortBody, SortResult, useSort } from "./lesson/sort";
 
 type Step = { kind: "slide"; i: number } | { kind: "sort"; i: number } | { kind: "check" } | { kind: "teach" } | { kind: "done" };
 
+type Phase = "read" | "sort" | "check" | "teach";
+const PHASE_KEY = { read: "learn.phaseRead", sort: "learn.phaseSort", check: "learn.phaseCheck", teach: "learn.phaseTeach" } as const;
+function phaseOf(st: Step): Phase | null {
+  return st.kind === "slide" ? "read" : st.kind === "done" ? null : st.kind;
+}
+
 function Player({ id, onClose, onList }: { id: string; onClose: () => void; onList: () => void }) {
   const { customer, lang, t, bump, openLesson, version } = useApp();
   const reduce = useReducedMotion();
@@ -40,6 +46,15 @@ function Player({ id, onClose, onList }: { id: string; onClose: () => void; onLi
     : [];
   const step = steps[Math.min(n, steps.length - 1)];
   const total = Math.max(1, steps.length - 1);
+  // the lesson's parts, named from the start: read, sort your payments, check, say it back
+  const phases = steps.reduce<{ kind: Phase }[]>((out, st) => {
+    const k = phaseOf(st);
+    if (k && !out.some((x) => x.kind === k)) out.push({ kind: k });
+    return out;
+  }, []);
+  const phaseNow = step ? phaseOf(step) : null;
+  const passed = !d?.teach_back || !!grade?.passed;
+  const finished = step?.kind === "done" && passed;
 
   useEffect(() => {
     scroller.current?.scrollTo({ top: 0 });
@@ -88,6 +103,23 @@ function Player({ id, onClose, onList }: { id: string; onClose: () => void; onLi
           <X size={21} strokeWidth={2} aria-hidden />
         </IconButton>
       </div>
+      {phases.length > 1 && (
+        <ol className="flex items-center justify-center gap-1.5 px-3 pb-2 text-[12px] leading-4" aria-label={t("learn.phases")}>
+          {phases.map((ph, i) => {
+            const here = ph.kind === phaseNow;
+            const past = finished || phases.findIndex((x) => x.kind === phaseNow) > i;
+            return (
+              <li key={ph.kind} className="flex items-center gap-1.5" aria-current={here ? "step" : undefined}>
+                {i > 0 && <span className="h-px w-3 bg-line-strong" aria-hidden />}
+                <span className={cx("inline-flex items-center gap-1 whitespace-nowrap", here ? "font-semibold text-ink" : past ? "text-brand-strong" : "text-ink-3")}>
+                  {past && <Check size={12} strokeWidth={2.5} aria-hidden />}
+                  {t(PHASE_KEY[ph.kind])}
+                </span>
+              </li>
+            );
+          })}
+        </ol>
+      )}
       <div
         className={cx("flex gap-1 px-3 pb-1", step?.kind === "sort" && "sr-only")}
         role="progressbar"
@@ -241,7 +273,13 @@ function Player({ id, onClose, onList }: { id: string; onClose: () => void; onLi
             <p className="mt-4 text-[17px] font-semibold leading-6 text-ink">{grade.grade === "got_it" ? grade.encouragement : grade.grade === "partly" ? t("learn.almost") : t("learn.notYet")}</p>
             {grade.got && (
               <div className="mt-3 flex gap-2.5">
-                {grade.passed ? <CircleCheck size={18} strokeWidth={2} className="mt-0.5 shrink-0 text-brand-mid" aria-hidden /> : <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full border-[1.5px] border-ink-3" aria-hidden />}
+                {grade.passed ? (
+                  <CircleCheck size={18} strokeWidth={2} className="mt-0.5 shrink-0 text-brand-mid" aria-hidden />
+                ) : (
+                  <span className="mt-0.5 flex h-[18px] w-[18px] shrink-0 items-center justify-center" aria-hidden>
+                    <span className="h-2 w-2 rounded-full border-[1.5px] border-ink-3" />
+                  </span>
+                )}
                 <p className="text-[15px] leading-[22px] text-ink">
                   <span className="block text-[12px] leading-4 text-ink-3">{t("learn.got")}</span>
                   {grade.got}
@@ -291,6 +329,25 @@ function Player({ id, onClose, onList }: { id: string; onClose: () => void; onLi
           className="min-w-0 flex-1"
         >
           {t("learn.tryAgain")}
+        </Button>
+      </div>
+    );
+  } else if (!passed) {
+    // skipped the say-it-back: the lesson is not done yet, and the way to finish it is one tap
+    const teachAt = steps.findIndex((x) => x.kind === "teach");
+    body = (
+      <div className="pt-6">
+        <h2 className="text-[26px] font-semibold leading-8 tracking-[-0.03em] text-ink">{t("learn.almostTitle")}</h2>
+        <p className="mt-2 text-[17px] leading-[26px] text-ink-2">{t("learn.almostBody")}</p>
+      </div>
+    );
+    footer = (
+      <div className="space-y-2">
+        <Button variant="primary" block onClick={() => go(teachAt)}>
+          {t("learn.sayBack")}
+        </Button>
+        <Button variant="ghost" block onClick={onList}>
+          {t("learn.backToList")}
         </Button>
       </div>
     );

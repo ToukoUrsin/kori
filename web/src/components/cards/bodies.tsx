@@ -3,6 +3,7 @@ import { useState } from "react";
 import { day, money, monthShort, num, pct } from "../../lib/format";
 import { useApp } from "../../lib/store";
 import type {
+  Basket,
   BasketsData,
   AffordData,
   CalculateData,
@@ -23,7 +24,7 @@ import { MonthsMeter, Radar, RangeStrip, TrendBars, TwoLine } from "../charts/Ch
 import { ForecastChart, ForecastLegend } from "../charts/ForecastChart";
 import { ReplayCells, ReplayMissBlock } from "../replay/ReplayStrip";
 import { SpokenBar } from "../charts/SpokenBar";
-import { BASKET_BG, BASKET_VAR, BigMoney, Button, CatIcon, Collapse, Dot, cx } from "../ui/bits";
+import { BASKET_BG, BASKET_VAR, BigMoney, Button, CatIcon, Collapse, Dot, LinkedTag, cx } from "../ui/bits";
 import { ForecastSums } from "./Brief";
 import { Cell, Cells, Ledger, NoticeRow, StatusChip, TxList, type LedgerRow } from "./parts";
 
@@ -55,12 +56,17 @@ export function SafeMaths({ d }: { d: SafeData }) {
     on ? <span className="rounded-full bg-brand-soft px-2 py-px text-[11px] font-semibold text-brand-strong">{lang === "fi" ? "raja" : "the limit"}</span> : null;
   return (
     <div className="space-y-5 pt-4">
-      <Ledger title={t("safe.cashTitle")} rows={cash} tag={limitTag(d.limit === "cash")} />
+      <div>
+        <Ledger title={t("safe.cashTitle")} rows={cash} tag={limitTag(d.limit === "cash")} />
+        {/* the reserve is for the days to payday, the average it comes from is monthly: the engine's sentence names both */}
+        {d.cash.surprise_reserve_in_words && <p className="mt-1.5 text-[12px] leading-4 text-ink-3">{d.cash.surprise_reserve_in_words}</p>}
+      </div>
       <div>
         <Ledger title={t("safe.budgetTitle")} rows={budget} tag={limitTag(d.limit === "budget")} />
         <div className="mt-3">
           <Ledger title="" rows={cycle} />
         </div>
+        {d.budget.in_words && <p className="mt-1.5 text-[12px] leading-4 text-ink-3">{d.budget.in_words}</p>}
       </div>
       <p className="text-[13px] leading-[18px] text-ink-2">{t(d.limit === "budget" ? "safe.limitBudget" : "safe.limitCash")}</p>
       <div>
@@ -101,8 +107,11 @@ export function SafeBody({ d, open }: { d: SafeData; open: boolean }) {
   return (
     <div>
       <div className="flex items-start justify-between gap-3">
-        <BigMoney value={d.amount} lang={lang} className="text-[36px] font-semibold leading-10 tracking-[-0.03em] text-ink" />
-        {d.status_label ? <span className={cx("mt-2 inline-flex h-6 items-center rounded-full px-2.5 text-[12px] font-semibold", d.status === "comfortable" ? "bg-brand-soft text-brand-strong" : d.status === "empty" ? "bg-sunk text-ink-2" : "bg-warn-soft text-warn-ink")}>{d.status_label}</span> : <StatusChip status={d.status} className="mt-2" />}
+        <div className="min-w-0">
+          <BigMoney value={d.amount} lang={lang} className="text-[36px] font-semibold leading-10 tracking-[-0.03em] text-ink" />
+          {d.linked_view && <LinkedTag label={d.linked_view.label} className="flex" />}
+        </div>
+        {d.status_label ? <span className={cx("mt-2 inline-flex h-6 shrink-0 items-center whitespace-nowrap rounded-full px-2.5 text-[12px] font-semibold", d.status === "comfortable" ? "bg-brand-soft text-brand-strong" : d.status === "empty" ? "bg-sunk text-ink-2" : "bg-warn-soft text-warn-ink")}>{d.status_label}</span> : <StatusChip status={d.status} className="mt-2" />}
       </div>
       <div className="mt-3">
         <Cells>
@@ -170,6 +179,28 @@ export function vsUsualShort(p: number | null | undefined, t: ReturnType<typeof 
   return t(p > 0 ? "baskets.vsUpShort" : "baskets.vsDownShort", { p: pct(Math.abs(p), lang) });
 }
 
+/**
+ * A basket in words, with its window named: the engine's line ("€200 so far this calendar month (1 Sep to 21 Sep). Your usual
+ * whole month is €2,138.") and, while the month runs, the month so far against the usual for the same days, never against a whole month.
+ */
+export function basketWords(b: Basket, isCurrent: boolean, t: ReturnType<typeof useApp>["t"], lang: "en" | "fi"): string {
+  const p = isCurrent ? b.vs_usual_so_far_pct : b.vs_usual_pct;
+  const kind = isCurrent ? "soFar" : "month";
+  const compare = p == null ? "" : Math.abs(p) < 1 ? t(`baskets.${kind}Same`) : t(p > 0 ? `baskets.${kind}Up` : `baskets.${kind}Down`, { p: pct(Math.abs(p), lang) });
+  if (!b.line) return compare || t("common.usual", { v: money(b.usual, lang) });
+  return compare ? `${b.line} ${compare}` : b.line;
+}
+
+/** The same on the Baskets tab, where the month and the sum are already on screen: one line, the usual and the gap. */
+export function basketShort(b: Basket, isCurrent: boolean, t: ReturnType<typeof useApp>["t"], lang: "en" | "fi"): string {
+  const p = isCurrent ? b.vs_usual_so_far_pct : b.vs_usual_pct;
+  const kind = isCurrent ? "soFar" : "month";
+  const usual = t(isCurrent ? "baskets.usualWhole" : "baskets.usualMonth", { v: money(b.usual, lang) });
+  const head = usual.charAt(0).toUpperCase() + usual.slice(1);
+  if (p == null || !(b.usual > 0)) return head;
+  return `${head} · ${Math.abs(p) < 1 ? t(`baskets.${kind}SameShort`) : t(p > 0 ? `baskets.${kind}UpShort` : `baskets.${kind}DownShort`, { p: pct(Math.abs(p), lang) })}`;
+}
+
 export function BasketBar({ baskets }: { baskets: BasketsData["baskets"] }) {
   const { lang } = useApp();
   const total = baskets.reduce((a, b) => a + Math.max(0, b.amount), 0) || 1;
@@ -206,10 +237,7 @@ export function BasketsBody({ d }: { d: BasketsData }) {
               <h4 className="min-w-0 flex-1 truncate text-[14px] font-semibold text-ink">{b.label}</h4>
               <span className="num text-[14px] font-semibold text-ink">{money(b.amount, lang)}</span>
             </div>
-            <p className="pl-[18px] text-[12px] leading-4 text-ink-3">
-              {t("common.usual", { v: money(b.usual, lang) })}
-              {b.vs_usual_pct != null && ` · ${vsUsualShort(b.vs_usual_pct, t, lang)}`}
-            </p>
+            <p className="pl-[18px] text-[12px] leading-4 text-ink-3">{basketWords(b, d.is_current, t, lang)}</p>
             <ul className="mt-1.5 pl-[18px] text-[13px] leading-[18px]">
               {b.categories
                 .filter((c) => c.amount > 0)
@@ -364,7 +392,9 @@ export function TrendBody({ d }: { d: QueryData }) {
 /* ------------------------------------------------------------- new cards */
 
 export function AffordBody({ d }: { d: AffordData }) {
-  const { lang, t } = useApp();
+  const { lang, t, home } = useApp();
+  // the same words as the safe-to-spend sum: what the plan does not use is kept as savings, not spending money
+  const kept = home.data?.safe.spoken_for.find((s) => s.key === "buffer");
   return (
     <div>
       <p className="text-[16px] font-semibold leading-[23px] text-ink">{d.headline}</p>
@@ -372,7 +402,8 @@ export function AffordBody({ d }: { d: AffordData }) {
         <div className="flex items-baseline justify-between gap-3 text-[13px]"><span className="text-ink-2">{t("afford.pace")}</span><Arrow from={money(d.per_day.before, lang)} to={money(d.per_day.after, lang)} /></div>
         <div className="mt-1 flex items-baseline justify-between gap-3 text-[13px]"><span className="text-ink-2">{t("afford.safe")}</span><Arrow from={money(d.safe.before, lang)} to={money(d.safe.after, lang)} /></div>
         <div className="mt-1 flex items-baseline justify-between gap-3 text-[13px]"><span className="text-ink-2">{t("afford.account")}</span><Arrow from={money(d.account.balance_before, lang)} to={money(d.account.balance_after, lang)} /></div>
-        <div className="mt-1 flex items-baseline justify-between gap-3 text-[13px]"><span className="text-ink-2">{t("afford.buffer")}</span><Arrow from={money(d.account.buffer_before, lang)} to={money(d.account.buffer_after, lang)} /></div>
+        <div className="mt-1 flex items-baseline justify-between gap-3 text-[13px]"><span className="text-ink-2">{kept?.label || t("afford.buffer")}</span><Arrow from={money(d.account.buffer_before, lang)} to={money(d.account.buffer_after, lang)} /></div>
+        {kept?.detail && <p className="text-[12px] leading-4 text-ink-3">{kept.detail}</p>}
         <p className="mt-1 text-[12px] leading-4 text-ink-3">{t("afford.usual", { v: money(d.usual_per_day, lang) })}</p>
       </div>
       {d.short_by > 0 && <p className="mt-3 text-[13px] leading-[18px] text-warn-ink">{t("afford.short", { v: money(d.short_by, lang) })}</p>}

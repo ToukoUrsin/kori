@@ -180,6 +180,10 @@ HEDGE = (0.0, 3.5, 7.0)          # seconds after which the 1st, 2nd and 3rd atte
 HEDGE_FAST = (0.0, 2.0, 4.5)     # the same for the quick first step
 
 
+class _Empty(RuntimeError):
+    """Every attempt of a model call came back with no words and no tool call."""
+
+
 async def _generate(contents: list, cfg: types.GenerateContentConfig, fast: bool = False):
     """One model call that does not hang on a slow one.
 
@@ -200,10 +204,19 @@ async def _generate(contents: list, cfg: types.GenerateContentConfig, fast: bool
     async def one(i: int):
         key, model = attempts[i]
         try:
-            return await asyncio.wait_for(client(key).aio.models.generate_content(model=model, contents=contents, config=cfg), 40)
+            resp = await asyncio.wait_for(client(key).aio.models.generate_content(model=model, contents=contents, config=cfg), 40)
         except Exception as e:      # noqa: BLE001 - any provider error moves on to the next attempt
             log.warning("gemini attempt %s (%s) failed: %s", i, model, str(e)[:200])
             raise
+        cands = getattr(resp, "candidates", None)
+        cand = cands[0] if cands else None
+        if cands is not None and not (cand and cand.content and cand.content.parts):
+            # a reply with nothing in it (MALFORMED_RESPONSE, a cut-off) is a failed attempt, not an answer:
+            # it used to win the race against a slower attempt that was about to answer properly
+            why = getattr(cand, "finish_reason", None)
+            log.warning("gemini attempt %s (%s) returned nothing (%s)", i, model, why)
+            raise _Empty(str(why))
+        return resp
 
     start, started, pending, last = time.time(), 0, set(), None
     try:
@@ -265,8 +278,12 @@ async def run_turn(sess: Session, text: str, mode: str, emit: Emit) -> dict:
 
     for step in range(MAX_STEPS + 2):
         content = None
-        for _ in range(2):                              # an empty reply from the model gets one more try
-            resp = await _generate(sess.history() + turn, cfg, fast=step == 0 and FAST_FIRST)
+        for _ in range(2):                              # three attempts with nothing in them get one more round
+            try:
+                resp = await _generate(sess.history() + turn, cfg, fast=step == 0 and FAST_FIRST)
+            except _Empty as e:
+                log.warning("gemini returned nothing (%s)", e)
+                continue
             cand = resp.candidates[0] if resp.candidates else None
             content = cand.content if cand and cand.content and cand.content.parts else None
             if content is not None:

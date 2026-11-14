@@ -285,15 +285,29 @@ def _months_until(m: Money, by: str | None, months: float | None) -> tuple[int |
     return None, None
 
 
+MAX_GOAL = 1_000_000.0
+
+
+def goal_amount(amount, lang: str = "en") -> float:
+    """A goal amount as euros, or a plain sentence saying why it is refused (more than a million, or not an amount)."""
+    L = lambda en, fi: en if lang == "en" else fi
+    try:
+        v = float(amount)
+    except (TypeError, ValueError):
+        v = float("nan")
+    if math.isnan(v) or math.isinf(v) or v <= 0:
+        raise ValueError(L("A goal needs an amount in euros that is more than zero.",
+                           "Tavoitteelle tarvitaan euromäärä, joka on suurempi kuin nolla."))
+    if v > MAX_GOAL:
+        raise ValueError(L("A goal can be at most €1,000,000. Choose a smaller amount.",
+                           "Tavoite voi olla enintään 1 000 000 €. Valitse pienempi summa."))
+    return r2(v)
+
+
 def goal(m: Money, amount: float, name: str | None = None, months: float | None = None, by: str | None = None) -> dict:
     """Is this goal reachable by that date, from what a usual month really leaves? If not: when, or what it takes."""
     lang, L, E = _words(m)
-    try:
-        amount = r2(float(amount))
-    except (TypeError, ValueError):
-        raise ValueError("amount must be a number of euros") from None
-    if amount <= 0:
-        raise ValueError("amount must be more than zero")
+    amount = goal_amount(amount, lang)
     name = (name or "").strip()[:40] or L("Your goal", "Tavoitteesi")
     n, target = _months_until(m, by, months)
     room = r2(max(0.0, m.usual["left_over"]))
@@ -427,8 +441,7 @@ def income(m: Money, period_total: float | None = None, period_label: str | None
                  f"Tyypillinen kuukausittainen {word}si on {E(m.salary_typical, True)}: kuuden viimeisimmän keskimmäinen. Turvallinen käyttövara lähtee siitä, "
                  f"ennen kuin kiinteät menot, yllätysvara ja säästö vähennetään.")
         if m.linked_view:
-            notes.append(L(f"With the other account linked (simulated), the {E(swept)} that moves there each month counts as yours.",
-                           f"Kun toinen tili on yhdistetty (simuloitu), sinne kuukausittain siirtyvä {E(swept)} lasketaan omaksesi."))
+            notes.append(m.linked_view["note"])
     if late_n and total_n:
         notes.append(L(f"It usually lands on the 15th. In {late_n} of your last {total_n} months it came at the end of the month instead.",
                        f"Se tulee yleensä 15. päivä. {late_n} kertaa viimeisten {total_n} kuukauden aikana se tuli vasta kuun lopussa."))

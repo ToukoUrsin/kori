@@ -77,7 +77,11 @@ def system_prompt(m: Money, mode: str = "text", action: dict | None = None) -> s
     t = m.today
     c = m.customer
     day = f"{WEEKDAY['en'][t.weekday()]} {t.day} {MONTHS_LONG['en'][t.month - 1]} {t.year}"
-    linked_line = (f"This is a simulated link to another bank and adds about {m.linked_view['amount_counted']:.0f} EUR of salary moved out to your view. Call it an estimate."
+    linked_line = (f"The user linked their other bank, and in this demo that account is SIMULATED. Every figure you get includes it: about "
+                   f"{m.linked_view['amount_counted']:.0f} EUR of salary a month moves there, and about {m.linked_view['paid_from_it_monthly']:.0f} EUR a month "
+                   f"of housing, bills and everyday spending is paid from it, estimated from {m.linked_view['peers']} customers with a similar income "
+                   f"(this demo has no payments from that bank). Whenever you give a figure, say that it includes the simulated account. "
+                   f"Lists of single payments (the spending tool) cover this account only."
                    if m.linked_view else
                    ("IMPORTANT: most of this user’s salary moves to another bank right after payday, so you only see part of their money. Say so when it matters and never judge their total finances."
                     if m.partial_view else "This account receives the salary and pays the bills."))
@@ -102,7 +106,7 @@ def system_prompt(m: Money, mode: str = "text", action: dict | None = None) -> s
     return BASE + (VOICE_STYLE if mode == "voice" else TEXT_STYLE) + ctx
 
 
-TEACHBACK = """You are grading a "say it back" answer in a one-minute money lesson. The learner explains the idea in their own words.
+TEACHBACK = """You are grading a "say it back" answer in a two-minute money lesson. The learner explains the idea in their own words.
 Grade understanding, not vocabulary. The learner does not need the lesson's terms: any plain words that carry the idea pass
 (for example "same every month" means fixed, "come at random times" means surprise, "stuff I can control" means steer).
 Everyday wording, partial sentences and Finnish or English are all fine. Fail only if an idea is wrong or missing.

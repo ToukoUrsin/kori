@@ -1,0 +1,129 @@
+{
+ "question": "Pesukoneeni hajosi. Uusi maksaa 600 €. Pystynkö maksamaan sen?",
+ "lang": "fi",
+ "kept": "2026-11-14",
+ "by": {
+  "analyst": "kept view",
+  "designer": "kept view"
+ },
+ "title": "Kun jotain hajoaa",
+ "chips": [],
+ "cells": [
+  {
+   "title": "Pakollinen meno tiliäsi vasten tänään",
+   "by": "kept view",
+   "code": "PENSION = (me.get(\"age\") or 0) >= 68\nPAY = \"eläkepäivä\" if PENSION else \"palkkapäivä\"\nPAY_TO = \"eläkepäivään\" if PENSION else \"palkkapäivään\"\nCYCLE = \"eläkejakso\" if PENSION else \"palkkajakso\"\ndef day(s):\n    d = datetime.date.fromisoformat(str(s)[:10])\n    return f\"{d.day}.{d.month}.\"\nemit(\"pay_word\", PAY, \"text\", \"Päivä, jona rahat tulevat\")\nemit(\"pay_to\", PAY_TO, \"text\", \"Päivä, jona rahat tulevat\")\n\nprice = float(§PRICE§)\nITEM = \"§ITEM§\"\nk = kori.breaks(price, ITEM)\nres = k.get(\"reserve\") or {}\nparts = [{\"label\": \"Yllätysvarasi\", \"amount\": res.get(\"used\", 0.0)}, {\"label\": \"Raha, jota tämä \" + CYCLE + \" ei tarvitse\", \"amount\": res.get(\"from_buffer\", 0.0)},\n         {\"label\": \"Turvallinen käyttövara\", \"amount\": res.get(\"from_safe_to_spend\", 0.0)}]\nok = k[\"verdict\"] in (\"yes\", \"tight\") and not k.get(\"partial_view\") and res and abs(sum(p[\"amount\"] for p in parts) - k[\"amount\"]) < 0.005\nif ok:                                            # it does not fit, or only part of the money is here: worked out fresh\n    emit(\"price\", k[\"amount\"], \"eur\", \"Mitä se maksaa\")\n    emit(\"from_reserve\", res[\"used\"], \"eur\", parts[0][\"label\"])\n    emit(\"from_buffer\", res[\"from_buffer\"], \"eur\", parts[1][\"label\"])\n    emit(\"from_safe\", res[\"from_safe_to_spend\"], \"eur\", parts[2][\"label\"])\n    emit(\"safe_before\", k[\"safe\"][\"before\"], \"eur\", \"Turvallista käyttää nyt\")\n    emit(\"safe_after\", k[\"safe\"][\"after\"], \"eur\", \"Turvallista käyttää sen jälkeen\")\n    emit(\"per_day_after\", k[\"per_day\"][\"after\"], \"eur_per_day\", \"Turvallista päivässä sen jälkeen\")\n    emit(\"next_payday\", k[\"next_payday\"], \"date\", \"Seuraava palkkapäivä\")\n    opt = next((o for o in k.get(\"options\") or [] if o.get(\"text\")), None)\n    emit(\"plan\", opt[\"text\"] if opt else k[\"headline\"], \"text\", \"Suunnitelma rahan palauttamiseen\")\n    emit(\"has_plan\", 1 if opt else 0, \"count\", \"Palautussuunnitelma\")\n    table(\"parts\", parts, \"Mistä raha tulee, tässä järjestyksessä\")\n    text = f\"Kyllä, {eur(k['amount'])}:n {ITEM} onnistuu: {eur(res['used'], True)} tulee yllätysvarastasi, joka on juuri tätä varten.\"\n    text += f\" Loput pienentävät turvallista käyttövaraasi, ja sitä jää **{eur(k['safe']['after'], True)}** {PAY_TO} {day(k['next_payday'])} asti.\" if res[\"from_safe_to_spend\"] > 0.005 else f\" Turvallista käyttövaraa jää edelleen **{eur(k['safe']['after'], True)}** {PAY_TO} {day(k['next_payday'])} asti.\"\n    say(text)\n"
+  }
+ ],
+ "html": "<style>.kw .k-n{white-space:normal;color:inherit;font-weight:inherit}</style>\n<p class=\"k-lede\">Pakollinen meno maksetaan ensin sitä varten pidetystä rahasta ja vasta viimeisenä käyttörahasta.</p>\n<div class=\"k-rows\"><k-each table=\"parts\"><template><div class=\"k-row\"><div>{label}</div><b>{amount|eur}</b></div></template></k-each>\n<div class=\"k-row total\"><div>Yhteensä</div><b>{{price|eur}}</b></div></div>\n<div class=\"k-stats\"><div class=\"k-fig\"><span>{{safe_before|eur0}}</span><small>turvallista nyt</small></div><div class=\"k-fig pos\"><span>{{safe_after|eur0}}</span><small>sen jälkeen</small></div><div class=\"k-fig\"><span>{{per_day_after|eur}}</span><small>päivässä sen jälkeen</small></div></div>\n<p class=\"k-note kw\" id=\"pl\">{{plan|raw}}</p>\n<div class=\"k-chips\"><button class=\"k-chip\" data-ask=\"Paljonko voin turvallisesti käyttää tällä viikolla?\">Turvallista tällä viikolla</button><button class=\"k-chip\" data-ask=\"Miksi saldoni ei ole budjettini?\">Miksi ei saldo</button></div>\n<script>if(!K.fact(\"has_plan\"))K.$(\"#pl\").hidden=true</script>",
+ "wordings": [
+  "Pesukoneeni hajosi. Uusi maksaa 600 €. Pystynkö maksamaan sen?",
+  "pesukone hajos, uus maksaa 600 €, riittääkö rahat",
+  "puhelin meni rikki, uusi 400 e",
+  "auton korjaus 800 €, pystynkö maksamaan",
+  "hammaslääkäri maksaa 350 euroa, onnistuuko",
+  "jääkaappi hajosi, uusi maksaa 700",
+  "eläinlääkärilasku 250 €, pakko maksaa",
+  "läppäri hajos ja uus maksaa 900",
+  "mun pyörä meni rikki ja korjaus maksaa 120",
+  "yllättävä 300 euron meno, selviänkö siitä"
+ ],
+ "match": [
+  [
+   "rikki",
+   "hajos",
+   "hajo",
+   "korja",
+   "hammaslääk",
+   "eläinlääk",
+   "pakko maksaa",
+   "pakollinen",
+   "yllättäv",
+   "yllätys",
+   "lakkasi toimimasta",
+   "sakko",
+   "uusi tilalle",
+   "tilalle"
+  ],
+  [
+   "1",
+   "2",
+   "3",
+   "4",
+   "5",
+   "6",
+   "7",
+   "8",
+   "9",
+   "€1",
+   "€2",
+   "€3",
+   "€4",
+   "€5",
+   "€6",
+   "€7",
+   "€8",
+   "€9"
+  ]
+ ],
+ "unless": [
+  "bitcoin",
+  "crypto",
+  "stock",
+  "share",
+  "fund",
+  "etf",
+  "invest",
+  "osake",
+  "osakk",
+  "rahasto",
+  "sijoit",
+  "krypto",
+  "säästä",
+  "kuussa",
+  "kuukaudessa",
+  "paljonko maksoi",
+  "paljon maksoi",
+  "viime vuonna",
+  "viime kuussa",
+  "kulutin"
+ ],
+ "params": [
+  {
+   "token": "§PRICE§",
+   "find": "(?<!\\d )(?<!\\d)(\\d{2,5})(?! \\d{3}\\b)(?!\\d)",
+   "min": 20,
+   "max": 20000
+  },
+  {
+   "token": "§ITEM§",
+   "choices": {
+    "astianpesukon": "astianpesukone",
+    "pesukon": "pesukone",
+    "puhelin": "puhelin",
+    "puhelim": "puhelin",
+    "kännyk": "puhelin",
+    "jääkaap": "jääkaappi",
+    "pakastin": "pakastin",
+    "pakastim": "pakastin",
+    "auto": "auton korjaus",
+    "hammas": "hammaslääkärilasku",
+    "läppär": "läppäri",
+    "tietokone": "tietokone",
+    "pyör": "pyörä",
+    "silmäla": "silmälasit",
+    "lasit": "silmälasit",
+    "eläinlää": "eläinlääkärilasku",
+    "uuni": "uuni",
+    "liesi": "liesi",
+    "liede": "liesi",
+    "telkk": "televisio",
+    "televis": "televisio",
+    "tv": "televisio",
+    "putki": "putkiremontti",
+    "katto": "katon korjaus"
+   },
+   "default": "meno"
+  }
+ ]
+}

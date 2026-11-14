@@ -1,0 +1,88 @@
+{
+ "question": "Paljonko voin turvallisesti säästää kuussa?",
+ "lang": "fi",
+ "kept": "2026-11-14",
+ "by": {
+  "analyst": "kept view",
+  "designer": "kept view"
+ },
+ "title": "Säästövara",
+ "chips": [],
+ "cells": [
+  {
+   "title": "Säästövara tavallisena kuukautena ja puskuri",
+   "by": "kept view",
+   "code": "s = kori.safe_to_save()\nb = s[\"buffer\"]\ncap, already, extra = s[\"monthly_capacity\"], s[\"already_saving_monthly\"], s[\"extra_monthly\"]\nemit(\"monthly_capacity\", round(cap, 2), \"eur_per_month\", \"Säästövaraa tavallisena kuukautena\")\nemit(\"already_saving\", round(already, 2), \"eur_per_month\", \"Säästät jo kuussa\")\nemit(\"could_add\", round(extra, 2), \"eur_per_month\", \"Voisit lisätä kuussa\")\nemit(\"now\", round(s[\"now\"], 2), \"eur\", \"Turvallista säästää juuri nyt\")\nemit(\"covered\", b[\"months_covered\"], \"months\", \"Kuinka monta kuukautta pakollisia menoja saldosi kattaa\")\nemit(\"target_months\", b[\"target_months\"], \"months\", \"Tavoite kuukausina\")\nemit(\"rest\", max(0.0, round(b[\"target_months\"] - b[\"months_covered\"], 1)), \"months\", \"Kuukausia vielä kattamatta\")\nemit(\"gap\", round(b[\"gap\"], 2), \"eur\", \"Puskuristasi\")\n\nif not s.get(\"partial_view\"):\n    if cap > 0:\n        say(f\"Tavallisena kuukautena voit turvallisesti säästää noin **{eur(cap)}**.\" + (f\" Säästät jo {eur(already)}, joten voisit lisätä {eur(extra)}.\" if already > 0 else \"\"))\n    elif already > 0:\n        say(f\"Säästät jo **{eur(already)} kuussa**, eikä tavallinen kuukausi jätä nyt tilaa enempään.\")\n    else:\n        say(f\"Tavallinen kuukausi ei jätä nyt **tilaa säästää**: mitä tulee sisään, menee myös ulos.\")\n"
+  }
+ ],
+ "html": "<p class=\"k-lede\">Saldosi riittää pakollisiin menoihin <b>{{covered|num}}</b> kuukaudeksi. Tavoite on {{target_months|int}} kuukautta.</p>\n<div class=\"k-meter\"><i style=\"flex:{{covered|raw}};--c:var(--color-brand)\"></i><i style=\"flex:{{rest|raw}};--c:var(--color-line)\"></i></div>\n<p class=\"k-note\" id=\"gp\">Vielä {{gap|eur0}} ja puskurisi kattaa {{target_months|int}} kuukautta.</p><p class=\"k-note\" id=\"rc\" hidden>Puskurisi kattaa tavoitteen.</p>\n<div class=\"k-stats\"><div class=\"k-fig\"><span>{{already_saving|eur0}}</span><small>säästät jo kuussa</small></div><div class=\"k-fig pos\"><span>{{could_add|eur0}}</span><small>voisit lisätä kuussa</small></div><div class=\"k-fig\"><span>{{now|eur0}}</span><small>turvallista laittaa sivuun nyt</small></div></div>\n<p class=\"k-note\">Säästövara on se, mitä tavallisesta kuukaudesta jää kiinteiden ja yllättävien pakollisten sekä arjen menojen jälkeen.</p>\n<div class=\"k-chips\"><button class=\"k-chip\" data-ask=\"Haluan säästää 3000 € matkaan. Kauanko siihen menee?\">Säästötavoite</button><button class=\"k-chip\" data-ask=\"Mitä jos säästän 100 € kuussa kymmenen vuotta?\">Kymmenen vuotta</button></div>\n<script>if(!(K.fact(\"gap\")>0)){K.$(\"#gp\").hidden=true;K.$(\"#rc\").hidden=false}</script>",
+ "match": [
+  [
+   "säästä",
+   "säästö",
+   "sivuun",
+   "säästää",
+   "säästäis"
+  ],
+  [
+   "kuussa",
+   "kuukaudessa",
+   "kuukausittain",
+   "kuukausi",
+   "kk"
+  ],
+  [
+   "paljonko",
+   "kuinka paljon",
+   "paljon",
+   "voin",
+   "pystyn",
+   "turvallis",
+   "riittää",
+   "kannattaa",
+   "voisin"
+  ]
+ ],
+ "unless": [
+  "vuotta",
+  "vuodessa",
+  "tavoite",
+  "matka",
+  "kauanko",
+  "kauan",
+  "sijoit",
+  "rahasto",
+  "mitä jos",
+  "viime kuu",
+  "leikka",
+  "vähen",
+  "varaa",
+  "turvallista käyttää",
+  "tällä viikolla",
+  "saldo",
+  "tilillä",
+  "palkkajakso",
+  "lasku",
+  "tilaus",
+  "toistuv",
+  "hajos",
+  "rikki",
+  "palkkapäiv",
+  "läppär",
+  "sää on",
+  "sääenn",
+  "säätila",
+  "millainen sää",
+  "bitcoin",
+  "krypto",
+  "osake",
+  "sijoit",
+  "rahasto",
+  "laina",
+  "korko"
+ ],
+ "also": [
+  "Paljonko voin säästää kuussa?",
+  "Paljonko mä voin säästää kuussa?"
+ ]
+}

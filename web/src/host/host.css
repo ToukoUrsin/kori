@@ -231,3 +231,15 @@
 .host-switch[aria-checked="true"]::after { transform: translateX(18px); }
 .host-page .host-switch:focus-visible { outline: 2px solid var(--color-brand); outline-offset: 2px; }
 @media (prefers-reduced-motion: reduce) { .host-switch, .host-switch::after { transition: none; } }
+
+/* the reviewed answers, under the AI switch */
+.host-approved { border-bottom: 1px solid var(--color-line); }
+.host-approved summary { display: flex; align-items: center; gap: 12px; min-height: 60px; padding: 10px 0; cursor: pointer; list-style: none; }
+.host-approved summary::-webkit-details-marker { display: none; }
+.host-approved summary > span { min-width: 0; flex: 1; }
+.host-approved summary strong, .host-approved summary small { display: block; }
+.host-approved summary strong { font-size: 15px; font-weight: 500; line-height: 20px; }
+.host-approved summary small { color: var(--color-ink-3); font-size: 13px; line-height: 18px; }
+.host-approved[open] .host-row-chevron { transform: rotate(90deg); }
+.host-approved ul { margin: 0; padding: 0 0 12px; list-style: none; }
+.host-approved li { padding: 7px 0; color: var(--color-ink-2); font-size: 14px; line-height: 20px; border-top: 1px solid var(--color-line); }

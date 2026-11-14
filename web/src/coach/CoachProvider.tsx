@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ComponentType, type ReactNode } from "react";
-import { api } from "../lib/api";
+import { api, ApiError } from "../lib/api";
 import { useApp } from "../lib/store";
 import type { Card, ChatDone } from "../lib/types";
 import type { Conv } from "./VoiceBridge";
@@ -411,8 +411,12 @@ function Inner({ children }: { children: ReactNode }) {
     let vs;
     try {
       vs = await api.voiceSession(ctxRef.current.customer, ctxRef.current.lang, sessionRef.current);
-    } catch {
-      if (now() === "connecting") toFallback(tRef.current("voice.fallback"));
+    } catch (e) {
+      // no speech at all right now (the recorder would fail too): back to typing, with the reason, not to hold-to-talk
+      if (now() === "connecting") {
+        if (e instanceof ApiError && e.message === "no_speech") endVoice(tRef.current("voice.down"));
+        else toFallback(tRef.current("voice.fallback"));
+      }
       return;
     }
     if (now() !== "connecting") return;

@@ -75,11 +75,10 @@ class Money:
     @cached_property
     def balance(self) -> float:
         base = float(self.df["balance"].iloc[-1])
-        # A linked view treats salary sweeps as transfers between the user's
-        # own accounts. The real account balance is unchanged; the linked
-        # picture adds the swept amount back to the household total.
-        if self.prefs.other_bank_linked and not self.sweeps.empty:
-            base += float(self.sweep_typical)
+        # A linked view treats salary sweeps as transfers between the user's own accounts. The real account
+        # balance is unchanged; the linked picture adds what is on the simulated other account today.
+        if self.other_account:
+            base += self.other_account["balance_today"]
         return r2(base)
 
     @cached_property
@@ -134,12 +133,101 @@ class Money:
 
     @cached_property
     def linked_view(self) -> dict | None:
-        if not self.prefs.other_bank_linked or self.sweeps.empty:
+        """What the simulated other-bank link adds, in numbers and in one sentence every linked screen can show."""
+        o = self.other_account
+        if not o:
             return None
-        amount = self.sweep_typical
-        return {"simulated": True, "amount_counted": amount,
-                "note": {"en": "Estimate from a simulated link to the other bank. Salary moved out is counted as your money.",
-                         "fi": "Arvio tämän demon simuloidusta toisen pankin linkistä. Siirtynyt palkka lasketaan omaksi rahaksesi."}}
+        from .insights import eur          # local import: insights imports this module
+        lang = self.prefs.lang
+        E = lambda v: eur(v, lang)
+        L = lambda en, fi: en if lang == "en" else fi
+        return {"simulated": True, "amount_counted": o["moves_in_monthly"], "paid_from_it_monthly": o["paid_monthly"],
+                "baskets": o["baskets"], "categories": {c: v for c, v in o["categories"].items() if v > 0},
+                "balance_today": o["balance_today"], "peers": o["peers"],
+                "label": L("Includes a simulated account", "Mukana simuloitu tili"),
+                "short": L("Includes a simulated account at another bank.", "Mukana on simuloitu tili toisessa pankissa."),
+                "note": L(f"Simulated account at another bank: the {E(o['moves_in_monthly'])} a month that moves there counts as yours, "
+                          f"and so does what it pays, about {E(o['paid_monthly'])} a month for housing, bills and everyday spending. "
+                          f"This demo has no payments from that bank, so they are estimated from {o['peers']} customers with a similar income.",
+                          f"Simuloitu tili toisessa pankissa: sinne kuukausittain siirtyvä {E(o['moves_in_monthly'])} lasketaan omaksesi, "
+                          f"samoin tililtä maksettavat menot, noin {E(o['paid_monthly'])} kuussa asumiseen, laskuihin ja arkeen. "
+                          f"Tässä demossa ei ole sen pankin maksuja, joten ne on arvioitu {o['peers']} samantuloisen asiakkaan perusteella.")}
+
+    @cached_property
+    def other_account(self) -> dict | None:
+        """The linked other-bank account, as a stated simulation.
+
+        The link brings the salary that moves out. Money comes with what it pays for, and this demo has no payments
+        from that bank, so they are built: per category, what customers with a similar salary (whose money stays on
+        one account) usually spend, minus what this account already shows. Never more than what moves there."""
+        if not self.prefs.other_bank_linked or self.sweeps.empty or self.sweep_typical <= 0:
+            return None
+        from . import peers          # local import: peers imports this module
+        t, u = peers.table(), peers.usual_table()
+        full = u.reindex(t.index[t["sweep_share"] < 0.5]).dropna(how="all").drop(index=self.customer_id, errors="ignore")
+        sal = self.salary_typical
+        band = full[(full["salary"] >= 0.85 * sal) & (full["salary"] <= 1.15 * sal)]
+        if len(band) < peers.MIN_GROUP:
+            band = full.loc[(full["salary"] - sal).abs().sort_values().index[:peers.MIN_GROUP]]
+        own = self._monthly_own
+        cats = {}
+        for c in CATEGORIES:
+            months = self.last_full_months(12 if self._basket_of(c) == SURPRISE else 6)
+            mine = float(own["cat:" + c].reindex(months).fillna(0.0).mean()) if months else 0.0
+            cats[c] = max(0.0, float(band[f"cat_{c}"].median()) - mine)
+        total = sum(cats.values())
+        scale = min(1.0, self.sweep_typical / total) if total > 0 else 0.0
+        cats = {c: r2(v * scale) for c, v in cats.items()}
+        baskets = {b: r2(sum(v for c, v in cats.items() if self._basket_of(c) == b)) for b in BASKET_ORDER}
+        paid = r2(sum(baskets.values()))
+        o = {"simulated": True, "moves_in_monthly": self.sweep_typical, "categories": cats, "baskets": baskets,
+             "paid_monthly": paid, "kept_monthly": r2(self.sweep_typical - paid), "peers": int(len(band))}
+        # what it holds today: the money that moved in this pay cycle, minus what it has paid since
+        spent = sum(self._other_paid(o, self.cycle_start, self.today).values())
+        o["balance_today"] = r2(max(0.0, self.sweep_typical - spent))
+        return o
+
+    # The simulated account pays housing on the 5th and its other fixed bills on the 20th; surprises and everyday
+    # spending leave evenly, day by day.
+    _OTHER_BILL_DAY = {"Housing": 5}
+
+    def _other_paid(self, o: dict | None, start: date, end: date) -> dict[str, float]:
+        """Simulated payments from the other account after `start`, up to and including `end`, per category."""
+        if not o or end <= start:
+            return {}
+        days = (end - start).days
+        out = {}
+        for c, v in o["categories"].items():
+            if v <= 0:
+                continue
+            if self._basket_of(c) == FIXED:
+                day = self._OTHER_BILL_DAY.get(c, 20)
+                n = sum(1 for i in range(1, days + 1) if (start + timedelta(days=i)).day == day)
+                out[c] = r2(v * n)
+            else:
+                out[c] = r2(v * days / DAYS_PER_MONTH)
+        return out
+
+    def other_paid(self, start: date, end: date) -> dict[str, float]:
+        """Linked view only: what the simulated other account paid after `start`, up to and including `end`."""
+        return self._other_paid(self.other_account, start, end)
+
+    def _other_bills(self, until: date) -> list[dict]:
+        """Fixed bills the simulated other account pays between tomorrow and `until`."""
+        o = self.other_account
+        if not o:
+            return []
+        items = []
+        for c, v in o["categories"].items():
+            if v <= 0 or self._basket_of(c) != FIXED:
+                continue
+            day = self._OTHER_BILL_DAY.get(c, 20)
+            d = self.today + timedelta(days=1)
+            while d <= until:
+                if d.day == day:
+                    items.append({"date": d, "category": c, "amount": v, "simulated": True})
+                d += timedelta(days=1)
+        return items
 
     @cached_property
     def income_typical(self) -> float:
@@ -196,7 +284,31 @@ class Money:
     # ------------------------------------------------------- monthly table
     @cached_property
     def monthly(self) -> pd.DataFrame:
-        """One row per calendar month: income, baskets, categories, saving, net."""
+        """One row per calendar month: income, baskets, categories, saving, net.
+
+        With the other bank linked, each month also carries what the simulated other account paid: a full month's
+        worth in a complete month, and what has left so far in the current one."""
+        own = self._monthly_own
+        o = self.other_account
+        if not o:
+            return own
+        out = own.copy()
+        for k in out.index:
+            start, end = month_bounds(k)
+            if k == self.this_month:
+                paid = self._other_paid(o, start - timedelta(days=1), self.today)
+            else:
+                paid = {c: v for c, v in o["categories"].items() if v > 0}
+            for c, v in paid.items():
+                out.loc[k, "cat:" + c] += v
+                out.loc[k, self._basket_of(c)] += v
+        out["spend"] = out[BASKET_ORDER].sum(axis=1)
+        out["net"] = out["income"] - out["spend"] - out["invested"] + out["withdrawn"]
+        return out.round(2)
+
+    @cached_property
+    def _monthly_own(self) -> pd.DataFrame:
+        """The monthly table from this account's own transactions."""
         df = self.df
         months = sorted(set(df["month"]))
         out = pd.DataFrame(index=months)
@@ -227,8 +339,11 @@ class Money:
 
     @cached_property
     def usual(self) -> dict:
-        """A typical month, from the last 6 complete months (12 for the lumpy surprise basket)."""
-        cats = {c: self._typ("cat:" + c, 6, "mean") for c in CATEGORIES}
+        """A typical month, from the last 6 complete months (12 for the lumpy surprise basket).
+
+        A category is measured on its basket's own window, so the parts of the surprise basket add up to it:
+        12 months for a category that sits in the surprise basket (also one the customer moved there), 6 for the rest."""
+        cats = {c: self._typ("cat:" + c, 12 if self._basket_of(c) == SURPRISE else 6, "mean") for c in CATEGORIES}
         u = {
             "income": self.income_typical,
             FIXED: self._typ(FIXED, 6, "median"),
@@ -236,8 +351,8 @@ class Money:
             EVERYDAY: self._typ(EVERYDAY, 6, "median"),
             "invested": self.invest_typical,
             "categories": cats,
-            "window": {"en": "last 6 complete months, median for baskets and mean for categories",
-                       "fi": "viimeiset 6 täyttä kuukautta, koreissa mediaani ja kategorioissa keskiarvo"}[self.prefs.lang],
+            "window": {"en": "last 6 complete months, median for baskets and mean for categories; surprise musts and their categories are the mean of the last 12",
+                       "fi": "viimeiset 6 täyttä kuukautta, koreissa mediaani ja kategorioissa keskiarvo; yllättävät pakolliset ja niiden kategoriat ovat viimeisten 12 kuukauden keskiarvo"}[self.prefs.lang],
         }
         u["spend"] = r2(u[FIXED] + u[SURPRISE] + u[EVERYDAY])
         u["left_over"] = r2(u["income"] - u["spend"] - u["invested"])
@@ -258,6 +373,18 @@ class Money:
     def savings_plan(self) -> float:
         g = self.prefs.savings_goal_monthly
         return r2(g) if g is not None else self.invest_typical
+
+    @cached_property
+    def saving_parts(self) -> tuple[float, float]:
+        """The planned monthly saving in two parts: the habit (spread over a pay cycle by its length, like the rest
+        of the month) and what the customer set aside on top of it (taken whole from each pay cycle)."""
+        habit = r2(min(self.savings_plan, self.invest_typical))
+        return habit, r2(self.savings_plan - habit)
+
+    def saving_in_cycle(self, days: int) -> float:
+        """The planned saving that belongs to a pay cycle of `days` days."""
+        habit, pledged = self.saving_parts
+        return r2(habit * days / DAYS_PER_MONTH + pledged)
 
     @cached_property
     def cushion(self) -> float:
@@ -330,6 +457,9 @@ class Money:
         items = self._housing_forecast(until) + self._utilities_forecast(until)
         for it in items:
             it["label"] = cat_label(it["category"], self.prefs.lang)
+        for it in self._other_bills(until):
+            it["label"] = cat_label(it["category"], self.prefs.lang) + {"en": " (simulated account)", "fi": " (simuloitu tili)"}[self.prefs.lang]
+            items.append(it)
         items.sort(key=lambda x: x["date"])
         return [{**it, "date": it["date"].isoformat()} for it in items]
 
@@ -345,6 +475,9 @@ class Money:
         days_in = (end - start).days + 1
         elapsed = min(days_in, (self.today - start).days + 1) if is_current else days_in
         d = self.df[self.df["month"] == month]
+        o = self.other_account
+        other = {} if not o else (self._other_paid(o, start - timedelta(days=1), self.today) if is_current else
+                                  ({c: v for c, v in o["categories"].items() if v > 0} if month < self.this_month else {}))
         out = {"month": month, "is_current": is_current, "days_elapsed": elapsed, "days_in_month": days_in,
                "income": r2(row["income"]) if row is not None else 0.0, "baskets": []}
         total = 0.0
@@ -357,8 +490,9 @@ class Money:
                     continue
                 cd = d[d["category"] == c]
                 cats.append({"category": c, "label": cat_label(c, lang), "icon": meta["icon"],
-                             "amount": r2(cd["spend"].sum()), "count": int(len(cd)),
-                             "usual": self.usual["categories"][c]})
+                             "amount": r2(cd["spend"].sum() + other.get(c, 0.0)), "count": int(len(cd)),
+                             "usual": self.usual["categories"][c],
+                             **({"simulated_amount": r2(other[c])} if other.get(c) else {})})
             cats.sort(key=lambda x: -x["amount"])
             out["baskets"].append({
                 "key": b, "label": BASKETS[b][lang], "short": BASKETS[b]["short_" + lang],
@@ -368,12 +502,36 @@ class Money:
             })
             total += amount
         out["spend"] = r2(total)
+        from .query import fmt_day, month_label          # local import: query imports this module
+        from .insights import eur                         # local import: insights imports this module
+        E = lambda v: eur(v, lang)
+        if is_current:
+            a, z = fmt_day(start, lang), fmt_day(self.today, lang)
+            label = {"en": f"{a} to {z}", "fi": f"{a}–{z}"}[lang]
+        else:
+            label = month_label(month, lang)
+        # the baskets are calendar-month figures (the plan above them is a pay-cycle figure): each sentence says so
+        out["window"] = "calendar_month"
+        out["window_label"] = label
         for b in out["baskets"]:
             b["share"] = round(b["amount"] / total, 3) if total else 0.0
+            b["window"] = "calendar_month"
+            if is_current:
+                b["line"] = {"en": f"{E(b['amount'])} so far this calendar month ({label}). Your usual whole month is {E(b['usual'])}.",
+                             "fi": f"{E(b['amount'])} tässä kalenterikuussa tähän mennessä ({label}). Tavallinen koko kuukautesi on {E(b['usual'])}."}[lang]
+                # a part of a month against a whole usual month says nothing: compare with the usual for the same days
+                so_far = r2(b["usual"] * elapsed / days_in)
+                b["usual_so_far"] = so_far
+                b["vs_usual_so_far_pct"] = round(100 * (b["amount"] - so_far) / so_far) if so_far else None
+            else:
+                b["line"] = {"en": f"{E(b['amount'])} in {label}. Your usual month is {E(b['usual'])}.",
+                             "fi": f"{E(b['amount'])}, {label}. Tavallinen kuukautesi on {E(b['usual'])}."}[lang]
         out["usual_spend"] = self.usual["spend"]
         out["usual_window"] = self.usual["window"]
         out["saved"] = r2(row["invested"] - row["withdrawn"]) if row is not None else 0.0
         out["left_over"] = r2(out["income"] - out["spend"] - out["saved"])
+        if self.linked_view:
+            out["linked_view"] = self.linked_view
         return out
 
     def _basket_of(self, category: str) -> str:
@@ -389,8 +547,12 @@ class Money:
         days = [start + timedelta(days=i) for i in range(1, 91)]
         s = pd.Series([float(by_day.get(x, 0.0)) for x in days], index=days)
         wd = pd.Series([x.weekday() for x in days], index=days)
-        per_wd = {int(k): r2(v) for k, v in s.groupby(wd).mean().items()}
-        return {"mean": r2(s.mean()), "p75": r2(s.rolling(7).sum().dropna().quantile(0.75) / 7 if len(s) >= 7 else s.mean()),
+        # the simulated other account spends its everyday money evenly, day by day
+        o = self.other_account
+        add = o["baskets"][EVERYDAY] / DAYS_PER_MONTH if o else 0.0
+        per_wd = {int(k): r2(v + add) for k, v in s.groupby(wd).mean().items()}
+        return {"mean": r2(s.mean() + add),
+                "p75": r2((s.rolling(7).sum().dropna().quantile(0.75) / 7 if len(s) >= 7 else s.mean()) + add),
                 "per_weekday": per_wd}
 
     # -------------------------------------------------------- safe to spend
@@ -410,14 +572,17 @@ class Money:
         surprise_reserve = r2(surprise_monthly * days / DAYS_PER_MONTH)
 
         cyc = self.df[self.df["date"] >= self.cycle_start]
-        everyday_spent = r2(cyc[cyc["basket"] == EVERYDAY]["spend"].sum())
+        everyday_spent = r2(cyc[cyc["basket"] == EVERYDAY]["spend"].sum()
+                            + sum(v for c, v in self.other_paid(self.cycle_start, self.today).items() if self._basket_of(c) == EVERYDAY))
         invested_cycle = r2(-cyc[cyc["category"] == "Invest Deposit"]["amount"].sum())
         savings_left = r2(max(0.0, self.savings_plan - invested_cycle))
 
-        # a month's income leaves this much for everyday; scale it to the real length of this pay cycle
+        # A month's income leaves this much for everyday; scale it to the real length of this pay cycle. What the
+        # customer sets aside on top of their habit is not scaled: it comes off whole, so "20 a month" takes exactly 20.
         everyday_monthly = r2(self.income_typical - self.usual[FIXED] - surprise_monthly - self.savings_plan)
         cycle_days = max(1, (self.next_payday - self.cycle_start).days)
-        everyday_budget = r2(everyday_monthly * cycle_days / DAYS_PER_MONTH)
+        habit, pledged = self.saving_parts
+        everyday_budget = r2(r2(self.income_typical - self.usual[FIXED] - surprise_monthly - habit) * cycle_days / DAYS_PER_MONTH - pledged)
         budget_left = r2(everyday_budget - everyday_spent)
         free_cash = r2(self.balance - fixed_due - surprise_reserve - savings_left - self.cushion)
 
@@ -444,8 +609,27 @@ class Money:
             {"key": "saving", "label": {"en": "Planned saving", "fi": "Suunniteltu säästö"}[lang], "amount": savings_left},
             {"key": "cushion", "label": {"en": "Cushion", "fi": "Pohjavara"}[lang], "amount": self.cushion},
             {"key": "safe", "label": {"en": "Safe to spend", "fi": "Turvallista käyttää"}[lang], "amount": r2(min(amount, free_total))},
-            {"key": "buffer", "label": {"en": "Not needed before payday", "fi": "Ei tarvita ennen palkkapäivää"}[lang], "amount": r2(max(0.0, free_total - amount))},
+            # Money this pay cycle's plan does not use. It is not spending money, so it never contradicts a small
+            # (or empty) safe to spend: the plan is built from this cycle's pay, and this was there before it.
+            {"key": "buffer", "label": {"en": "Kept as savings", "fi": "Jää säästöön"}[lang], "amount": r2(max(0.0, free_total - amount)),
+             "detail": {"en": "This pay cycle's plan does not use it. It is savings, not spending money.",
+                        "fi": "Tämän palkkajakson suunnitelma ei käytä sitä. Se on säästöä, ei käyttörahaa."}[lang]},
         ]
+        from .query import fmt_day          # local import: query imports this module
+        from .insights import eur           # local import: insights imports this module
+        E = lambda v: eur(v, lang)
+        c0, c1 = fmt_day(self.cycle_start, lang), fmt_day(self.next_payday - timedelta(days=1), lang)
+        cycle_label = {"en": f"{c0} to {c1}", "fi": f"{c0}–{c1}"}[lang]
+        if budget_left >= 0:
+            budget_words = {"en": f"This pay cycle ({cycle_label}): {E(everyday_budget)} for everyday, {E(everyday_spent)} spent, {E(budget_left)} left.",
+                            "fi": f"Tämä palkkajakso ({cycle_label}): arkeen {E(everyday_budget)}, käytetty {E(everyday_spent)}, jäljellä {E(budget_left)}."}[lang]
+        else:
+            budget_words = {"en": f"This pay cycle ({cycle_label}): {E(everyday_budget)} for everyday, {E(everyday_spent)} spent, {E(-budget_left)} over.",
+                            "fi": f"Tämä palkkajakso ({cycle_label}): arkeen {E(everyday_budget)}, käytetty {E(everyday_spent)}, ylitystä {E(-budget_left)}."}[lang]
+        reserve_words = {"en": f"Surprise reserve: {E(surprise_reserve)} for the {days} {'day' if days == 1 else 'days'} to payday, "
+                               f"at your average of {E(surprise_monthly)} a month over the last 12 months.",
+                         "fi": f"Yllätysvara: {E(surprise_reserve)} palkkapäivään asti ({days} pv). Viimeisten 12 kuukauden keskiarvosi on "
+                               f"{E(surprise_monthly)} kuussa."}[lang]
         # stress test: pay comes late (end of month instead of the 15th)
         late = None
         if self.next_payday.day == 15 and self.late_pay_rate > 0 and not self.partial_view:
@@ -465,9 +649,12 @@ class Money:
                        "saving": self.savings_plan, "everyday_monthly": everyday_monthly,
                        "cycle_days": cycle_days, "everyday_budget": everyday_budget,
                        "everyday_spent": everyday_spent, "left": budget_left,
-                       "cycle_start": self.cycle_start.isoformat()},
+                       "cycle_start": self.cycle_start.isoformat(),
+                       # every figure of the plan is a pay-cycle figure, and its sentence says so
+                       "window": "pay_cycle", "window_label": cycle_label, "in_words": budget_words},
             "cash": {"balance": self.balance, "fixed_due": fixed_due, "surprise_reserve": surprise_reserve,
-                     "saving_left": savings_left, "cushion": self.cushion, "free": free_cash},
+                     "saving_left": savings_left, "cushion": self.cushion, "free": free_cash,
+                     "surprise_reserve_in_words": reserve_words},
             "upcoming": upcoming, "spoken_for": spoken, "late_pay": late, "partial_view": self.partial_view,
             "linked_view": self.linked_view,
         }
@@ -570,8 +757,8 @@ class Money:
         L = lambda en, fi: en if lang == "en" else fi
         if pace == "safe":
             adds_up |= {"cushion": self.cushion, "buffer": buffer}
-            made_of = (L(f"your cushion of {E(self.cushion)} plus {E(buffer)} that this pay cycle does not need",
-                         f"pohjavarasi {E(self.cushion)} ja {E(buffer)}, jota tämä palkkajakso ei tarvitse") if buffer > 0.005 and left > 0.005 else
+            made_of = (L(f"your cushion of {E(self.cushion)} plus {E(buffer)} of savings that this pay cycle's plan does not use",
+                         f"pohjavarasi {E(self.cushion)} ja {E(buffer)} säästöä, jota tämän palkkajakson suunnitelma ei käytä") if buffer > 0.005 and left > 0.005 else
                        L(f"your cushion of {E(self.cushion)}", f"pohjavarasi {E(self.cushion)}") if left > 0.005 else "")
             adds_up["in_words"] = L(
                 f"At the safe pace of {E(adds_up['per_day'])} a day, {E(left)} is on the account when pay lands" + (f": {made_of}." if made_of else ".") +

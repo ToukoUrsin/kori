@@ -52,7 +52,7 @@ SHAPE = [  # key, column, higher is better, labels
     ("saving", "savings_rate", True, {"en": "Saving habit", "fi": "Säästötapa"}),
     ("steady", "everyday_cv", False, {"en": "Steadiness", "fi": "Tasaisuus"}),
     ("room", "fixed_share", False, {"en": "Breathing room", "fi": "Liikkumavara"}),
-    ("pacing", "payday_week_share", False, {"en": "Pacing", "fi": "Tahdistus"}),
+    ("pacing", "payday_week_share", False, {"en": "Pacing", "fi": "Tahti"}),
 ]
 
 

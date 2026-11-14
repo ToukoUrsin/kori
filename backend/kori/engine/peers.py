@@ -40,7 +40,7 @@ def statfin() -> dict | None:
 def usual_table(today=None) -> pd.DataFrame:
     """A usual month for every customer, measured exactly as `Money.usual` measures it for one:
     the middle (median) of the last 6 full months for fixed musts and everyday, the average of the last 12 for
-    surprise musts, the average of the last 6 for each category, and the middle one of the last 6 pay amounts.
+    surprise musts and their categories, the average of the last 6 for every other category, and the middle one of the last 6 pay amounts.
     So "you" and "people like you" are always compared on the same definition."""
     from datetime import date
     from ..data import _lock, con
@@ -69,7 +69,8 @@ def usual_table(today=None) -> pd.DataFrame:
     last6 = wide.index.get_level_values("ym").isin(m6)
     out = pd.DataFrame(index=ids)
     for c in CATEGORIES:
-        out[f"cat_{c}"] = spend(c)[last6].groupby(level=0).mean()
+        # a surprise category is measured on the surprise basket's own 12 months, as in Money.usual
+        out[f"cat_{c}"] = (spend(c) if CATEGORIES[c]["basket"] == SURPRISE else spend(c)[last6]).groupby(level=0).mean()
     out["fixed"] = basket(FIXED)[last6].groupby(level=0).median()
     out["everyday"] = basket(EVERYDAY)[last6].groupby(level=0).median()
     out["surprise"] = basket(SURPRISE).groupby(level=0).mean()

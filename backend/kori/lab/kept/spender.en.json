@@ -1,0 +1,72 @@
+{
+ "question": "What kind of spender am I?",
+ "lang": "en",
+ "kept": "2026-11-14",
+ "by": {
+  "analyst": "kept view",
+  "designer": "kept view"
+ },
+ "title": "Your spender type",
+ "chips": [],
+ "cells": [
+  {
+   "title": "Your money shape, as the Learn tab shows it",
+   "by": "kept view",
+   "code": "p = kori.profile()\narch = p[\"archetype\"]\ntraits = p.get(\"traits\") or []\nstrong, weak = p.get(\"strongest\") or {}, p.get(\"weakest\") or {}\nemit(\"name\", arch[\"name\"], \"text\", \"Your spender type\")\nemit(\"strongest\", strong.get(\"label\") or \"-\", \"text\", \"Your strongest side\")\nemit(\"weakest\", (weak.get(\"label\") or \"-\").lower(), \"text\", \"Most room to grow\")\nemit(\"traits_found\", len(traits), \"count\", \"Habits that stand out\")\ntable(\"shape\", [{\"label\": s[\"label\"], \"score\": s[\"score\"]} for s in p.get(\"shape\") or []], \"Your money shape, each side scored from nothing to full\")\nrows = [{\"name\": t[\"name\"], \"evidence\": t[\"evidence\"], \"pctl\": \"more than \" + num(t[\"percentile\"], 0) + \"% of people\"} for t in traits]\ntable(\"traits\", rows or [{\"name\": arch[\"name\"], \"evidence\": arch[\"tagline\"], \"pctl\": \"\"}], \"What shows in your transactions\")\n\nif strong and weak and p.get(\"shape\"):\n    say(f\"You are **{arch['name']}**. {arch['tagline']}\")\n"
+  }
+ ],
+ "html": "<p class=\"k-lede\"><b>{{strongest|raw}}</b> is your strongest side. Most room to grow: {{weakest|raw}}.</p>\n<div class=\"k-stack\"><p class=\"k-h\">Your money shape</p><k-bars table=\"shape\" x=\"label\" y=\"score\" fmt=\"int\" dir=\"h\"></k-bars></div>\n<div class=\"k-stack\" id=\"tr\" hidden><p class=\"k-h\">What shows in your transactions</p><div class=\"k-rows\"><k-each table=\"traits\"><template><div class=\"k-row\"><div>{name}<small>{evidence}</small></div><small class=\"k-note\">{pctl}</small></div></template></k-each></div></div>\n<div class=\"k-chips\"><button class=\"k-chip\" data-ask=\"How do I compare with others my age?\">Against my age group</button><button class=\"k-chip\" data-ask=\"Where does my money go in a usual month?\">A usual month</button></div>\n<script>K.$(\"#tr\").hidden=!(K.fact(\"traits_found\")>0)</script>",
+ "match": [
+  [
+   "spender",
+   "spending type",
+   "spending personality",
+   "money personality",
+   "spending style",
+   "spending profile",
+   "money profile",
+   "money type",
+   "spending habits",
+   "money habits",
+   "spending archetype",
+   "kind of saver",
+   "type of saver"
+  ]
+ ],
+ "unless": [
+  "compare",
+  "others",
+  "other people",
+  "peers",
+  "my age",
+  "how much",
+  "last month",
+  "afford",
+  "safe to spend",
+  "this week",
+  "balance",
+  "pay cycle",
+  "bills",
+  "bill ",
+  "subscription",
+  "repeating",
+  "recurring",
+  "broke",
+  "broken",
+  "payday",
+  "laptop",
+  "weather",
+  "bitcoin",
+  "crypto",
+  "stock",
+  "invest",
+  "fund",
+  "loan",
+  "mortgage",
+  "interest"
+ ],
+ "also": [
+  "What type of spender am I?",
+  "Which spender type am I?"
+ ]
+}

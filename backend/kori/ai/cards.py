@@ -263,8 +263,20 @@ def lesson_card(m: Money, lesson_id: str) -> dict | None:
                 {"tool": "start_lesson", "args": {"lesson": lesson_id}})
 
 
+def stamp(m: Money, c: dict | None) -> dict | None:
+    """With the other bank linked, every card says that its figures include a simulated account."""
+    lv = m.linked_view
+    if c and lv and c.get("type") != "lesson" and lv["short"] not in (c.get("note") or ""):
+        c["note"] = f"{c['note']} {lv['short']}" if c.get("note") else lv["short"]
+    return c
+
+
 def from_source(m: Money, tool: str, args: dict) -> dict | None:
     """Rebuild a card from the tool call that made it (pins, lesson slides, REST)."""
+    return stamp(m, _from_source(m, tool, args))
+
+
+def _from_source(m: Money, tool: str, args: dict) -> dict | None:
     args = args or {}
     if tool == "spending":
         return income_card(m, args) if is_income_question(args) else query_card(m, args)

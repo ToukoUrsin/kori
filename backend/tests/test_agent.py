@@ -183,3 +183,14 @@ def test_voice_events_resume_from_the_last_event_the_phone_saw():
                     return out
     assert read({}) == ["ready"]                                     # a first connection starts from now
     assert read({"Last-Event-ID": "1"}) == ["ready", "coach", "card"]
+
+
+def test_an_empty_reply_is_a_failed_attempt_not_an_answer(monkeypatch):
+    """What a judge heard once in Finnish ("my thought broke off"): a reply with nothing in it won the race against a real one."""
+    from types import SimpleNamespace as NS
+    empty = NS(candidates=[NS(content=None, finish_reason="MALFORMED_RESPONSE")])
+    _fake_client(monkeypatch, [(0.2, "slow but real"), (0.01, empty), (5, "never")])
+    assert asyncio.run(agent._generate([], None)) == "slow but real"
+    _fake_client(monkeypatch, [(0, empty), (0, empty), (0, empty)])
+    with pytest.raises(agent._Empty):
+        asyncio.run(agent._generate([], None))

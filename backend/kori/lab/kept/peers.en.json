@@ -1,0 +1,85 @@
+{
+ "question": "How do I compare with others my age?",
+ "lang": "en",
+ "kept": "2026-11-14",
+ "by": {
+  "analyst": "kept view",
+  "designer": "kept view"
+ },
+ "title": "You and your age group",
+ "chips": [],
+ "cells": [
+  {
+   "title": "Your usual month against customers of your age",
+   "by": "kept view",
+   "code": "partial = bool(kori.safe_to_save().get(\"partial_view\"))          # pay moves to another bank: only part of the month is visible here\n\np = kori.peers()\ng = p[\"group\"]\ndef status(r):\n    if abs(r[\"you\"] - r[\"median\"]) < 10 or (r.get(\"diff_pct\") is not None and abs(r[\"diff_pct\"]) < 5):\n        return \"about the same\", \"\"\n    if r[\"median\"] <= 0:\n        return (eur(r[\"you\"] - r[\"median\"]) + \" more\"), \"neg\"\n    pc = num(abs(r[\"diff_pct\"]), 0)\n    return (pc + \"% more\") if r[\"you\"] > r[\"median\"] else (pc + \"% less\"), \"neg\" if r[\"you\"] > r[\"median\"] else \"pos\"\nrows = []\nfor r in p[\"baskets\"] + p[\"categories\"]:\n    if r[\"you\"] <= 0 and r[\"median\"] <= 0:\n        continue\n    s, tone = status(r)\n    rows.append({\"label\": r[\"label\"], \"you\": round(r[\"you\"], 2), \"median\": round(r[\"median\"], 2), \"status\": s, \"tone\": tone,\n                 \"gap\": round(abs(r[\"you\"] - r[\"median\"]), 2), \"basket\": 1 if r in p[\"baskets\"] else 0})\nbas = [r for r in rows if r[\"basket\"]]\ncats = sorted([r for r in rows if not r[\"basket\"]], key=lambda r: -r[\"gap\"])\nev = next(r for r in p[\"baskets\"] if r[\"key\"] == \"everyday\")\nevs, _ = status(ev)\nevs_say = evs\nnums = [x for x in g[\"label\"].replace(\"+\", \" \").replace(\"-\", \" \").split() if x.isdigit()]\nages = g[\"label\"]\nemit(\"group_size\", g[\"size\"], \"count\", \"Customers in your age group\")\nemit(\"min_group\", g[\"min_group_size\"], \"count\", \"The smallest group ever compared\")\nemit(\"ages\", ages, \"text\", \"Your age group\")\nemit(\"everyday_you\", round(ev[\"you\"], 2), \"eur_per_month\", \"Your everyday, a usual month\")\nemit(\"everyday_median\", round(ev[\"median\"], 2), \"eur_per_month\", \"The middle of your age group, everyday\")\nemit(\"top_gap\", cats[0][\"label\"] if cats else ev[\"label\"], \"text\", \"The biggest gap\")\nemit(\"top_gap_status\", (cats[0][\"status\"] if cats else evs), \"text\", \"How big the gap is\")\ntable(\"baskets\", bas, \"The three baskets against your age group\")\ntable(\"categories\", cats, \"Categories against your age group, biggest gap first\")\n\nif not partial and g.get(\"by\") == \"age\" and nums and ev[\"median\"] > 0:\n    say(f\"Against {g['size']} other customers of the bank {g['label']}, your everyday spending is **{evs_say}**: {eur(ev['you'])} a month, the middle of the group {eur(ev['median'])}.\")\n"
+  }
+ ],
+ "html": "<style>.k-row .k-pill{margin-left:8px}</style>\n<p class=\"k-lede\">Your biggest gap is <b>{{top_gap|raw}}</b>: {{top_gap_status|raw}}</p>\n<div class=\"k-stack\"><p class=\"k-h\">The three baskets</p><div class=\"k-rows\"><k-each table=\"baskets\"><template><div class=\"k-row\"><div>{label}<small>you {you|eur0} · middle {median|eur0}</small></div><span class=\"k-pill {tone}\">{status}</span></div></template></k-each></div></div>\n<div class=\"k-stack\"><p class=\"k-h\">By category</p><div class=\"k-rows\"><k-each table=\"categories\" limit=\"5\" more=\"Show all {n}\"><template><div class=\"k-row\"><div>{label}<small>you {you|eur0} · middle {median|eur0}</small></div><span class=\"k-pill {tone}\">{status}</span></div></template></k-each></div></div>\n<p class=\"k-note\">Other customers of the bank {{ages|raw}}, in a usual month. Nobody can be identified and no group is under {{min_group|int}} people.</p>\n<div class=\"k-chips\"><button class=\"k-chip\" data-ask=\"What kind of spender am I?\">My spender type</button><button class=\"k-chip\" data-ask=\"Where does my money go in a usual month?\">A usual month</button></div>",
+ "match": [
+  [
+   "compare",
+   "compared",
+   "comparison",
+   "versus",
+   "vs",
+   "against",
+   "than",
+   "like me",
+   "normal",
+   "average",
+   "typical",
+   "stack up"
+  ],
+  [
+   "others",
+   "other people",
+   "other customers",
+   "people",
+   "peers",
+   "my age",
+   "same age",
+   "age group",
+   "everyone",
+   "average person",
+   "the average"
+  ]
+ ],
+ "unless": [
+  "save",
+  "afford",
+  "last month",
+  "this month",
+  "week",
+  "what if",
+  "spender",
+  "kind of",
+  "type of",
+  "afford",
+  "safe to spend",
+  "this week",
+  "balance",
+  "pay cycle",
+  "bills",
+  "bill ",
+  "subscription",
+  "repeating",
+  "recurring",
+  "broke",
+  "broken",
+  "payday",
+  "laptop",
+  "weather",
+  "bitcoin",
+  "crypto",
+  "stock",
+  "invest",
+  "fund",
+  "loan",
+  "mortgage",
+  "interest"
+ ],
+ "also": [
+  "How do I compare with others?"
+ ]
+}

@@ -33,7 +33,7 @@ Everything hangs on S-Pankki's three baskets:
 3. **Everyday**: what slips through your fingers (coffees, lunches, taxis, small online buys).
 
 Each basket gets a different kind of attention: decide fixed costs once, reserve for surprises every month, steer
-everyday spending every day. The app has five to eight one-minute lessons, the ones this user's payments can teach, built from their own numbers. The first starts
+everyday spending every day. The app has five to eight two-minute lessons, the ones this user's payments can teach, built from their own numbers. The first starts
 with sorting six of their own payments into the baskets. Each ends with one question to answer in your own words,
 which is graded on the idea, not the wording (Gemini reads it, and a deterministic idea check in `backend/kori/ai/teachback.py` backs it up, so a known misconception never passes): "not yet" comes with a hint and another try.
 
@@ -55,7 +55,7 @@ with a sandbox of its own (the contract is in `docs/LAB.md`):
 |---|---|
 | "Can my grocery shopping be cheaper?" | Each brand you buy next to the S Group own-brand product that is the same thing, with real pictures and Prisma prices, a switch on every row, and what a usual month then leaves. For the demo customer: €69 a month, €828 a year. |
 | "Is there a cheaper oat drink than the one I buy?" | Your carton (€2.05) and three real cheaper ones to pick from (the cheapest €1.15). |
-| "I need a new laptop. What can I afford?" | Two limits from the engine (up to €287 keeps the usual pace, up to €715 is tight), a price picker against your payday, then laptops on sale today at Prisma.fi and Verkkokauppa.com. |
+| "I need a new laptop. What can I afford?" | Two limits from the engine (up to €287 keeps the usual pace, up to €715 is tight), a price picker against your payday, then laptops in Finnish shops right now, with real prices from Prisma.fi and Verkkokauppa.com. |
 | "What if I save €150 a month for ten years?" | 4,000 outcomes with one of S-Pankki's own funds and its real fee, as a range you can drag. An illustration, not investment advice. |
 | "When do I spend the most on eating out?" | Your eating out by weekday and by month, and what fewer visits a month would leave you. |
 
@@ -64,7 +64,8 @@ live web-shop results, 15 fund and saving facts read from s-pankki.fi, each with
 to fill a gap. One thing is sample data and says so: receipt lines. A bank sees the store total, not the lines, so the
 demo builds sample receipts from the real catalogue that add up to each real supermarket payment.
 
-Measured on the live site: the four questions the chat suggests open in 1 to 2 seconds. Their code and screen were
+Measured on the live site: twenty common questions open in 1 to 2 seconds, however they are worded ("safe this week?",
+"my washing machine broke, 600 euros"). The chat suggests four of them, picked for each customer. Their code and screen were
 approved once (kept views, `docs/LAB.md`); asking one runs the code again on your data, so the numbers are computed
 now and checked, and the screen is the same on every take. A question in your own words is built fresh: the written
 answer is there in about 5 seconds and the finished screen in about 12 (median of 58 fresh questions on the live site: 11.8 s). A ten-year model built fresh takes about 30. The answer is fast because the code that
@@ -144,8 +145,8 @@ before?" and see the months it held, the months it did not, and the reason for e
   versioned message bridge, and the safe-to-spend number handed back to the host's own home screen. The contract is
   in `docs/INTEGRATION.md`.
 - **A way in without a model.** The bank can start with approved answers only: on `/host`, under More, switch off
-  "New answers written by AI". The suggested questions still answer in about a second, with code and a screen that
-  were reviewed once and numbers computed again on the customer's data, and no model is called for the turn
+  "New answers written by AI". Twenty approved answers (listed under the switch) still open in about a second, asked
+  in the customer's own words, with code and a screen that were reviewed once and numbers computed again on the customer's data, and no model is called for the turn
   (`approved=1` on the web-view address, `approved: true` on `/api/lab/chat`). Any other question gets a plain "not
   on the approved list". Fresh answers can be switched on later, question family by question family.
 - **PSD2 view.** One demo customer has their salary in another bank. Kori says so, shows what it cannot see and
@@ -185,7 +186,7 @@ PYTHONPATH=. uv run uvicorn kori.app:app --port 8811
 cd ../web && pnpm install && pnpm dev      # http://localhost:8812
 ```
 
-Tests (248: engine arithmetic, number check, API, the sandbox, the shop and swap rules, the demo customers in both languages):
+Tests (over 1,000: engine arithmetic, the approved answers and their wordings, number check, API, the sandbox, the shop and swap rules, the demo customers in both languages):
 
 ```bash
 cd backend && PYTHONPATH=. uv run pytest -q

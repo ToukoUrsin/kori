@@ -19,7 +19,7 @@ function AboutCard({ tool }: { tool: string }) {
 /** The exact number of lessons this person has, never "up to": each lesson needs the data it teaches from. */
 function lessonCount(n: number | undefined, lang: string): string | undefined {
   if (!n) return undefined;
-  if (lang === "fi") return n === 1 ? "1 oppitunti valittu sinulle" : `${n} oppituntia valittu sinulle`;
+  if (lang === "fi") return n === 1 ? "Sinulle valittu 1 oppitunti" : `Sinulle valittu ${n} oppituntia`;
   return n === 1 ? "1 lesson picked for you" : `${n} lessons picked for you`;
 }
 

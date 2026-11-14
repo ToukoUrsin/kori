@@ -18,6 +18,17 @@ export interface SpokenFor {
   key: "fixed" | "surprise" | "saving" | "cushion" | "safe" | "buffer" | string;
   label: string;
   amount: number;
+  /** the engine's one sentence on what this part is (the buffer: "kept as savings") */
+  detail?: string;
+}
+
+/** Jari's other bank, linked in this demo only: every figure it changes is labelled, and the note says once per screen what was added. */
+export interface LinkedView {
+  simulated?: boolean;
+  label?: string;
+  short?: string;
+  note?: string;
+  [key: string]: unknown;
 }
 
 export interface Upcoming {
@@ -54,6 +65,10 @@ export interface SafeData {
     everyday_spent: number;
     left: number;
     cycle_start: string;
+    window?: string;
+    window_label?: string;
+    /** one sentence that names its own window: "This pay cycle (15 Aug to 28 Sep): €2,307 for everyday, …" */
+    in_words?: string;
   };
   cash: {
     balance: number;
@@ -62,12 +77,14 @@ export interface SafeData {
     saving_left: number;
     cushion: number;
     free: number;
+    surprise_reserve_in_words?: string;
   };
   upcoming: Upcoming[];
   spoken_for: SpokenFor[];
   late_pay: { date: string; extra_days: number; rate: number; extra_needed: number; covered: boolean } | null;
   partial_view: boolean;
   cushion: number;
+  linked_view?: LinkedView | null;
 }
 
 export interface ForecastEvent {
@@ -134,6 +151,11 @@ export interface Basket {
   vs_usual_pct: number | null;
   categories: BasketCategory[];
   share: number;
+  /** the engine's sentence with its window named: "€200 so far this calendar month (1 Sep to 21 Sep). Your usual whole month is €2,138." */
+  line?: string;
+  usual_so_far?: number;
+  /** this month so far against the usual for the same days; null for a finished month */
+  vs_usual_so_far_pct?: number | null;
 }
 export interface BasketsData {
   month: string;
@@ -146,6 +168,9 @@ export interface BasketsData {
   usual_spend: number;
   saved: number;
   left_over: number;
+  window?: string;
+  window_label?: string;
+  linked_view?: LinkedView | null;
 }
 
 export interface Notice {
@@ -207,6 +232,7 @@ export interface Home {
   forecast: ForecastData;
   baskets: BasketsData;
   notices: Notice[];
+  linked_view?: LinkedView | null;
   save: SaveData;
   profile: ProfileData;
   suggestions: string[];
@@ -302,7 +328,7 @@ export interface LoopCheckIn {
   over_by?: number;
   difference?: number;
   partial_view?: boolean;
-  linked_view?: { note?: string; [key: string]: unknown } | null;
+  linked_view?: LinkedView | null;
   history?: LoopHistoryRow[];
 }
 export interface LoopReplay {
@@ -417,6 +443,7 @@ export interface BasketsResponse {
     top_kinds: { kind: string; total: number; count: number; label?: string }[];
   };
   labels: Record<BasketKey, { label: string; short: string; desc: string }>;
+  linked_view?: LinkedView | null;
 }
 
 export interface PlanResponse {
@@ -435,6 +462,7 @@ export interface PlanResponse {
   save: SaveData;
   balance: number;
   reason?: string | null;
+  linked_view?: LinkedView | null;
 }
 
 export type Change =
@@ -463,7 +491,7 @@ export interface WhatIfData {
   yearly_effect: number;
   one_off_total: number;
   total_effect_over_period: number;
-  left_over: { now: number; after: number };
+  left_over: { now: number | null; after: number | null };
   everyday_per_day: { now: number; after: number };
   series: { month: number; baseline: number; scenario: number }[];
   yearly_equals?: { what: string; count: number }[];

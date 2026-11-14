@@ -136,7 +136,7 @@ export function ForecastSums({ d }: { d: ForecastData }) {
   const parts =
     a.cushion !== undefined && a.buffer !== undefined && a.left_when_pay_lands > 0.004
       ? a.buffer > 0.004
-        ? L(`That is your cushion ${m(a.cushion)} plus ${m(a.buffer)} this pay cycle does not need.`, `Se on pohjavarasi ${m(a.cushion)} ja ${m(a.buffer)}, jota tämä palkkajakso ei tarvitse.`)
+        ? L(`That is your cushion ${m(a.cushion)} plus ${m(a.buffer)} kept as savings.`, `Se on pohjavarasi ${m(a.cushion)} ja säästöön jäävät ${m(a.buffer)}.`)
         : L(`That is your cushion: ${m(a.cushion)}.`, `Se on pohjavarasi: ${m(a.cushion)}.`)
       : "";
   const noSurprise = a.surprise_reserve > 0.004 ? L(`If no surprise comes, ${m(a.left_if_no_surprise_comes)} is left.`, `Jos yllätystä ei tule, jäljelle jää ${m(a.left_if_no_surprise_comes)}.`) : "";

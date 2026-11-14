@@ -1,0 +1,84 @@
+{
+ "question": "What do I pay for every month?",
+ "lang": "en",
+ "kept": "2026-11-14",
+ "by": {
+  "analyst": "kept view",
+  "designer": "kept view"
+ },
+ "title": "What repeats every month",
+ "chips": [],
+ "cells": [
+  {
+   "title": "Bills and subscriptions, one definition",
+   "by": "kept view",
+   "code": "PENSION = (me.get(\"age\") or 0) >= 68\nPAY = \"pension day\" if PENSION else \"payday\"\nPAY_TO = \"pension day\" if PENSION else \"payday\"\nCYCLE = \"pension cycle\" if PENSION else \"pay cycle\"\ndef day(s):\n    d = datetime.date.fromisoformat(str(s)[:10])\n    return f\"{d.day} {d:%b}\"\nemit(\"pay_word\", PAY, \"text\", \"The day money comes in\")\nemit(\"pay_to\", PAY_TO, \"text\", \"The day money comes in\")\n\np = kori.repeating()\nrows = [{\"what\": b[\"what\"], \"per_month\": b[\"per_month\"], \"kind\": \"a bill, at your usual month\"} for b in p.get(\"bills\") or []]\nrows += [{\"what\": x[\"what\"], \"per_month\": x[\"per_month\"], \"kind\": \"looks like a subscription\"} for x in p.get(\"subscriptions\") or []]\nif rows and abs(sum(r[\"per_month\"] for r in rows) - p[\"total_per_month\"]) < 0.005:\n    n = p[\"subscription_count\"]\n    emit(\"total_per_month\", p[\"total_per_month\"], \"eur_per_month\", \"Repeats a month\")\n    emit(\"subscription_count\", n, \"count\", \"Subscriptions found\")\n    emit(\"definition\", p[\"definition\"], \"text\", \"What counts as repeating\")\n    emit(\"note\", p[\"note\"], \"text\", \"What the bank can see\")\n    table(\"repeating\", rows, \"Payments that repeat, last 12 months\")\n    say(f\"No subscriptions show on this account over the last 12 months. What repeats is your bills: **{eur(p['total_per_month'], True)}** a month.\" if n == 0 else f\"Over the last 12 months, your bills and {n} {'subscription' if n == 1 else 'subscriptions'} repeat every month: **{eur(p['total_per_month'], True)}** a month in all.\")\n"
+  }
+ ],
+ "html": "<style>.kw .k-n{white-space:normal;color:inherit;font-weight:inherit}</style>\n<p class=\"k-lede\">What leaves your account every month, at a usual month's amount.</p>\n<div class=\"k-rows\"><k-each table=\"repeating\" sort=\"-per_month\"><template><div class=\"k-row\"><div>{what}<small>{kind}</small></div><b>{per_month|eur}</b></div></template></k-each>\n<div class=\"k-row total\"><div>A month in all</div><b>{{total_per_month|eur}}</b></div></div>\n<p class=\"k-note kw\">{{note|raw}}</p>\n<p class=\"k-legal kw\">{{definition|raw}}</p>\n<div class=\"k-chips\"><button class=\"k-chip\" data-ask=\"What bills are coming before payday?\">Bills before payday</button><button class=\"k-chip\" data-ask=\"How did my last pay cycle go?\">Last pay cycle</button></div>",
+ "wordings": [
+  "What do I pay for every month?",
+  "What are my subscriptions?",
+  "subscriptions?",
+  "do i have any subscriptions",
+  "what recurring payments do I have",
+  "what do I pay monthly",
+  "list my monthly bills",
+  "what repeats every month",
+  "which payments repeat",
+  "my direct debits",
+  "fixed costs?"
+ ],
+ "match": [
+  [
+   "subscri",
+   "recurr",
+   "repeat",
+   "standing order",
+   "direct debit",
+   "regular payment",
+   "pay for every month",
+   "pay every month",
+   "pay for each month",
+   "paying every month",
+   "pay monthly",
+   "charged every month",
+   "charged monthly",
+   "fixed cost",
+   "monthly bills",
+   "monthly payments",
+   "bills every month",
+   "bills each month",
+   "my bills a month",
+   "bills come to a month"
+  ]
+ ],
+ "unless": [
+  "save",
+  "saving",
+  "invest",
+  "before payday",
+  "this week",
+  "1",
+  "2",
+  "3",
+  "4",
+  "5",
+  "6",
+  "7",
+  "8",
+  "9",
+  "€1",
+  "€2",
+  "€3",
+  "€4",
+  "€5",
+  "€6",
+  "€7",
+  "€8",
+  "€9"
+ ],
+ "also": [
+  "What are my subscriptions?"
+ ]
+}

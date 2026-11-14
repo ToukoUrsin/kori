@@ -11,7 +11,12 @@ import re
 
 from ..ai import grounding
 
-PLACEHOLDER = re.compile(r"\{\{\s*([A-Za-z_][\w.]*)\s*(?:\|\s*(\w+))?\s*\}\}")
+# the same reading as the runtime (web/public/lab/runtime.js): any name, an optional format, and one closing brace is enough
+PLACEHOLDER = re.compile(r"\{\{\s*([^{}|]+?)\s*(?:\|\s*(\w+)\s*)?(?:\|[^{}]*)?\}\}?")
+CELL = re.compile(r"^([\w-]+)\.(\d+|first|last)\.(.+)$")
+EACH = re.compile(r"<k-each\b[^>]*?\btable\s*=\s*['\"]([\w]+)['\"][^>]*>(.*?)</k-each\s*>", re.S | re.I)
+ROWCELL = re.compile(r"(?<!\{)\{\s*([^{}|<>\"'=;:\n]{1,60}?)\s*(?:\|\s*\w+\s*)?\}(?!\})")
+_HOLE = re.compile(r"(?<![A-Za-z])(?:nan|NaN|NaT|undefined)(?![A-Za-z])|<NA>|[{}]")
 REF = re.compile(r"K\.(table|fact)\(\s*['\"]([\w]+)['\"]")
 KIT_TABLE = re.compile(r"<k-[\w-]+\b[^>]*?\btable\s*=\s*['\"]([\w]+)['\"]")       # <k-each table="swaps">, <k-chart table="…">
 KIT_PRODUCTS = re.compile(r"<k-product\b|<k-each\b[^>]*\bproducts\b|K\.data\.products|K\.products")
@@ -68,13 +73,29 @@ def fragment(html: str, ledger: dict, ok: set[float], lang: str) -> dict:
     facts, tables = ledger.get("facts") or {}, ledger.get("tables") or {}
     flagged: list[str] = []
     figures = traced = 0
+    def column(t: dict, path: str) -> bool:                           # a column of this table, or a field inside one ("have.name")
+        cols = [str(c) for c in t.get("columns") or []]
+        return path in cols or path.split(".")[0] in cols
+
     for name, _fmt in PLACEHOLDER.findall(html):
         figures += 1
-        head = name.split(".")[0]
-        if head in facts or (head in tables and "." in name):        # {{saving}} or a table cell, {{months.5.month}}
+        cell = CELL.match(name)
+        if name in facts:                                            # {{saving}}
             traced += 1
+        elif cell and cell.group(1) in tables:                       # a table cell, {{months.5.month}}: the row and the column must exist
+            t = tables[cell.group(1)]
+            n = len(t.get("rows") or [])
+            if column(t, cell.group(3)) and n and (cell.group(2) in ("first", "last") or int(cell.group(2)) < n):
+                traced += 1
+            else:
+                flagged.append("{{" + name + "}}")
         else:
             flagged.append("{{" + name + "}}")
+    for tname, body in EACH.findall(html):                           # a row template may name only columns that table has
+        if tname in tables:
+            for path in ROWCELL.findall(PLACEHOLDER.sub(" ", body)):
+                if path != "$i" and not column(tables[tname], path):
+                    flagged.append("{" + path + "}")
     for kind, name in REF.findall(html):
         if name not in (tables if kind == "table" else facts):
             flagged.append(f"K.{kind}({name})")
@@ -91,6 +112,8 @@ def fragment(html: str, ledger: dict, ok: set[float], lang: str) -> dict:
         figures += n
         traced += n
     text = PLACEHOLDER.sub(" ", _TAGS.sub(" ", _BLOCKS.sub(" ", html)))
+    for hole in _HOLE.findall(text):                                 # a brace or "nan" a customer would read as it stands
+        flagged.append(hole)
     for tok, v in grounding.numbers_in_text(text, lang):
         if grounding._ok(v, tok, ok):
             continue

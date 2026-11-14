@@ -1,0 +1,73 @@
+{
+ "question": "What is safe for me to spend this week?",
+ "lang": "en",
+ "kept": "2026-11-14",
+ "by": {
+  "analyst": "kept view",
+  "designer": "kept view"
+ },
+ "title": "Safe this week",
+ "chips": [],
+ "cells": [
+  {
+   "title": "Safe to spend, this week and until payday",
+   "by": "kept view",
+   "code": "PENSION = (me.get(\"age\") or 0) >= 68\nPAY = \"pension day\" if PENSION else \"payday\"\nPAY_TO = \"pension day\" if PENSION else \"payday\"\nCYCLE = \"pension cycle\" if PENSION else \"pay cycle\"\ndef day(s):\n    d = datetime.date.fromisoformat(str(s)[:10])\n    return f\"{d.day} {d:%b}\"\nemit(\"pay_word\", PAY, \"text\", \"The day money comes in\")\nemit(\"pay_to\", PAY_TO, \"text\", \"The day money comes in\")\n\ns = kori.safe_to_spend()\nemit(\"this_week\", s[\"this_week\"], \"eur\", \"Safe to spend this week\")\nemit(\"week_days\", s[\"week_days\"], \"days\", \"Days counted in this week\")\nemit(\"per_day\", s[\"per_day\"], \"eur_per_day\", \"Safe a day until payday\")\nemit(\"safe_to_spend\", s[\"amount\"], \"eur\", \"Safe to spend until payday\")\nemit(\"days_to_payday\", s[\"days_to_payday\"], \"days\", \"Days to payday\")\nemit(\"next_payday\", s[\"next_payday\"], \"date\", \"Next payday\")\nemit(\"usual_per_day\", s[\"usual_per_day\"], \"eur_per_day\", \"Your usual day\")\nemit(\"status_line\", s[\"status_line\"], \"text\", \"How the pace looks\")\nif s[\"amount\"] > 0 and s[\"this_week\"] > 0:        # nothing safe to spend: no kept answer, the question is worked out fresh\n    say(f\"This week **{eur(s['this_week'], True)}** is safe to spend: {eur(s['per_day'], True)} a day for {s['week_days']} days, the pace that lasts until {PAY} on {day(s['next_payday'])}.\")\n"
+  }
+ ],
+ "html": "<style>.kw .k-n{white-space:normal;color:inherit;font-weight:inherit}</style>\n<p class=\"k-lede\">A day at a time, the same pace carries you to <b>{{pay_word|raw}}</b>.</p>\n<div class=\"k-stats\"><div class=\"k-fig\"><span>{{per_day|eur}}</span><small>a day</small></div><div class=\"k-fig\"><span>{{week_days|int}}</span><small>days this week</small></div><div class=\"k-fig\"><span>{{usual_per_day|eur}}</span><small>your usual day</small></div></div>\n<div class=\"k-rows\"><div class=\"k-row\"><div>This week</div><b>{{this_week|eur}}</b></div><div class=\"k-row\"><div>Until {{pay_word|raw}} <small>{{next_payday|date}}, in {{days_to_payday|int}} days</small></div><b>{{safe_to_spend|eur}}</b></div></div>\n<p class=\"k-note kw\">{{status_line|raw}}</p>\n<div class=\"k-chips\"><button class=\"k-chip\" data-ask=\"What bills are coming before payday?\">Bills before payday</button><button class=\"k-chip\" data-ask=\"Why is my balance not my budget?\">Why not my balance</button></div>",
+ "wordings": [
+  "What is safe for me to spend this week?",
+  "safe this week?",
+  "how much can I spend this week",
+  "what's my budget this week",
+  "budget for the week",
+  "how much money do I have for this week",
+  "what can I afford this week",
+  "spending money this week",
+  "how much is left for this week",
+  "can i spend much this week",
+  "how much am i allowed to spend this week",
+  "weekly budget?"
+ ],
+ "match": [
+  [
+   "week",
+   "wk",
+   "next 7 days",
+   "next seven days"
+  ],
+  [
+   "safe",
+   "spend",
+   "budget",
+   "afford",
+   "use",
+   "left",
+   "allowed",
+   "money",
+   "blow",
+   "have"
+  ]
+ ],
+ "unless": [
+  "weekend",
+  "last week",
+  "next week",
+  "per week",
+  "every week",
+  "each week",
+  "a week on",
+  "spent",
+  "did i",
+  "usually",
+  "average",
+  "save",
+  "saving",
+  "invest",
+  "a week",
+  "spend less",
+  "cut",
+  "less"
+ ]
+}

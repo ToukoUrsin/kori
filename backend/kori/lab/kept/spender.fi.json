@@ -1,0 +1,74 @@
+{
+ "question": "Millainen kuluttaja olen?",
+ "lang": "fi",
+ "kept": "2026-11-14",
+ "by": {
+  "analyst": "kept view",
+  "designer": "kept view"
+ },
+ "title": "Kuluttajatyyppisi",
+ "chips": [],
+ "cells": [
+  {
+   "title": "Rahaprofiilisi muoto, kuten Opi-välilehti sen näyttää",
+   "by": "kept view",
+   "code": "p = kori.profile()\narch = p[\"archetype\"]\ntraits = p.get(\"traits\") or []\nstrong, weak = p.get(\"strongest\") or {}, p.get(\"weakest\") or {}\nemit(\"name\", arch[\"name\"], \"text\", \"Kuluttajatyyppisi\")\nemit(\"strongest\", strong.get(\"label\") or \"-\", \"text\", \"Vahvin puolesi\")\nemit(\"weakest\", (weak.get(\"label\") or \"-\").lower(), \"text\", \"Eniten kasvunvaraa\")\nemit(\"traits_found\", len(traits), \"count\", \"Erottuvat tavat\")\ntable(\"shape\", [{\"label\": s[\"label\"], \"score\": s[\"score\"]} for s in p.get(\"shape\") or []], \"Rahaprofiilisi muoto, jokainen puoli tyhjästä täyteen\")\nrows = [{\"name\": t[\"name\"], \"evidence\": t[\"evidence\"], \"pctl\": \"enemmän kuin \" + num(t[\"percentile\"], 0) + \"\\u00a0% ihmisistä\"} for t in traits]\ntable(\"traits\", rows or [{\"name\": arch[\"name\"], \"evidence\": arch[\"tagline\"], \"pctl\": \"\"}], \"Mitä tapahtumistasi näkyy\")\n\nif strong and weak and p.get(\"shape\"):\n    say(f\"Olet **{arch['name']}**. {arch['tagline']}\")\n"
+  }
+ ],
+ "html": "<p class=\"k-lede\"><b>{{strongest|raw}}</b> on vahvin puolesi. Eniten kasvunvaraa: {{weakest|raw}}.</p>\n<div class=\"k-stack\"><p class=\"k-h\">Rahaprofiilisi muoto</p><k-bars table=\"shape\" x=\"label\" y=\"score\" fmt=\"int\" dir=\"h\"></k-bars></div>\n<div class=\"k-stack\" id=\"tr\" hidden><p class=\"k-h\">Mitä tapahtumistasi näkyy</p><div class=\"k-rows\"><k-each table=\"traits\"><template><div class=\"k-row\"><div>{name}<small>{evidence}</small></div><small class=\"k-note\">{pctl}</small></div></template></k-each></div></div>\n<div class=\"k-chips\"><button class=\"k-chip\" data-ask=\"Miten vertaudun muihin ikäisiini?\">Ikäryhmääni vasten</button><button class=\"k-chip\" data-ask=\"Mihin rahani menevät tavallisena kuukautena?\">Tavallinen kuukausi</button></div>\n<script>K.$(\"#tr\").hidden=!(K.fact(\"traits_found\")>0)</script>",
+ "match": [
+  [
+   "kuluttaja",
+   "kuluttajatyyp",
+   "rahaprofiil",
+   "kulutustyyp",
+   "rahatyyp",
+   "kulutusprofiil",
+   "rahankäyttäjä",
+   "rahankäyttötyyp",
+   "kulutustottumu",
+   "rahankäyttötap",
+   "kulutustap",
+   "kulutustyyli",
+   "rahatyyli",
+   "säästäjätyyp"
+  ]
+ ],
+ "unless": [
+  "vert",
+  "verr",
+  "muihin",
+  "muiden",
+  "ikäis",
+  "paljonko",
+  "viime kuu",
+  "varaa",
+  "turvallista käyttää",
+  "tällä viikolla",
+  "saldo",
+  "tilillä",
+  "palkkajakso",
+  "lasku",
+  "tilaus",
+  "toistuv",
+  "hajos",
+  "rikki",
+  "palkkapäiv",
+  "läppär",
+  "sää on",
+  "sääenn",
+  "säätila",
+  "millainen sää",
+  "bitcoin",
+  "krypto",
+  "osake",
+  "sijoit",
+  "rahasto",
+  "laina",
+  "korko"
+ ],
+ "also": [
+  "Minkälainen kuluttaja olen?",
+  "Millainen kuluttaja mä oon?"
+ ]
+}

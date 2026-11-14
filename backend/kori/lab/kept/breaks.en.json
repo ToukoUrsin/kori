@@ -1,0 +1,142 @@
+{
+ "question": "My washing machine broke. A new one costs €600. Can I cover it?",
+ "lang": "en",
+ "kept": "2026-11-14",
+ "by": {
+  "analyst": "kept view",
+  "designer": "kept view"
+ },
+ "title": "When something breaks",
+ "chips": [],
+ "cells": [
+  {
+   "title": "A must, tested against your account today",
+   "by": "kept view",
+   "code": "PENSION = (me.get(\"age\") or 0) >= 68\nPAY = \"pension day\" if PENSION else \"payday\"\nPAY_TO = \"pension day\" if PENSION else \"payday\"\nCYCLE = \"pension cycle\" if PENSION else \"pay cycle\"\ndef day(s):\n    d = datetime.date.fromisoformat(str(s)[:10])\n    return f\"{d.day} {d:%b}\"\nemit(\"pay_word\", PAY, \"text\", \"The day money comes in\")\nemit(\"pay_to\", PAY_TO, \"text\", \"The day money comes in\")\n\nprice = float(§PRICE§)\nITEM = \"§ITEM§\"\nk = kori.breaks(price, ITEM)\nres = k.get(\"reserve\") or {}\nparts = [{\"label\": \"Your surprise reserve\", \"amount\": res.get(\"used\", 0.0)}, {\"label\": \"Money this \" + CYCLE + \" does not need\", \"amount\": res.get(\"from_buffer\", 0.0)},\n         {\"label\": \"Safe to spend\", \"amount\": res.get(\"from_safe_to_spend\", 0.0)}]\nok = k[\"verdict\"] in (\"yes\", \"tight\") and not k.get(\"partial_view\") and res and abs(sum(p[\"amount\"] for p in parts) - k[\"amount\"]) < 0.005\nif ok:                                            # it does not fit, or only part of the money is here: worked out fresh\n    emit(\"price\", k[\"amount\"], \"eur\", \"What it costs\")\n    emit(\"from_reserve\", res[\"used\"], \"eur\", parts[0][\"label\"])\n    emit(\"from_buffer\", res[\"from_buffer\"], \"eur\", parts[1][\"label\"])\n    emit(\"from_safe\", res[\"from_safe_to_spend\"], \"eur\", parts[2][\"label\"])\n    emit(\"safe_before\", k[\"safe\"][\"before\"], \"eur\", \"Safe to spend now\")\n    emit(\"safe_after\", k[\"safe\"][\"after\"], \"eur\", \"Safe to spend after it\")\n    emit(\"per_day_after\", k[\"per_day\"][\"after\"], \"eur_per_day\", \"Safe a day after it\")\n    emit(\"next_payday\", k[\"next_payday\"], \"date\", \"Next payday\")\n    opt = next((o for o in k.get(\"options\") or [] if o.get(\"text\")), None)\n    emit(\"plan\", opt[\"text\"] if opt else k[\"headline\"], \"text\", \"The plan to put it back\")\n    emit(\"has_plan\", 1 if opt else 0, \"count\", \"A plan to put it back\")\n    table(\"parts\", parts, \"Where the money comes from, in this order\")\n    text = f\"Yes, you can cover {eur(k['amount'])} for {ITEM}: {eur(res['used'], True)} comes from your surprise reserve, set aside for this.\"\n    text += f\" The rest lowers safe to spend to **{eur(k['safe']['after'], True)}** until {PAY} on {day(k['next_payday'])}.\" if res[\"from_safe_to_spend\"] > 0.005 else f\" Safe to spend stays at **{eur(k['safe']['after'], True)}** until {PAY} on {day(k['next_payday'])}.\"\n    say(text)\n"
+  }
+ ],
+ "html": "<style>.kw .k-n{white-space:normal;color:inherit;font-weight:inherit}</style>\n<p class=\"k-lede\">A must comes out of the money set aside for it first, and from spending money last.</p>\n<div class=\"k-rows\"><k-each table=\"parts\"><template><div class=\"k-row\"><div>{label}</div><b>{amount|eur}</b></div></template></k-each>\n<div class=\"k-row total\"><div>In all</div><b>{{price|eur}}</b></div></div>\n<div class=\"k-stats\"><div class=\"k-fig\"><span>{{safe_before|eur0}}</span><small>safe to spend now</small></div><div class=\"k-fig pos\"><span>{{safe_after|eur0}}</span><small>after it</small></div><div class=\"k-fig\"><span>{{per_day_after|eur}}</span><small>a day after it</small></div></div>\n<p class=\"k-note kw\" id=\"pl\">{{plan|raw}}</p>\n<div class=\"k-chips\"><button class=\"k-chip\" data-ask=\"What is safe for me to spend this week?\">Safe this week</button><button class=\"k-chip\" data-ask=\"Why is my balance not my budget?\">Why not my balance</button></div>\n<script>if(!K.fact(\"has_plan\"))K.$(\"#pl\").hidden=true</script>",
+ "wordings": [
+  "My washing machine broke. A new one costs €600. Can I cover it?",
+  "washing machine broke, new one 600, can i afford it",
+  "my phone broke, a new one is €400",
+  "car repair 800 euros, can I pay it",
+  "the dentist costs €350, can I cover it",
+  "fridge died, replacement 700€ ok?",
+  "I have to pay a €250 vet bill",
+  "my laptop broke and a new one costs 900",
+  "need a new washer for 550 can i cover it",
+  "unexpected bill of €300, can I handle it"
+ ],
+ "match": [
+  [
+   "broke",
+   "break",
+   "died",
+   "dead",
+   "stopped working",
+   "packed up",
+   "need a new",
+   "repair",
+   "fix",
+   "dentist",
+   "vet ",
+   "vet's",
+   "emergency",
+   "unexpected",
+   "must pay",
+   "have to pay",
+   "need to pay",
+   "surprise",
+   "fine for",
+   "a fine",
+   "replace"
+  ],
+  [
+   "1",
+   "2",
+   "3",
+   "4",
+   "5",
+   "6",
+   "7",
+   "8",
+   "9",
+   "€1",
+   "€2",
+   "€3",
+   "€4",
+   "€5",
+   "€6",
+   "€7",
+   "€8",
+   "€9"
+  ]
+ ],
+ "unless": [
+  "bitcoin",
+  "crypto",
+  "stock",
+  "share",
+  "fund",
+  "etf",
+  "invest",
+  "osake",
+  "osakk",
+  "rahasto",
+  "sijoit",
+  "krypto",
+  "save",
+  "saving",
+  "a month",
+  "per month",
+  "what did",
+  "did it cost",
+  "cost me",
+  "last year",
+  "last month",
+  "spent",
+  "spend on"
+ ],
+ "params": [
+  {
+   "token": "§PRICE§",
+   "find": "(?<!\\d )(?<!\\d)(\\d{2,5})(?! \\d{3}\\b)(?!\\d)",
+   "min": 20,
+   "max": 20000
+  },
+  {
+   "token": "§ITEM§",
+   "choices": {
+    "washing machine": "the washing machine",
+    "washer": "the washing machine",
+    "dishwasher": "the dishwasher",
+    "phone": "the phone",
+    "fridge": "the fridge",
+    "freezer": "the freezer",
+    "car repair": "the car repair",
+    "my car": "the car",
+    "the car": "the car",
+    "car broke": "the car",
+    "dentist": "the dentist",
+    "tooth": "the dentist",
+    "laptop": "the laptop",
+    "computer": "the computer",
+    "bike": "the bike",
+    "bicycle": "the bike",
+    "glasses": "the glasses",
+    "vet": "the vet",
+    "boiler": "the boiler",
+    "oven": "the oven",
+    "stove": "the stove",
+    "tv": "the TV",
+    "television": "the TV",
+    "boots": "the boots",
+    "heating": "the heating",
+    "plumb": "the plumber",
+    "roof": "the roof"
+   },
+   "default": "it"
+  }
+ ]
+}

@@ -32,7 +32,7 @@ def build(m: Money) -> list[dict]:
     pay = date.fromisoformat(s["next_payday"])
     out = []
 
-    def lesson(id_, title, concept, slides, check, teach, minutes=1):
+    def lesson(id_, title, concept, slides, check, teach, minutes=2):
         opts, idx = _shuffle(check["options"], check["options"][0], seed + len(out))
         for sl_ in slides:
             sl_["body"] = tidy(sl_["body"])
@@ -101,7 +101,7 @@ def build(m: Money) -> list[dict]:
     big = sd.sort_values("spend").iloc[-1] if n_s else None
     quiet = int(sum(1 for k in months if m.monthly.loc[k, SURPRISE] < 20)) if months else 0
     if n_s >= 3:
-        lesson("surprise", L("Surprises are predictable in bulk", "Yllätykset ovat ennustettavia kasassa"),
+        lesson("surprise", L("Surprises are predictable in bulk", "Yllätysmenot ovat ennustettavia vuositasolla"),
                L("You can't know which month the surprise comes. You can know roughly how much a year of them costs.",
                  "Et voi tietää, minä kuukautena yllätys tulee. Voit tietää suunnilleen, paljonko vuoden yllätykset maksavat."),
                [{"title": L("Your last 12 months", "Viimeiset 12 kuukauttasi"),

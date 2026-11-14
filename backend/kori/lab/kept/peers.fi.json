@@ -1,0 +1,83 @@
+{
+ "question": "Miten vertaudun muihin ikäisiini?",
+ "lang": "fi",
+ "kept": "2026-11-14",
+ "by": {
+  "analyst": "kept view",
+  "designer": "kept view"
+ },
+ "title": "Sinä ja ikäryhmäsi",
+ "chips": [],
+ "cells": [
+  {
+   "title": "Tavallinen kuukautesi samanikäisiin asiakkaisiin verrattuna",
+   "by": "kept view",
+   "code": "partial = bool(kori.safe_to_save().get(\"partial_view\"))          # pay moves to another bank: only part of the month is visible here\n\np = kori.peers()\ng = p[\"group\"]\ndef status(r):\n    if abs(r[\"you\"] - r[\"median\"]) < 10 or (r.get(\"diff_pct\") is not None and abs(r[\"diff_pct\"]) < 5):\n        return \"suunnilleen sama\", \"\"\n    if r[\"median\"] <= 0:\n        return (eur(r[\"you\"] - r[\"median\"]) + \" enemmän\"), \"neg\"\n    pc = num(abs(r[\"diff_pct\"]), 0)\n    return (pc + \"\\u00a0% enemmän\") if r[\"you\"] > r[\"median\"] else (pc + \"\\u00a0% vähemmän\"), \"neg\" if r[\"you\"] > r[\"median\"] else \"pos\"\nrows = []\nfor r in p[\"baskets\"] + p[\"categories\"]:\n    if r[\"you\"] <= 0 and r[\"median\"] <= 0:\n        continue\n    s, tone = status(r)\n    rows.append({\"label\": r[\"label\"], \"you\": round(r[\"you\"], 2), \"median\": round(r[\"median\"], 2), \"status\": s, \"tone\": tone,\n                 \"gap\": round(abs(r[\"you\"] - r[\"median\"]), 2), \"basket\": 1 if r in p[\"baskets\"] else 0})\nbas = [r for r in rows if r[\"basket\"]]\ncats = sorted([r for r in rows if not r[\"basket\"]], key=lambda r: -r[\"gap\"])\nev = next(r for r in p[\"baskets\"] if r[\"key\"] == \"everyday\")\nevs, _ = status(ev)\nevs_say = evs.replace(\"suunnilleen sama\", \"suunnilleen samat\").replace(\"enemmän\", \"suuremmat\").replace(\"vähemmän\", \"pienemmät\")\nnums = [x for x in g[\"label\"].replace(\"+\", \" \").replace(\"-\", \" \").split() if x.isdigit()]\nages = (nums[0] + \"-\" + nums[1] + \"-vuotiaat\") if len(nums) > 1 else (\"vähintään \" + nums[0] + \"-vuotiaat\") if nums else \"\"\nemit(\"group_size\", g[\"size\"], \"count\", \"Asiakkaita ikäryhmässäsi\")\nemit(\"min_group\", g[\"min_group_size\"], \"count\", \"Pienin koskaan verrattu ryhmä\")\nemit(\"ages\", ages, \"text\", \"Ikäryhmäsi\")\nemit(\"everyday_you\", round(ev[\"you\"], 2), \"eur_per_month\", \"Arjen menosi tavallisena kuukautena\")\nemit(\"everyday_median\", round(ev[\"median\"], 2), \"eur_per_month\", \"Ikäryhmäsi keskimmäinen, arjen menot\")\nemit(\"top_gap\", cats[0][\"label\"] if cats else ev[\"label\"], \"text\", \"Suurin ero\")\nemit(\"top_gap_status\", (cats[0][\"status\"] if cats else evs), \"text\", \"Kuinka suuri ero on\")\ntable(\"baskets\", bas, \"Kolme koria ikäryhmääsi verrattuna\")\ntable(\"categories\", cats, \"Luokat ikäryhmääsi verrattuna, suurin ero ensin\")\n\nif not partial and g.get(\"by\") == \"age\" and nums and ev[\"median\"] > 0:\n    say(f\"Ikäryhmässäsi ({ages}, {g['size']} pankin asiakasta) arjen menosi ovat **{evs_say}** kuin keskimmäisellä: sinulla {eur(ev['you'])} kuussa, keskimmäisellä {eur(ev['median'])}.\")\n"
+  }
+ ],
+ "html": "<style>.k-row .k-pill{margin-left:8px}</style>\n<p class=\"k-lede\">Suurin ero on kohdassa <b>{{top_gap|raw}}</b>: {{top_gap_status|raw}}</p>\n<div class=\"k-stack\"><p class=\"k-h\">Kolme koria</p><div class=\"k-rows\"><k-each table=\"baskets\"><template><div class=\"k-row\"><div>{label}<small>sinä {you|eur0} · keskimmäinen {median|eur0}</small></div><span class=\"k-pill {tone}\">{status}</span></div></template></k-each></div></div>\n<div class=\"k-stack\"><p class=\"k-h\">Luokittain</p><div class=\"k-rows\"><k-each table=\"categories\" limit=\"5\" more=\"Näytä kaikki {n}\"><template><div class=\"k-row\"><div>{label}<small>sinä {you|eur0} · keskimmäinen {median|eur0}</small></div><span class=\"k-pill {tone}\">{status}</span></div></template></k-each></div></div>\n<p class=\"k-note\">Pankin muut asiakkaat ryhmässä {{ages|raw}}, tavallinen kuukausi. Ketään ei voi tunnistaa, eikä mikään ryhmä ole alle {{min_group|int}} hengen.</p>\n<div class=\"k-chips\"><button class=\"k-chip\" data-ask=\"Millainen kuluttaja olen?\">Kuluttajatyyppini</button><button class=\"k-chip\" data-ask=\"Mihin rahani menevät tavallisena kuukautena?\">Tavallinen kuukausi</button></div>",
+ "match": [
+  [
+   "vert",
+   "verr",
+   "muihin",
+   "muita",
+   "muiden",
+   "keskiver",
+   "enemmän kuin",
+   "vähemmän kuin",
+   "normaali",
+   "tavallinen ihminen"
+  ],
+  [
+   "muihin",
+   "muiden",
+   "muut",
+   "muita",
+   "ikäis",
+   "samanikäis",
+   "ikätoveri",
+   "ikäryhm",
+   "keskiver",
+   "ihmis",
+   "asiakkai"
+  ]
+ ],
+ "unless": [
+  "säästä",
+  "varaa",
+  "viime kuu",
+  "tässä kuussa",
+  "viiko",
+  "mitä jos",
+  "kuluttaja",
+  "millainen",
+  "varaa",
+  "turvallista käyttää",
+  "tällä viikolla",
+  "saldo",
+  "tilillä",
+  "palkkajakso",
+  "lasku",
+  "tilaus",
+  "toistuv",
+  "hajos",
+  "rikki",
+  "palkkapäiv",
+  "läppär",
+  "sää on",
+  "sääenn",
+  "säätila",
+  "millainen sää",
+  "bitcoin",
+  "krypto",
+  "osake",
+  "sijoit",
+  "rahasto",
+  "laina",
+  "korko"
+ ],
+ "also": [
+  "Miten vertaudun muihin?"
+ ]
+}

@@ -7,12 +7,13 @@ import { useApp } from "../../lib/store";
 import type { LoopAction, LoopHistoryRow, LoopReplay } from "../../lib/types";
 import { cx } from "../ui/bits";
 
-/** A held cycle is a filled mark, one that went over an outlined one. Same pair everywhere. */
+/** A cycle whose everyday spending fit is a filled mark, one that went over an outlined one. Same pair everywhere. */
 const HELD = "bg-brand";
 const WENT_OVER = "border border-warn bg-warn-soft";
 
 /** The last cycles as dots with a short count. The full sentence is the accessible name. */
 export function HistoryDots({ rows, line }: { rows: LoopHistoryRow[]; line: string }) {
+  const { t } = useApp();
   const held = rows.filter((r) => r.within).length;
   return (
     <span role="img" aria-label={line} title={line} className="flex shrink-0 items-center gap-1.5">
@@ -22,7 +23,7 @@ export function HistoryDots({ rows, line }: { rows: LoopHistoryRow[]; line: stri
         ))}
       </span>
       <span className="num text-[12px] font-medium leading-4 text-ink-2">
-        {held}/{rows.length}
+        {t("loop.fitCount", { n: held, total: rows.length })}
       </span>
     </span>
   );
@@ -33,14 +34,14 @@ export function CycleStrip({ rows, held, over }: { rows: LoopHistoryRow[]; held:
   const { t } = useApp();
   return (
     <div>
-      <ol className="flex gap-[3px]" aria-label={`${t("track.held")}: ${held}, ${t("loop.wentOver")}: ${over}`}>
+      <ol className="flex gap-[3px]" aria-label={`${t("loop.fit")}: ${held}, ${t("loop.wentOver")}: ${over}`}>
         {rows.map((r, i) => (
           <li key={`${r.label}-${i}`} title={r.label} className={cx("h-5 min-w-0 flex-1 rounded-[4px]", r.within ? HELD : WENT_OVER)} />
         ))}
       </ol>
       <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[12px] leading-4 text-ink-2">
         <li className="inline-flex items-center gap-1.5">
-          <span className={cx("h-2.5 w-2.5 rounded-[3px]", HELD)} aria-hidden /> {t("track.held")} <span className="num font-semibold text-ink">{held}</span>
+          <span className={cx("h-2.5 w-2.5 rounded-[3px]", HELD)} aria-hidden /> {t("loop.fit")} <span className="num font-semibold text-ink">{held}</span>
         </li>
         <li className="inline-flex items-center gap-1.5">
           <span className={cx("h-2.5 w-2.5 rounded-[3px]", WENT_OVER)} aria-hidden /> {t("loop.wentOver")} <span className="num font-semibold text-ink">{over}</span>

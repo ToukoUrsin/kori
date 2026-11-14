@@ -1,0 +1,96 @@
+{
+ "question": "Paljonko tililläni on rahaa?",
+ "lang": "fi",
+ "kept": "2026-11-14",
+ "by": {
+  "analyst": "kept view",
+  "designer": "kept view"
+ },
+ "title": "Saldosi rivi riviltä",
+ "chips": [],
+ "cells": [
+  {
+   "title": "Saldosta turvalliseen käyttövaraan",
+   "by": "kept view",
+   "code": "PENSION = (me.get(\"age\") or 0) >= 68\nPAY = \"eläkepäivä\" if PENSION else \"palkkapäivä\"\nPAY_TO = \"eläkepäivään\" if PENSION else \"palkkapäivään\"\nCYCLE = \"eläkejakso\" if PENSION else \"palkkajakso\"\ndef day(s):\n    d = datetime.date.fromisoformat(str(s)[:10])\n    return f\"{d.day}.{d.month}.\"\nemit(\"pay_word\", PAY, \"text\", \"Päivä, jona rahat tulevat\")\nemit(\"pay_to\", PAY_TO, \"text\", \"Päivä, jona rahat tulevat\")\n\ns = kori.safe_to_spend()\nrows = s.get(\"from_balance\") or []                # missing when only part of the money is on this account\nparts = [{\"label\": r[\"label\"], \"amount\": r[\"amount\"]} for r in rows if r[\"sign\"] == \"-\"]\nif rows:\n    emit(\"balance\", rows[0][\"amount\"], \"eur\", rows[0][\"label\"])\n    emit(\"balance_label\", rows[0][\"label\"], \"text\", \"Mikä ensimmäinen rivi on\")\n    emit(\"safe_to_spend\", rows[-1][\"amount\"], \"eur\", rows[-1][\"label\"])\n    emit(\"safe_label\", rows[-1][\"label\"], \"text\", \"Mikä viimeinen rivi on\")\n    emit(\"next_payday\", s[\"next_payday\"], \"date\", \"Seuraava palkkapäivä\")\n    buffer = next((x for x in s.get(\"spoken_for\") or [] if x.get(\"key\") == \"buffer\" and x.get(\"detail\")), None)\n    emit(\"note\", buffer[\"detail\"] if buffer else s[\"status_line\"], \"text\", \"Sivuun pidetystä rahasta\")\n    if parts:\n        table(\"parts\", parts, \"Jo varattu palkkapäivään asti\")\nadds_up = bool(rows) and bool(parts) and rows[0][\"sign\"] == \"+\" and rows[-1][\"sign\"] == \"=\" and \\\n    abs(rows[0][\"amount\"] - sum(p[\"amount\"] for p in parts) - rows[-1][\"amount\"]) < 0.005\nif adds_up:                                       # the screen shows a sum, so it must add up to the cent\n    if rows[-1][\"amount\"] > 0:\n        say(f\"Tililläsi on **{eur(rows[0]['amount'], True)}**. Siitä {eur(rows[-1]['amount'], True)} on turvallista käyttää {PAY_TO} {day(s['next_payday'])} asti, loput on jo varattu.\")\n    else:\n        say(f\"Tililläsi on **{eur(rows[0]['amount'], True)}**, mutta siitä ei ole turvallista käyttää mitään {PAY_TO} {day(s['next_payday'])} asti. \" + s[\"status_line\"])\n"
+  }
+ ],
+ "html": "<style>.kw .k-n{white-space:normal;color:inherit;font-weight:inherit}</style>\n<p class=\"k-lede\">Saldosta maksetaan ensin se, mikä on jo tulossa. Mitä jää, on turvallista käyttää.</p>\n<div class=\"k-rows\"><div class=\"k-row\"><div>{{balance_label|raw}}</div><b>{{balance|eur}}</b></div>\n<k-each table=\"parts\"><template><div class=\"k-row\"><div class=\"k-dim\">{label}</div><b class=\"k-dim\">−{amount|eur}</b></div></template></k-each>\n<div class=\"k-row total\"><div>{{safe_label|raw}}<small>asti {{next_payday|date}}</small></div><b>{{safe_to_spend|eur}}</b></div></div>\n<p class=\"k-note kw\">{{note|raw}}</p>\n<div class=\"k-chips\"><button class=\"k-chip\" data-ask=\"Mitä laskuja on tulossa ennen palkkapäivää?\">Laskut ennen palkkapäivää</button><button class=\"k-chip\" data-ask=\"Voinko luottaa turvalliseen käyttövaraan?\">Voinko luottaa</button></div>",
+ "wordings": [
+  "Paljonko tililläni on rahaa?",
+  "saldo?",
+  "mikä on saldoni",
+  "mikä mun saldo on",
+  "paljon mun tilillä on",
+  "paljonko mulla on rahaa",
+  "paljon mul on rahaa tilillä",
+  "miksi saldoni ei ole budjettini",
+  "miks saldo ei oo se mitä voin käyttää",
+  "tilin saldo",
+  "paljonko rahaa minulla on"
+ ],
+ "match": [
+  [
+   "saldo",
+   "paljonko tililläni on",
+   "paljonko tilillä on",
+   "paljon tilillä on",
+   "paljon mun tilillä",
+   "paljonko mun tilillä",
+   "rahaa tilillä",
+   "rahaa tililläni",
+   "tilillä on rahaa",
+   "paljonko minulla on rahaa",
+   "paljonko mulla on rahaa",
+   "paljon mulla on rahaa",
+   "paljon mul on rahaa",
+   "paljonko rahaa mulla on",
+   "paljonko rahaa minulla on"
+  ]
+ ],
+ "unless": [
+  "luot",
+  "pitän",
+  "pitik",
+  "piti",
+  "osu",
+  "ensi",
+  "ennuste",
+  "tulee olemaan",
+  "palkkapäivänä",
+  "eläkepäivänä",
+  "lopussa",
+  "oli",
+  "viime",
+  "alin",
+  "korkein",
+  "siirr",
+  "toise",
+  "säästä",
+  "sijoit",
+  "viikolla",
+  "viikolle",
+  "1",
+  "2",
+  "3",
+  "4",
+  "5",
+  "6",
+  "7",
+  "8",
+  "9",
+  "€1",
+  "€2",
+  "€3",
+  "€4",
+  "€5",
+  "€6",
+  "€7",
+  "€8",
+  "€9"
+ ],
+ "also": [
+  "Miksi saldoni ei ole budjettini?",
+  "Mikä on saldoni?"
+ ]
+}

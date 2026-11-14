@@ -1,0 +1,91 @@
+{
+ "question": "Was this number right before?",
+ "lang": "en",
+ "kept": "2026-11-14",
+ "by": {
+  "analyst": "kept view",
+  "designer": "kept view"
+ },
+ "title": "The number's track record",
+ "chips": [],
+ "cells": [
+  {
+   "title": "Safe to spend replayed on past paydays",
+   "by": "kept view",
+   "code": "PENSION = (me.get(\"age\") or 0) >= 68\nPAY = \"pension day\" if PENSION else \"payday\"\nPAY_TO = \"pension day\" if PENSION else \"payday\"\nCYCLE = \"pension cycle\" if PENSION else \"pay cycle\"\ndef day(s):\n    d = datetime.date.fromisoformat(str(s)[:10])\n    return f\"{d.day} {d:%b}\"\nemit(\"pay_word\", PAY, \"text\", \"The day money comes in\")\nemit(\"pay_to\", PAY_TO, \"text\", \"The day money comes in\")\n\nr = kori.replay()\nmonths = [{\"label\": c[\"label\"], \"state\": c[\"state\"], \"safe\": c.get(\"safe\")} for c in r.get(\"cells\") or []]\nmiss = r.get(\"miss\") or {}\nif r.get(\"checked\") and months:\n    emit(\"checked\", r[\"checked\"], \"count\", \"Past paydays tested\")\n    emit(\"held\", r[\"held\"], \"count\", \"Times the number held\")\n    emit(\"missed\", r[\"missed\"], \"count\", \"Times it missed\")\n    emit(\"balance_as_budget_held\", r[\"balance_as_budget_held\"], \"count\", \"Times the balance as budget would have held\")\n    emit(\"summary\", r[\"summary\"], \"text\", \"In short\")\n    emit(\"method\", r[\"method\"], \"text\", \"How it was tested\")\n    emit(\"miss_title\", miss.get(\"window\") or r[\"summary\"], \"text\", \"When it missed\")\n    emit(\"miss_text\", miss.get(\"text\") or r[\"summary\"], \"text\", \"What happened\")\n    emit(\"miss_lesson\", \" \".join(x for x in (miss.get(\"lesson\"), miss.get(\"since\")) if x) or r[\"summary\"], \"text\", \"What changed since\")\n    table(\"months\", months, \"Month by month\")\n    short = r[\"short\"].replace(f\" {r['held']} times\", f\" **{r['held']} times**\", 1)\n    if \"**\" not in short:\n        short = f\"**{short}**\"\n    say(f\"{short}. {r['versus']}\")\n"
+  }
+ ],
+ "html": "<style>.kw .k-n{white-space:normal;color:inherit;font-weight:inherit}</style>\n<style>.tr-g{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}.tr-c{padding:7px 2px;white-space:nowrap;border-radius:8px;font-size:12px;line-height:16px;text-align:center;background:var(--color-sunk);color:var(--color-ink-3)}.tr-c.held{background:var(--color-brand-soft);color:var(--color-brand-strong)}.tr-c.missed{background:var(--color-neg-soft);color:var(--color-neg)}.tr-l{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--color-ink-3)}.tr-l i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}</style>\n<p class=\"k-lede kw\">{{summary|raw}}</p>\n<div class=\"k-stats\"><div class=\"k-fig pos\"><span>{{held|int}}</span><small>times it held</small></div><div class=\"k-fig\"><span>{{missed|int}}</span><small>times it missed</small></div><div class=\"k-fig\"><span>{{balance_as_budget_held|int}}</span><small>balance as budget held</small></div></div>\n<div class=\"k-stack\"><div class=\"tr-g\"><k-each table=\"months\"><template><div class=\"tr-c {state}\">{label}</div></template></k-each></div>\n<div class=\"tr-l\"><span><i style=\"background:var(--color-brand-soft)\"></i>held</span><span><i style=\"background:var(--color-neg-soft)\"></i>missed</span><span><i style=\"background:var(--color-sunk)\"></i>nothing was safe, not tested</span></div></div>\n<div class=\"k-card k-stack\" id=\"mc\"><p class=\"k-h kw\">The miss: {{miss_title|raw}}</p><p class=\"kw\">{{miss_text|raw}}</p><p class=\"k-note kw\">{{miss_lesson|raw}}</p></div>\n<p class=\"k-note kw\">{{method|raw}}</p>\n<div class=\"k-chips\"><button class=\"k-chip\" data-ask=\"Why is my balance not my budget?\">Why not my balance</button><button class=\"k-chip\" data-ask=\"How did my last pay cycle go?\">Last pay cycle</button></div>\n<script>if(!K.fact(\"missed\"))K.$(\"#mc\").hidden=true</script>",
+ "wordings": [
+  "Was this number right before?",
+  "Can I trust the safe to spend number?",
+  "can i trust this number",
+  "is the safe number accurate",
+  "has it been right before",
+  "how reliable is this",
+  "can i trust you",
+  "has this number held before",
+  "track record?",
+  "was it right before",
+  "can i rely on the safe to spend figure"
+ ],
+ "match": [
+  [
+   "trust",
+   "right before",
+   "been right",
+   "was it right",
+   "accurate",
+   "reliable",
+   "held",
+   "hold up",
+   "track record",
+   "tested",
+   "rely on",
+   "believe",
+   "proof",
+   "worked before",
+   "work before"
+  ],
+  [
+   "number",
+   "safe",
+   "figure",
+   "it",
+   "this",
+   "you",
+   "kori",
+   "estimate",
+   "track record"
+  ]
+ ],
+ "unless": [
+  "bitcoin",
+  "crypto",
+  "stock",
+  "fund",
+  "invest",
+  "bank",
+  "1",
+  "2",
+  "3",
+  "4",
+  "5",
+  "6",
+  "7",
+  "8",
+  "9",
+  "€1",
+  "€2",
+  "€3",
+  "€4",
+  "€5",
+  "€6",
+  "€7",
+  "€8",
+  "€9"
+ ],
+ "also": [
+  "Can I trust the safe to spend number?"
+ ]
+}

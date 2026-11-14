@@ -25,31 +25,31 @@ Elli asks "can my grocery shopping be cheaper?" Kori writes code, runs it on her
 
 This one needs a bank in the same group as the shop. The receipt lines are sample data in the demo; S-mobiili already has the real ones in Omat ostot.
 
-- "I need a new laptop. What can I afford?" €287 without changing anything, €715 if she cuts back. Then laptops on sale today at Prisma.fi and Verkkokauppa.com.
+- "I need a new laptop. What can I afford?" €287 without changing anything, €715 if she cuts back. Then laptops in Finnish shops right now, with real prices from Prisma.fi and Verkkokauppa.com.
 - "What if I save €150 a month for ten years?" She puts in €18,000 and the middle outcome is about €22,000, with a weak and a strong decade beside it. One of S-Pankki's own funds, with its real fee. An illustration, not investment advice.
 
-She can type it or say it. The questions Kori suggests open in about a second: their code and screen were approved once, and the numbers are computed again on her data each time. Anything in her own words is written fresh: the answer in about 5 seconds, its screen in about 12.
+She can type it or say it. Twenty common questions open in about a second, however she words them: their code and screen were approved once, and the numbers are computed again on her data each time. The four Kori suggests are picked for each customer. Anything else is written fresh: the answer in about 5 seconds, its screen in about 12.
 
 ## It coaches and teaches
 
 - Went over? On payday Kori says why: a habit, or one big purchase. In voice, Kori speaks first. Elli hears that one €293 purchase put her €141 over, and then one question: "Will something like it come again within a year?" Her answer decides the one thing Kori suggests.
-- Five to eight one-minute lessons on S-Pankki's three baskets (fixed musts, surprise musts, everyday money), made from your own payments. You get the ones your payments can teach. Each ends with you saying the idea back in your own words, and it's the idea that is graded, not the wording. "Not yet" comes with a hint and another try.
+- Five to eight two-minute lessons on S-Pankki's three baskets (fixed musts, surprise musts, everyday money), made from your own payments. You get the ones your payments can teach. Each ends with you saying the idea back in your own words, and it's the idea that is graded, not the wording. "Not yet" comes with a hint and another try.
 
 ## Ready for S-mobiili
 
 - https://kori-coach.fly.dev/host shows Kori inside a stand-in bank app. The host asks for consent, opens Kori in a web view and gets the safe-to-spend number back for its own home screen.
 - The code runs inside the bank, next to the data. The model gets the question and what the calculations return.
-- A bank can start with no model in the loop. On /host, under More, switch off "New answers written by AI": the suggested questions still answer in a second with code the bank has reviewed, and anything else gets a plain "not on the approved list".
+- A bank can start with no model in the loop. On /host, under More, switch off "New answers written by AI": 20 answers the bank has reviewed still open in a second, asked in the customer's own words ("my washing machine broke, 600 euros, can I cover it"), and anything else gets a plain "not on the approved list".
 - When the salary goes to another bank, Kori says what it can't see and doesn't guess.
 - It says it's an AI and gives no investment or credit advice. A fund or a loan is shown as an example, with its assumptions named.
 
 ## How it's built
 
-Every figure is calculated by code and checked before you see or hear it. The chat is told what the app's own cards say, so the two agree. A zero is checked a second time before it's shown.
+Every figure is calculated by code and checked before you see or hear it. The chat and the app's own screens run the same calculations, so they agree. A zero is checked a second time before it's shown.
 
 - Gemini (gemini-4-hydrogen) writes and runs the code in the chat and searches the web with Google Search. A larger one (gemini-4-carbon) runs the ten-year model. In the coach, Gemini chooses which of 22 calculations to run (function calling) and grades the lessons.
 - ElevenLabs Agents run the voice conversation with our own server as the brain, so the voice goes through the same check. Spoken questions in the chat are written down by ElevenLabs too.
 - Claude only draws: each screen is built from what Gemini's code produced.
-- 248 automated tests.
+- Over 1,000 automated tests.
 
 Open it on your phone and ask anything.

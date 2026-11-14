@@ -84,7 +84,7 @@ export function ReplayStrip({ story, onOpen, loading = false }: { story: ReplayS
   return (
     <button type="button" onClick={onOpen} className="group mt-5 block w-full rounded-card border border-line bg-surface px-4 py-3.5 text-left transition-colors duration-150 hover:border-line-strong focus-visible:border-brand">
       <span className="flex min-h-6 items-center gap-2">
-        <span className="min-w-0 flex-1 truncate text-[14px] font-semibold leading-5 text-ink">{story.short}</span>
+        <span className="min-w-0 flex-1 text-pretty text-[14px] font-semibold leading-5 text-ink">{story.short}</span>
         <ChevronRight size={17} strokeWidth={2} className="shrink-0 text-ink-3 transition-transform duration-150 group-hover:translate-x-0.5" aria-hidden />
       </span>
       <div className="mt-3"><ReplayCells story={story} /></div>

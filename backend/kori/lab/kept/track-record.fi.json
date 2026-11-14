@@ -1,0 +1,92 @@
+{
+ "question": "Onko tämä luku pitänyt ennenkin?",
+ "lang": "fi",
+ "kept": "2026-11-14",
+ "by": {
+  "analyst": "kept view",
+  "designer": "kept view"
+ },
+ "title": "Luvun historia",
+ "chips": [],
+ "cells": [
+  {
+   "title": "Turvallinen käyttövara menneillä palkkapäivillä",
+   "by": "kept view",
+   "code": "PENSION = (me.get(\"age\") or 0) >= 68\nPAY = \"eläkepäivä\" if PENSION else \"palkkapäivä\"\nPAY_TO = \"eläkepäivään\" if PENSION else \"palkkapäivään\"\nCYCLE = \"eläkejakso\" if PENSION else \"palkkajakso\"\ndef day(s):\n    d = datetime.date.fromisoformat(str(s)[:10])\n    return f\"{d.day}.{d.month}.\"\nemit(\"pay_word\", PAY, \"text\", \"Päivä, jona rahat tulevat\")\nemit(\"pay_to\", PAY_TO, \"text\", \"Päivä, jona rahat tulevat\")\n\nr = kori.replay()\nmonths = [{\"label\": c[\"label\"], \"state\": c[\"state\"], \"safe\": c.get(\"safe\")} for c in r.get(\"cells\") or []]\nmiss = r.get(\"miss\") or {}\nif r.get(\"checked\") and months:\n    emit(\"checked\", r[\"checked\"], \"count\", \"Testatut menneet palkkapäivät\")\n    emit(\"held\", r[\"held\"], \"count\", \"Kerrat, joina luku piti\")\n    emit(\"missed\", r[\"missed\"], \"count\", \"Kerrat, joina se ei pitänyt\")\n    emit(\"balance_as_budget_held\", r[\"balance_as_budget_held\"], \"count\", \"Kerrat, joina saldo budjettina olisi pitänyt\")\n    emit(\"summary\", r[\"summary\"], \"text\", \"Lyhyesti\")\n    emit(\"method\", r[\"method\"], \"text\", \"Miten se testattiin\")\n    emit(\"miss_title\", miss.get(\"window\") or r[\"summary\"], \"text\", \"Milloin se ei pitänyt\")\n    emit(\"miss_text\", miss.get(\"text\") or r[\"summary\"], \"text\", \"Mitä tapahtui\")\n    emit(\"miss_lesson\", \" \".join(x for x in (miss.get(\"lesson\"), miss.get(\"since\")) if x) or r[\"summary\"], \"text\", \"Mikä on muuttunut\")\n    table(\"months\", months, \"Kuukausi kerrallaan\")\n    short = r[\"short\"].replace(f\" {r['held']} kertaa\", f\" **{r['held']} kertaa**\", 1)\n    if \"**\" not in short:\n        short = f\"**{short}**\"\n    say(f\"{short}. {r['versus']}\")\n"
+  }
+ ],
+ "html": "<style>.kw .k-n{white-space:normal;color:inherit;font-weight:inherit}</style>\n<style>.tr-g{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}.tr-c{padding:7px 2px;white-space:nowrap;border-radius:8px;font-size:12px;line-height:16px;text-align:center;background:var(--color-sunk);color:var(--color-ink-3)}.tr-c.held{background:var(--color-brand-soft);color:var(--color-brand-strong)}.tr-c.missed{background:var(--color-neg-soft);color:var(--color-neg)}.tr-l{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--color-ink-3)}.tr-l i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}</style>\n<p class=\"k-lede kw\">{{summary|raw}}</p>\n<div class=\"k-stats\"><div class=\"k-fig pos\"><span>{{held|int}}</span><small>kertaa luku piti</small></div><div class=\"k-fig\"><span>{{missed|int}}</span><small>kertaa se ei pitänyt</small></div><div class=\"k-fig\"><span>{{balance_as_budget_held|int}}</span><small>saldo budjettina piti</small></div></div>\n<div class=\"k-stack\"><div class=\"tr-g\"><k-each table=\"months\"><template><div class=\"tr-c {state}\">{label}</div></template></k-each></div>\n<div class=\"tr-l\"><span><i style=\"background:var(--color-brand-soft)\"></i>piti</span><span><i style=\"background:var(--color-neg-soft)\"></i>ei pitänyt</span><span><i style=\"background:var(--color-sunk)\"></i>ei turvallista rahaa, ei testattu</span></div></div>\n<div class=\"k-card k-stack\" id=\"mc\"><p class=\"k-h kw\">Kun se ei pitänyt: {{miss_title|raw}}</p><p class=\"kw\">{{miss_text|raw}}</p><p class=\"k-note kw\">{{miss_lesson|raw}}</p></div>\n<p class=\"k-note kw\">{{method|raw}}</p>\n<div class=\"k-chips\"><button class=\"k-chip\" data-ask=\"Miksi saldoni ei ole budjettini?\">Miksi ei saldo</button><button class=\"k-chip\" data-ask=\"Miten edellinen palkkajakso meni?\">Edellinen palkkajakso</button></div>\n<script>if(!K.fact(\"missed\"))K.$(\"#mc\").hidden=true</script>",
+ "wordings": [
+  "Onko tämä luku pitänyt ennenkin?",
+  "Voinko luottaa turvalliseen käyttövaraan?",
+  "voiko tähän lukuun luottaa",
+  "pitääkö tää luku paikkansa",
+  "onko luku pitänyt aiemmin",
+  "voinko luottaa suhun",
+  "pitikö tää luku ennenkin",
+  "onko turvallinen käyttövara luotettava",
+  "osuuko tää arvio",
+  "onko tätä testattu"
+ ],
+ "match": [
+  [
+   "luot",
+   "pitänyt",
+   "pitäny",
+   "pitik",
+   "pitää paikkansa",
+   "paikkansa",
+   "osunut",
+   "osuuko",
+   "osui",
+   "testat",
+   "toiminut",
+   "toimiko"
+  ],
+  [
+   "luku",
+   "luvu",
+   "luvun",
+   "turvall",
+   "käyttövar",
+   "tähän",
+   "tämä",
+   "tätä",
+   "tää",
+   "sinuun",
+   "suhun",
+   "siihen",
+   "kori",
+   "arvio"
+  ]
+ ],
+ "unless": [
+  "bitcoin",
+  "krypto",
+  "osake",
+  "rahasto",
+  "sijoit",
+  "pankki",
+  "1",
+  "2",
+  "3",
+  "4",
+  "5",
+  "6",
+  "7",
+  "8",
+  "9",
+  "€1",
+  "€2",
+  "€3",
+  "€4",
+  "€5",
+  "€6",
+  "€7",
+  "€8",
+  "€9"
+ ],
+ "also": [
+  "Voinko luottaa turvalliseen käyttövaraan?"
+ ]
+}

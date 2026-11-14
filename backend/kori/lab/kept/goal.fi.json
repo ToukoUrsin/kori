@@ -1,0 +1,136 @@
+{
+ "question": "Haluan säästää 3000 € matkaan. Kauanko siihen menee?",
+ "lang": "fi",
+ "kept": "2026-11-14",
+ "by": {
+  "analyst": "kept view",
+  "designer": "kept view"
+ },
+ "title": "Kauanko tavoite vie",
+ "chips": [],
+ "cells": [
+  {
+   "title": "Säästötavoite tavallisella tahdillasi",
+   "by": "kept view",
+   "code": "AMOUNT, KEY = float(§AMOUNT§), \"§NAME§\"\nNAMES = {\"trip\": (\"matka\", \"matkaan\"), \"car\": (\"auto\", \"autoon\"), \"laptop\": (\"läppäri\", \"läppäriin\"), \"phone\": (\"puhelin\", \"puhelimeen\"), \"wedding\": (\"häät\", \"häihin\"), \"home\": (\"asunto\", \"asuntoon\"), \"bike\": (\"pyörä\", \"pyörään\"), \"sofa\": (\"sohva\", \"sohvaan\"), \"christmas\": (\"joulu\", \"jouluun\"), \"buffer\": (\"puskuri\", \"puskuriin\"), \"goal\": (\"tavoite\", \"tavoitteeseen\")}\nMON = [\"tammikuu\", \"helmikuu\", \"maaliskuu\", \"huhtikuu\", \"toukokuu\", \"kesäkuu\", \"heinäkuu\", \"elokuu\", \"syyskuu\", \"lokakuu\", \"marraskuu\", \"joulukuu\"]\ngname, gfor = NAMES.get(KEY, NAMES[\"goal\"])\ng = kori.goal(AMOUNT, gname)\nroom, months = g.get(\"usual_month_leaves\") or 0.0, g.get(\"months_at_usual_room\")\nemit(\"amount\", AMOUNT, \"eur\", \"Tavoite\")\nemit(\"room\", round(room, 2), \"eur_per_month\", \"Tavallisesta kuukaudesta jää\")\nok = g.get(\"verdict\") == \"no_date\" and months and 0 < months <= 120 and room > 0\nif ok:\n    reached = str(g[\"reached_at_usual_room\"])\n    emit(\"months\", months, \"months\", \"Kuukausia sillä tahdilla\")\n    reached_in = \" \".join([reached.split(\" \")[0] + \"ssa\"] + reached.split(\" \")[1:]) if reached.split(\" \")[0].endswith(\"kuu\") else reached\n    emit(\"reached\", reached, \"text\", \"Koossa noin\")\n    emit(\"reached_in\", reached_in, \"text\", \"Koossa noin\")\n    emit(\"goal_for\", gfor, \"text\", \"Mihin rahat ovat\")\n    table(\"path\", [{\"month\": k, \"saved\": round(min(AMOUNT, room * k), 2)} for k in range(0, months + 1)], \"Säästetty kuukausi kuukaudelta sillä tahdilla\")\n    say(f\"Tavallisella tahdillasi siihen menee **{months} kuukautta**: tavallisesta kuukaudesta jää {eur(room)} kaiken jälkeen, joten {eur(AMOUNT)} {gfor} on koossa noin {reached_in}.\")\n"
+  }
+ ],
+ "html": "<p class=\"k-lede\">{{amount|eur0}} {{goal_for|raw}} on koossa noin <b>{{reached_in|raw}}</b>.</p>\n<div class=\"k-stats\"><div class=\"k-fig\"><span>{{room|eur0}}</span><small>jää tavallisesta kuukaudesta</small></div><div class=\"k-fig pos\"><span>{{months|int}}</span><small>kuukautta sillä tahdilla</small></div></div>\n<div class=\"k-stack\"><p class=\"k-h\">Säästetty kuukausi kuukaudelta</p><k-chart x=\"month\" h=\"180\" yfmt=\"eur0\" zero xlabels=\"Nyt|{{reached|raw}}\"><k-line table=\"path\" y=\"saved\" label=\"Säästetty\" end fill></k-line></k-chart></div>\n<p class=\"k-note\">Jos laitat sivuun sen, mitä tavallisesta kuukaudesta jää. Kalliimpi kuukausi siirtää päivää.</p>\n<div class=\"k-chips\"><button class=\"k-chip\" data-ask=\"Paljonko voin turvallisesti säästää kuussa?\">Paljonko on turvallista</button><button class=\"k-chip\" data-ask=\"Mitä jos vähennän ulkona syömistä 20 %?\">Vähemmän ulkona syömistä</button></div>",
+ "match": [
+  [
+   "säästä",
+   "säästö",
+   "kerä",
+   "kasa",
+   "kokoon",
+   "koossa",
+   "sivuun",
+   "tarvitsen",
+   "haluan",
+   "tarviin"
+  ],
+  [
+   "kauanko",
+   "kuinka kauan",
+   "kauan",
+   "milloin",
+   "montako kuukautta",
+   "monessako",
+   "kestää",
+   "aikaa",
+   "mennee",
+   "menee"
+  ],
+  [
+   "0",
+   "1",
+   "2",
+   "3",
+   "4",
+   "5",
+   "6",
+   "7",
+   "8",
+   "9",
+   "€0",
+   "€1",
+   "€2",
+   "€3",
+   "€4",
+   "€5",
+   "€6",
+   "€7",
+   "€8",
+   "€9"
+  ]
+ ],
+ "unless": [
+  "kuussa",
+  "kuukaudessa",
+  "kuukausittain",
+  "viikossa",
+  "kymmenen vuotta",
+  "mitä jos",
+  "leikka",
+  "vähen",
+  "varaa",
+  "turvallista käyttää",
+  "tällä viikolla",
+  "saldo",
+  "tilillä",
+  "palkkajakso",
+  "lasku",
+  "tilaus",
+  "toistuv",
+  "hajos",
+  "rikki",
+  "palkkapäiv",
+  "sää on",
+  "sääenn",
+  "säätila",
+  "millainen sää",
+  "bitcoin",
+  "krypto",
+  "osake",
+  "sijoit",
+  "rahasto",
+  "laina",
+  "korko"
+ ],
+ "params": [
+  {
+   "token": "§AMOUNT§",
+   "find": "(?<!\\d)(?<!\\d )(\\d{2,6})(?!\\d)(?! \\d{3})",
+   "min": 50,
+   "max": 100000
+  },
+  {
+   "token": "§NAME§",
+   "choices": {
+    "matka": "trip",
+    "matkaa": "trip",
+    "matkaan": "trip",
+    "reissu": "trip",
+    "loma": "trip",
+    "auto": "car",
+    "läppär": "laptop",
+    "tietokone": "laptop",
+    "kone": "laptop",
+    "puhelin": "phone",
+    "puhelim": "phone",
+    "häi": "wedding",
+    "häät": "wedding",
+    "asunto": "home",
+    "asuntoon": "home",
+    "käsiraha": "home",
+    "pyörä": "bike",
+    "sohva": "sofa",
+    "joulu": "christmas",
+    "puskuri": "buffer",
+    "hätävara": "buffer",
+    "pahan päivän": "buffer"
+   },
+   "default": "goal"
+  }
+ ]
+}

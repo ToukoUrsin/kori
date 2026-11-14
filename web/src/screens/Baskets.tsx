@@ -1,9 +1,9 @@
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { useMemo, useState } from "react";
-import { BasketBar, vsUsualShort } from "../components/cards/bodies";
+import { BasketBar, basketShort } from "../components/cards/bodies";
 import { Cell, Cells, TxList } from "../components/cards/parts";
 import { HistoryStrip } from "../components/charts/Charts";
-import { Button, CatIcon, Dot, ErrorInline, IconButton, Money, SectionHead, Segmented, Skel, cx, useLast } from "../components/ui/bits";
+import { Button, CatIcon, Dot, ErrorInline, IconButton, LinkedNote, LinkedTag, Money, SectionHead, Segmented, Skel, cx, useLast } from "../components/ui/bits";
 import { Sheet } from "../components/ui/Sheet";
 import { api } from "../lib/api";
 import { humanize, money, monthName } from "../lib/format";
@@ -119,7 +119,7 @@ function CategorySheet({ d, row: current, onClose }: { d: BasketsResponse; row: 
           <div className="scroll-y min-h-0 px-5 pb-[max(18px,var(--safe-b))] pt-4">
             <p className="num text-[34px] font-semibold leading-10 tracking-[-0.03em] text-ink">{money(row.amount, lang, { cents: true })}</p>
             <p className="num mt-0.5 text-[13px] leading-[18px] text-ink-2">
-              {row.count === 1 ? t("baskets.purchase1") : t("baskets.purchases", { n: row.count })} · {t("common.average", { v: money(row.usual, lang) })}
+              {row.count === 1 ? t("baskets.purchase1") : t("baskets.purchases", { n: row.count })}{Math.round(row.usual) > 0 && ` · ${t("baskets.usualMonth", { v: money(row.usual, lang) })}`}
             </p>
 
             <section className="mt-5">
@@ -255,6 +255,7 @@ export function Baskets() {
   }
 
   const c = d.current;
+  const linked = c.linked_view || d.linked_view;
   return (
     <>
       <ScreenHeader title={t("baskets.title")} />
@@ -276,7 +277,9 @@ export function Baskets() {
           <div className="mt-3.5">
             <BasketBar baskets={c.baskets} />
           </div>
+          {linked && <LinkedTag label={linked.label} className="mt-2.5" />}
         </section>
+        {linked && <LinkedNote note={linked.note} className="mt-2 px-1" />}
 
         <div className={cx("mt-3 space-y-3 transition-opacity duration-150", q.loading && month !== null && c.month !== month && "opacity-60")}>
           {KEYS.map((key) => {
@@ -291,9 +294,9 @@ export function Baskets() {
                     <h2 className="min-w-0 flex-1 text-[16px] font-semibold leading-[22px] tracking-[-0.01em] text-ink">{label}</h2>
                     <Money value={b?.amount ?? 0} className="text-[16px] font-semibold leading-[22px] text-ink" />
                   </div>
-                  <p className="num mt-0.5 pl-[18px] text-[13px] leading-[18px] text-ink-2">
-                    {t("common.usual", { v: money(b?.usual ?? d.usual[key], lang) })}
-                    {b?.vs_usual_pct != null && ` · ${vsUsualShort(b.vs_usual_pct, t, lang)}`}
+                  {/* the month and the sum are in the header: one line with the usual, and the month so far against the same days, never a whole month */}
+                  <p className="num mt-0.5 text-pretty pl-[18px] text-[13px] leading-[18px] text-ink-2">
+                    {b ? basketShort(b, c.is_current, t, lang) : t("common.usual", { v: money(d.usual[key], lang) })}
                   </p>
                   <p className="mt-1.5 pl-[18px] text-[12px] leading-[17px] text-ink-3">{b?.desc || d.labels[key].desc}</p>
                 </div>
@@ -309,7 +312,7 @@ export function Baskets() {
                         <span className="min-w-0 flex-1">
                           <span className="block truncate text-[14px] font-medium leading-5 text-ink">{r.label}</span>
                           <span className="num block truncate text-[12px] leading-4 text-ink-3">
-                            {r.count === 1 ? t("baskets.purchase1") : t("baskets.purchases", { n: r.count })} · {t("common.average", { v: money(r.usual, lang) })}
+                            {r.count === 1 ? t("baskets.purchase1") : t("baskets.purchases", { n: r.count })}{Math.round(r.usual) > 0 && ` · ${t("baskets.usualMonth", { v: money(r.usual, lang) })}`}
                           </span>
                         </span>
                         <span className={cx("num shrink-0 text-[14px] font-semibold leading-5", r.amount > 0 ? "text-ink" : "text-ink-3")}>{money(r.amount, lang)}</span>

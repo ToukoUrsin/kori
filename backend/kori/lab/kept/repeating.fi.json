@@ -1,0 +1,81 @@
+{
+ "question": "Mitä maksan joka kuukausi?",
+ "lang": "fi",
+ "kept": "2026-11-14",
+ "by": {
+  "analyst": "kept view",
+  "designer": "kept view"
+ },
+ "title": "Mikä toistuu joka kuukausi",
+ "chips": [],
+ "cells": [
+  {
+   "title": "Laskut ja tilaukset, yksi määritelmä",
+   "by": "kept view",
+   "code": "PENSION = (me.get(\"age\") or 0) >= 68\nPAY = \"eläkepäivä\" if PENSION else \"palkkapäivä\"\nPAY_TO = \"eläkepäivään\" if PENSION else \"palkkapäivään\"\nCYCLE = \"eläkejakso\" if PENSION else \"palkkajakso\"\ndef day(s):\n    d = datetime.date.fromisoformat(str(s)[:10])\n    return f\"{d.day}.{d.month}.\"\nemit(\"pay_word\", PAY, \"text\", \"Päivä, jona rahat tulevat\")\nemit(\"pay_to\", PAY_TO, \"text\", \"Päivä, jona rahat tulevat\")\n\np = kori.repeating()\nrows = [{\"what\": b[\"what\"], \"per_month\": b[\"per_month\"], \"kind\": \"lasku, tavallisen kuukautesi mukaan\"} for b in p.get(\"bills\") or []]\nrows += [{\"what\": x[\"what\"], \"per_month\": x[\"per_month\"], \"kind\": \"näyttää tilaukselta\"} for x in p.get(\"subscriptions\") or []]\nif rows and abs(sum(r[\"per_month\"] for r in rows) - p[\"total_per_month\"]) < 0.005:\n    n = p[\"subscription_count\"]\n    emit(\"total_per_month\", p[\"total_per_month\"], \"eur_per_month\", \"Toistuu kuussa\")\n    emit(\"subscription_count\", n, \"count\", \"Löytyneet tilaukset\")\n    emit(\"definition\", p[\"definition\"], \"text\", \"Mikä lasketaan toistuvaksi\")\n    emit(\"note\", p[\"note\"], \"text\", \"Mitä pankki näkee\")\n    table(\"repeating\", rows, \"Toistuvat maksut, viimeiset 12 kuukautta\")\n    say(f\"Tällä tilillä ei näy tilauksia viimeisen 12 kuukauden ajalta. Toistuvia maksuja ovat laskusi: **{eur(p['total_per_month'], True)}** kuussa.\" if n == 0 else f\"Viimeisen 12 kuukauden aikana laskusi ja {n} {'tilaus' if n == 1 else 'tilausta'} toistuvat joka kuukausi: yhteensä **{eur(p['total_per_month'], True)}** kuussa.\")\n"
+  }
+ ],
+ "html": "<style>.kw .k-n{white-space:normal;color:inherit;font-weight:inherit}</style>\n<p class=\"k-lede\">Nämä lähtevät tililtäsi joka kuukausi, tavallisen kuukauden summina.</p>\n<div class=\"k-rows\"><k-each table=\"repeating\" sort=\"-per_month\"><template><div class=\"k-row\"><div>{what}<small>{kind}</small></div><b>{per_month|eur}</b></div></template></k-each>\n<div class=\"k-row total\"><div>Yhteensä kuussa</div><b>{{total_per_month|eur}}</b></div></div>\n<p class=\"k-note kw\">{{note|raw}}</p>\n<p class=\"k-legal kw\">{{definition|raw}}</p>\n<div class=\"k-chips\"><button class=\"k-chip\" data-ask=\"Mitä laskuja on tulossa ennen palkkapäivää?\">Laskut ennen palkkapäivää</button><button class=\"k-chip\" data-ask=\"Miten edellinen palkkajakso meni?\">Edellinen palkkajakso</button></div>",
+ "wordings": [
+  "Mitä maksan joka kuukausi?",
+  "Mitä tilauksia minulla on?",
+  "tilaukset?",
+  "onko mulla tilauksia",
+  "mitä toistuvia maksuja mulla on",
+  "mitä mä maksan joka kuu",
+  "kuukausimaksut",
+  "mitkä maksut toistuu",
+  "kiinteät menot?",
+  "mitä maksan kuukausittain",
+  "listaa mun tilaukset"
+ ],
+ "match": [
+  [
+   "tilau",
+   "toistu",
+   "kuukausimaks",
+   "kuukausittaiset maksut",
+   "kuukausittaiset laskut",
+   "maksan joka kuu",
+   "maksan kuukausittain",
+   "mitä maksan joka",
+   "säännölliset maksut",
+   "säännöllisiä maksuja",
+   "kiinteät menot",
+   "kiinteät kulut",
+   "suoraveloit",
+   "jatkuvat maksut",
+   "jatkuvia maksuja",
+   "laskut joka kuu",
+   "joka kuukausi maksan",
+   "joka kuu maksan"
+  ]
+ ],
+ "unless": [
+  "säästä",
+  "sijoit",
+  "ennen palkkapäivää",
+  "viikolla",
+  "1",
+  "2",
+  "3",
+  "4",
+  "5",
+  "6",
+  "7",
+  "8",
+  "9",
+  "€1",
+  "€2",
+  "€3",
+  "€4",
+  "€5",
+  "€6",
+  "€7",
+  "€8",
+  "€9"
+ ],
+ "also": [
+  "Mitä tilauksia minulla on?"
+ ]
+}

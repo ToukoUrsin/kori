@@ -16,18 +16,31 @@ from pydantic import BaseModel
 from . import config, state as S, voice
 from .ai import agent, cards as C, tools as T
 from .data import get_customer
-from .engine import insights, lessons, persona, trackrecord
+from .engine import answers, insights, lessons, persona, trackrecord
 from .engine.core import Money
 from .engine import loop
 from .engine.query import month_label, query, tx_row
 from .engine.whatif import what_if
 from .taxonomy import BASKETS, CATEGORIES, cat_label
-from .wording import adapt as W
+from .wording import adapt as _adapt
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(message)s")
 log = logging.getLogger("kori.api")
 app = FastAPI(title="Kori", docs_url="/api/docs", openapi_url="/api/openapi.json")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+
+
+def W(m: Money, obj):
+    """Words adapted to the reader. With the other bank linked, every answer also carries `linked_view`
+    (label, short, note), so each screen can say that its figures include a simulated account."""
+    if isinstance(obj, dict) and m.linked_view and not obj.get("linked_view"):
+        obj = {**obj, "linked_view": m.linked_view}
+    return _adapt(m, obj)
+
+
+def _linked(m: Money, obj: dict) -> dict:
+    """The same `linked_view` for an answer that is not reworded."""
+    return {**obj, "linked_view": m.linked_view} if m.linked_view and not obj.get("linked_view") else obj
 
 
 def _lang(lang: str | None) -> str:
@@ -111,6 +124,8 @@ def _goal(m: Money) -> dict | None:
     if not g:
         return None
     room = max(0.0, m.usual["left_over"])
+    if not isinstance(g.get("amount"), (int, float)) or not 0 < g["amount"] <= answers.MAX_GOAL:
+        return None          # a goal saved before amounts were checked
     return {"name": g.get("name"), "amount": g.get("amount"), "monthly_room": room,
             "months": round(g["amount"] / room, 1) if room > 0 else None}
 
@@ -230,11 +245,11 @@ def plan(customer: str, lang: str = "en", x_kori_device: str | None = Header(Non
     cats = [{"key": c, "label": cat_label(c, m.prefs.lang), "icon": v["icon"], "basket": m._basket_of(c),
              "usual": m.usual["categories"][c]} for c, v in CATEGORIES.items() if m.usual["categories"][c] > 0]
     cats.sort(key=lambda x: -x["usual"])
-    return {"usual": {"income": m.usual["income"], **{b: m.usual[b] for b in BASKETS}, "saving": m.usual["invested"],
+    return _linked(m, {"usual": {"income": m.usual["income"], **{b: m.usual[b] for b in BASKETS}, "saving": m.usual["invested"],
                       "left_over": m.usual["left_over"]},
             "categories": cats, "prefs": st["prefs"], "cushion": m.cushion, "savings_plan": m.savings_plan,
             "goal": _goal(m), "safe": {k: m.safe[k] for k in ("amount", "per_day", "days_to_payday", "status", "usual_per_day")},
-            "save": m.safe_to_save, "balance": m.balance}
+            "save": m.safe_to_save, "balance": m.balance})
 
 
 class PlanReq(BaseModel):
@@ -334,10 +349,10 @@ def _consent(m: Money, linked: bool) -> dict:
     return {"scopes": [
         {"key": "transactions", "granted": True, "required": True, "label": L("Transactions", "Tapahtumat"), "detail": L("Your transactions on this account.", "Tämän tilin tapahtumat.")},
         {"key": "other_bank", "granted": bool(linked), "simulated": True, "label": L("Another bank account", "Toisen pankin tili"),
-         "detail": L("A simulated PSD2 link adds salary moved to another bank." if m.sweep_typical else "This demo customer has no salary transfer to add.",
-                      "Simuloitu PSD2-linkki lisää toiseen pankkiin siirtyvän palkan." if m.sweep_typical else "Tällä demoasiakkaalla ei ole lisättävää palkkasiirtoa.")}
+         "detail": L("A simulated PSD2 link adds the salary that moves to another bank, and what is paid from that account." if m.sweep_typical else "This demo customer has no salary transfer to add.",
+                      "Simuloitu PSD2-linkki lisää toiseen pankkiin siirtyvän palkan ja sieltä maksettavat menot." if m.sweep_typical else "Tällä demoasiakkaalla ei ole lisättävää palkkasiirtoa.")}
     ], "partial_view": bool(m.partial_view),
-    "note": L("The other-bank link is simulated in this demo." if linked else ("I only see part of your money until you link the other account." if m.partial_view else "I can already see this account's transactions."),
+    "note": (m.linked_view["note"] if m.linked_view else None) or L("The other-bank link is simulated in this demo." if linked else ("I only see part of your money until you link the other account." if m.partial_view else "I can already see this account's transactions."),
                "Toisen pankin linkki on tässä demossa simuloitu." if linked else ("Näen vain osan rahoistasi, kunnes liität toisen tilin." if m.partial_view else "Näen jo tämän tilin tapahtumat."))}
 
 
@@ -366,7 +381,8 @@ def plan_put(req: PlanReq, x_kori_device: str | None = Header(None)):
     if req.savings_goal_monthly is not None:
         p["savings_goal_monthly"] = max(0.0, req.savings_goal_monthly)
     if req.goal is not None:
-        p["goal"] = {"name": str(req.goal.get("name") or "Goal")[:40], "amount": float(req.goal.get("amount") or 0)}
+        # refused with a plain sentence (HTTP 400, in `detail`) when it is not an amount or is over a million
+        p["goal"] = {"name": str(req.goal.get("name") or "Goal")[:40], "amount": answers.goal_amount(req.goal.get("amount"), m.prefs.lang)}
     if req.clear_goal:
         p["goal"] = None
     before_usual = dict(m.usual.get("categories", {}))
@@ -604,6 +620,8 @@ async def voice_session(customer: str, lang: str = "en", session: str | None = N
     m, st, device = _money(customer, lang, x_kori_device)
     if not (config.ELEVENLABS_API_KEY and config.ELEVENLABS_AGENT_ID):
         raise HTTPException(503, "voice agent is not configured")
+    if not await voice.has_credits():   # say it at once: a line that connects and drops, then a recorder that fails, reads as broken
+        raise HTTPException(503, "no_speech")
     sess = agent.session(session or uuid.uuid4().hex, device, customer, m.prefs.lang)
     try:
         tok = await voice.conversation_token(config.ELEVENLABS_AGENT_ID, transport)

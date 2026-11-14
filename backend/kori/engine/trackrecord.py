@@ -257,7 +257,7 @@ def story(m: Money, months: int = MONTHS_BACK) -> dict:
         short = ""
     else:
         headline = L(f"This number would have held {held} of the last {n} times.", f"Tämä luku olisi pitänyt {held} kerralla viimeisistä {n}:stä.")
-        short = L(f"Held {held} of {n} past paydays", f"Piti {held}/{n} palkkapäivään asti")
+        short = L(f"Tested on {n} past paydays: the number held {held} times", f"Testattu {n} palkkapäivällä: luku piti {held} kertaa")
     if n and not misses:
         summary = L("Every time, spending exactly the safe number would have kept the account above zero until pay came.",
                     "Joka kerta juuri turvallisen luvun käyttäminen olisi pitänyt tilin plussalla palkkapäivään asti.")

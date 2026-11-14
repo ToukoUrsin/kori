@@ -22,6 +22,7 @@ import "./host.css";
 
 type HostTab = "home" | "coach";
 type Sheet = "consent" | "permissions" | "link" | null;
+const AI_NEW_KEY = "kori.host.aiNew";
 
 const DEFAULT_CUSTOMER = "CUST01885";
 
@@ -378,6 +379,38 @@ function ScopeRow({ title, note, state, on, onToggle }: { title: string; note: s
   );
 }
 
+/** The answers the bank has reviewed: what Kori still answers with the AI switch off. */
+function ApprovedList({ lang }: { lang: Lang }) {
+  const [items, setItems] = useState<{ question: string; file: string }[]>([]);
+  useEffect(() => {
+    let alive = true;
+    fetch(`/api/lab/approved?lang=${lang}`)
+      .then((r) => (r.ok ? r.json() : { items: [] }))
+      .then((d: { items?: { question: string; file: string }[] }) => alive && setItems(d.items || []))
+      .catch(() => undefined);
+    return () => {
+      alive = false;
+    };
+  }, [lang]);
+  if (!items.length) return null;
+  return (
+    <details className="host-approved">
+      <summary>
+        <span>
+          <strong>{text(lang, `${items.length} answers the bank has checked`, `${items.length} pankin tarkastamaa vastausta`)}</strong>
+          <small>{text(lang, "Asked in your own words. Each one is worked out again on your own payments.", "Kysy omin sanoin. Jokainen lasketaan uudelleen omista maksuistasi.")}</small>
+        </span>
+        <ChevronRight size={18} className="host-row-chevron" aria-hidden />
+      </summary>
+      <ul>
+        {items.map((item) => (
+          <li key={item.file}>{item.question}</li>
+        ))}
+      </ul>
+    </details>
+  );
+}
+
 /** What Kori may read, and the way to take it back. */
 function PermissionsSheet({ lang, consent, canLink, aiNew, onAiNew, onLink, onTryLink, onWithdraw, onClose }: { lang: Lang; consent: HostConsent; canLink: boolean; aiNew: boolean; onAiNew: () => void; onLink: () => void; onTryLink: () => void; onWithdraw: () => void; onClose: () => void }) {
   return (
@@ -409,6 +442,7 @@ function PermissionsSheet({ lang, consent, canLink, aiNew, onAiNew, onLink, onTr
           onToggle={onAiNew}
         />
       </div>
+      <ApprovedList lang={lang} />
       {canLink ? (
         !consent.other_bank && (
           <button type="button" className="host-link-row" onClick={onLink}>
@@ -430,9 +464,12 @@ function PermissionsSheet({ lang, consent, canLink, aiNew, onAiNew, onLink, onTr
           <ChevronRight size={18} className="host-row-chevron" aria-hidden />
         </button>
       )}
-      <button type="button" className="host-withdraw" onClick={onWithdraw} disabled={!consent.transactions}>
-        {text(lang, "Withdraw Kori access", "Poista Korin käyttöoikeus")}
-      </button>
+      {/* only access that was given can be withdrawn */}
+      {consent.transactions && (
+        <button type="button" className="host-withdraw" onClick={onWithdraw}>
+          {text(lang, "Withdraw Kori access", "Poista Korin käyttöoikeus")}
+        </button>
+      )}
     </SheetFrame>
   );
 }
@@ -483,7 +520,24 @@ export function HostDemo() {
 
   const persona = useMemo(() => personas.find((item) => item.id === customer) || home?.persona, [customer, home?.persona, personas]);
   /** the bank decides whether Kori may write new answers with a model, or only give the ones whose code it has reviewed */
-  const [aiNew, setAiNew] = useState(true);
+  // a bank-side policy: it outlives a reload (and the page still works where storage is blocked)
+  const [aiNew, setAiNewState] = useState<boolean>(() => {
+    try {
+      return window.localStorage.getItem(AI_NEW_KEY) !== "off";
+    } catch {
+      return true;
+    }
+  });
+  const setAiNew = (next: (on: boolean) => boolean) =>
+    setAiNewState((on) => {
+      const value = next(on);
+      try {
+        window.localStorage.setItem(AI_NEW_KEY, value ? "on" : "off");
+      } catch {
+        /* storage blocked: the switch still works for this visit */
+      }
+      return value;
+    });
   const frameSrc = `/?embed=1&customer=${encodeURIComponent(customer)}&lang=${lang}${aiNew ? "" : "&approved=1"}`;
 
   const log = (direction: LogEntry["direction"], message: HostToKori | Record<string, unknown>) => {

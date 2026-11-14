@@ -1,0 +1,135 @@
+{
+ "question": "What if I reduce my dining out by 20%?",
+ "lang": "en",
+ "kept": "2026-11-14",
+ "by": {
+  "analyst": "kept view",
+  "designer": "kept view"
+ },
+ "title": "Spending less",
+ "chips": [],
+ "cells": [
+  {
+   "title": "What a cut does to a usual month",
+   "by": "kept view",
+   "code": "CAT, PCT = \"§CATEGORY§\", float(§PCT§)\nSAY = {\"Restaurants\": (\"eating out\", \"Eating out\", \"Eating out\"), \"Groceries\": (\"groceries\", \"Groceries\", \"Groceries\"), \"Transportation\": (\"getting around\", \"Getting around\", \"Getting around\"), \"Entertainment\": (\"fun\", \"Fun\", \"Fun\"), \"Lifestyle\": (\"shopping\", \"Shopping\", \"Shopping\"), \"Travel\": (\"trips\", \"Trips\", \"Trips\")}\nw = kori.what_if([{\"type\": \"cut\", \"target\": CAT, \"pct\": PCT}])\nc = w[\"changes\"][0]\nnow, after = (w.get(\"left_over\") or {}).get(\"now\"), (w.get(\"left_over\") or {}).get(\"after\")\nemit(\"cut_pct\", PCT, \"pct\", \"The cut\")\nemit(\"from_monthly\", round(c[\"from_monthly\"], 2), \"eur_per_month\", \"A usual month now\")\nemit(\"to_monthly\", round(c[\"to_monthly\"], 2), \"eur_per_month\", \"A usual month after the cut\")\nemit(\"monthly_effect\", round(w[\"monthly_effect\"], 2), \"eur_per_month\", \"More left a month\")\nemit(\"yearly_effect\", round(w[\"yearly_effect\"], 2), \"eur\", \"More left over a year\")\nemit(\"what\", SAY[CAT][2], \"text\", \"What is cut\")\nif now is not None and after is not None:\n    emit(\"left_after_abs\", round(abs(after), 2), \"eur_per_month\", \"A usual month then leaves\")\n    emit(\"left_after_label\", \"left a month\" if after >= 0 else \"short a month\", \"text\", \"What the figure is\")\n    emit(\"left_now_abs\", round(abs(now), 2), \"eur_per_month\", \"Today\")\n    emit(\"left_now_label\", \"Today a usual month leaves\" if now >= 0 else \"Today a usual month is short by\", \"text\", \"Today\")\nif w.get(\"series\"):\n    table(\"series\", w[\"series\"], \"Left over, added up month by month\")\n\nif now is not None and after is not None and w.get(\"series\") and not w.get(\"partial_view\") and c[\"from_monthly\"] > 0 and w[\"monthly_effect\"] > 0:\n    say(f\"Cutting {SAY[CAT][0]} by {num(PCT, 0)}% leaves **{eur(w['monthly_effect'])} more a month**, {eur(w['yearly_effect'])} over a year.\" + (f\" A usual month would then leave {eur(after)}.\" if after >= 0 else f\" A usual month would still be {eur(-after)} short.\"))\n"
+  }
+ ],
+ "html": "<p class=\"k-lede\">{{what|raw}}: {{from_monthly|eur0}} becomes <b>{{to_monthly|eur0}}</b> in a usual month.</p>\n<div class=\"k-stats\"><div class=\"k-fig pos\"><span>{{monthly_effect|eur0}}</span><small>more a month</small></div><div class=\"k-fig pos\"><span>{{yearly_effect|eur0}}</span><small>over a year</small></div><div class=\"k-fig\"><span>{{left_after_abs|eur0}}</span><small>{{left_after_label|raw}}</small></div></div>\n<div class=\"k-stack\"><p class=\"k-h\">Left over, added up over a year</p><k-chart x=\"month\" h=\"190\" yfmt=\"eur0\" xlabels=\"Now|In a year\"><k-line table=\"series\" y=\"baseline\" tone=\"ink\" dash label=\"As now\"></k-line><k-line table=\"series\" y=\"scenario\" label=\"With the cut\" end></k-line></k-chart></div>\n<p class=\"k-note\">{{left_now_label|raw}} {{left_now_abs|eur0}}.</p>\n<div class=\"k-chips\"><button class=\"k-chip\" data-ask=\"How much can I safely save a month?\">How much to save</button><button class=\"k-chip\" data-ask=\"When do I spend the most on eating out?\">When I eat out</button></div>",
+ "match": [
+  [
+   "cut",
+   "reduce",
+   "less",
+   "lower",
+   "trim",
+   "drop",
+   "decrease",
+   "fewer",
+   "down"
+  ],
+  [
+   "eating out",
+   "dining",
+   "restaurant",
+   "takeaway",
+   "take away",
+   "eat out",
+   "food out",
+   "grocer",
+   "food shopping",
+   "supermarket",
+   "getting around",
+   "transport",
+   "travel",
+   "trips",
+   "holiday",
+   "entertainment",
+   "fun",
+   "shopping"
+  ],
+  [
+   "0",
+   "1",
+   "2",
+   "3",
+   "4",
+   "5",
+   "6",
+   "7",
+   "8",
+   "9",
+   "€0",
+   "€1",
+   "€2",
+   "€3",
+   "€4",
+   "€5",
+   "€6",
+   "€7",
+   "€8",
+   "€9"
+  ]
+ ],
+ "unless": [
+  "euro",
+  "eur",
+  "a day",
+  "per day",
+  "year",
+  "last month",
+  "afford",
+  "safe to spend",
+  "this week",
+  "balance",
+  "pay cycle",
+  "bills",
+  "bill ",
+  "subscription",
+  "repeating",
+  "recurring",
+  "broke",
+  "broken",
+  "payday",
+  "laptop",
+  "weather",
+  "bitcoin",
+  "crypto",
+  "stock",
+  "invest",
+  "loan",
+  "mortgage",
+  "interest"
+ ],
+ "params": [
+  {
+   "token": "§PCT§",
+   "find": "(?<![\\d€])(\\d{1,2})(?![\\d€])(?! ?(?:€|e\\b|eur|euro))",
+   "min": 5,
+   "max": 90
+  },
+  {
+   "token": "§CATEGORY§",
+   "choices": {
+    "eating out": "Restaurants",
+    "dining": "Restaurants",
+    "restaurant": "Restaurants",
+    "takeaway": "Restaurants",
+    "take away": "Restaurants",
+    "eat out": "Restaurants",
+    "food out": "Restaurants",
+    "grocer": "Groceries",
+    "food shopping": "Groceries",
+    "supermarket": "Groceries",
+    "getting around": "Transportation",
+    "transport": "Transportation",
+    "travel": "Travel",
+    "trips": "Travel",
+    "holiday": "Travel",
+    "entertainment": "Entertainment",
+    "fun": "Entertainment",
+    "shopping": "Lifestyle"
+   }
+  }
+ ]
+}

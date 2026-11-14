@@ -265,6 +265,13 @@ def starters(customer: str, lang: str = "en"):
     return {"items": agent.starters(S.money("starters", customer, lang)[0])}
 
 
+@router.get("/api/lab/approved")
+def lab_approved(lang: str = "en"):
+    """The bank's own list: every question with reviewed code, when it was approved and where the code is."""
+    from . import kept
+    return {"items": kept.approved("fi" if lang == "fi" else "en")}
+
+
 @router.get("/api/lab/health")
 def health():
     from . import kernel

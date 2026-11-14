@@ -1,0 +1,90 @@
+{
+ "question": "How much can I safely save a month?",
+ "lang": "en",
+ "kept": "2026-11-14",
+ "by": {
+  "analyst": "kept view",
+  "designer": "kept view"
+ },
+ "title": "Room to save",
+ "chips": [],
+ "cells": [
+  {
+   "title": "Room to save in a usual month, and the buffer",
+   "by": "kept view",
+   "code": "s = kori.safe_to_save()\nb = s[\"buffer\"]\ncap, already, extra = s[\"monthly_capacity\"], s[\"already_saving_monthly\"], s[\"extra_monthly\"]\nemit(\"monthly_capacity\", round(cap, 2), \"eur_per_month\", \"Room to save in a usual month\")\nemit(\"already_saving\", round(already, 2), \"eur_per_month\", \"Already saving a month\")\nemit(\"could_add\", round(extra, 2), \"eur_per_month\", \"Could add a month\")\nemit(\"now\", round(s[\"now\"], 2), \"eur\", \"Safe to save right now\")\nemit(\"covered\", b[\"months_covered\"], \"months\", \"Months of musts your balance covers\")\nemit(\"target_months\", b[\"target_months\"], \"months\", \"Months to aim for\")\nemit(\"rest\", max(0.0, round(b[\"target_months\"] - b[\"months_covered\"], 1)), \"months\", \"Months still to cover\")\nemit(\"gap\", round(b[\"gap\"], 2), \"eur\", \"About your buffer\")\n\nif not s.get(\"partial_view\"):\n    if cap > 0:\n        say(f\"In a usual month you can safely save about **{eur(cap)}**.\" + (f\" You already save {eur(already)}, so you could add {eur(extra)}.\" if already > 0 else \"\"))\n    elif already > 0:\n        say(f\"You already save **{eur(already)} a month**, and a usual month leaves no room for more right now.\")\n    else:\n        say(f\"A usual month leaves **no room to save** right now: what comes in goes out.\")\n"
+  }
+ ],
+ "html": "<p class=\"k-lede\">Your balance covers <b>{{covered|num}}</b> months of musts. The aim is {{target_months|int}} months.</p>\n<div class=\"k-meter\"><i style=\"flex:{{covered|raw}};--c:var(--color-brand)\"></i><i style=\"flex:{{rest|raw}};--c:var(--color-line)\"></i></div>\n<p class=\"k-note\" id=\"gp\">Another {{gap|eur0}} and your buffer covers {{target_months|int}} months.</p><p class=\"k-note\" id=\"rc\" hidden>Your buffer covers the target.</p>\n<div class=\"k-stats\"><div class=\"k-fig\"><span>{{already_saving|eur0}}</span><small>already saving a month</small></div><div class=\"k-fig pos\"><span>{{could_add|eur0}}</span><small>could add a month</small></div><div class=\"k-fig\"><span>{{now|eur0}}</span><small>safe to put aside now</small></div></div>\n<p class=\"k-note\">Room to save is what a usual month leaves after fixed musts, surprise musts and everyday spending.</p>\n<div class=\"k-chips\"><button class=\"k-chip\" data-ask=\"I want to save €3000 for a trip. How long will it take?\">A savings goal</button><button class=\"k-chip\" data-ask=\"What if I save €100 a month for ten years?\">Ten years of saving</button></div>\n<script>if(!(K.fact(\"gap\")>0)){K.$(\"#gp\").hidden=true;K.$(\"#rc\").hidden=false}</script>",
+ "match": [
+  [
+   "save",
+   "saving",
+   "put aside",
+   "set aside",
+   "put away",
+   "savings"
+  ],
+  [
+   "a month",
+   "per month",
+   "each month",
+   "every month",
+   "monthly",
+   "month"
+  ],
+  [
+   "how much",
+   "what amount",
+   "can i",
+   "safe",
+   "safely",
+   "should i",
+   "could i",
+   "able to"
+  ]
+ ],
+ "unless": [
+  "year",
+  "ten",
+  "goal",
+  "trip",
+  "for a",
+  "how long",
+  "what if",
+  "invest",
+  "fund",
+  "last month",
+  "this month",
+  "cut",
+  "reduce",
+  "on ",
+  "afford",
+  "safe to spend",
+  "this week",
+  "balance",
+  "pay cycle",
+  "bills",
+  "bill ",
+  "subscription",
+  "repeating",
+  "recurring",
+  "broke",
+  "broken",
+  "payday",
+  "laptop",
+  "weather",
+  "bitcoin",
+  "crypto",
+  "stock",
+  "invest",
+  "fund",
+  "loan",
+  "mortgage",
+  "interest"
+ ],
+ "also": [
+  "How much can I safely save each month?",
+  "How much can I save a month?"
+ ]
+}

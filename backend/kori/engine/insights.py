@@ -88,7 +88,20 @@ def num(v: float, lang: str, digits: int = 1) -> str:
 
 
 def hero_line(m) -> str:
-    """The one sentence under the number on the home screen: what the balance says against what comes first."""
+    """The one sentence under the number on the home screen: what the balance says against what comes first.
+    With the other bank linked it also says that a simulated account is counted in."""
+    line = _hero_line(m)
+    if m.linked_view:
+        lang = m.prefs.lang
+        own = eur(float(m.df["balance"].iloc[-1]), lang)
+        there = eur(m.linked_view["balance_today"], lang)
+        line = line.replace("Your account shows", "Your accounts show", 1).replace("Tililläsi on", "Tileilläsi on", 1)
+        line += {"en": f" That is {own} here plus {there} on the simulated account at your other bank.",
+                 "fi": f" Siitä {own} on tällä tilillä ja {there} simuloidulla tilillä toisessa pankissasi."}[lang]
+    return line
+
+
+def _hero_line(m) -> str:
     from .query import fmt_day
     s, lang = m.safe, m.prefs.lang
     E = lambda v: eur(v, lang)
@@ -128,9 +141,9 @@ def hero_line(m) -> str:
         fi = f"Tililläsi on {E(bal)}, mutta siitä menee ensin {join([p[2] for p in parts], 'ja')}."
         if beyond > 0.5:
             first = join([p[1] for p in parts], "and")
-            en = f"Your account shows {E(bal)}. {first[0].upper() + first[1:]} come first, and {E(beyond)} more is money this pay cycle does not need."
-            fi = (f"Tililläsi on {E(bal)}. Siitä menee ensin {join([p[2] for p in parts], 'ja')}, "
-                  f"ja {E(beyond)} on rahaa, jota tämä palkkajakso ei tarvitse.")
+            # one breath on a phone: what comes first, and what stays put (the row below it says why it is not spending money)
+            en = f"Your account shows {E(bal)}. {first[0].upper() + first[1:]} come first, and {E(beyond)} more stays as savings."
+            fi = f"Tililläsi on {E(bal)}. Siitä menee ensin {join([p[2] for p in parts], 'ja')}, ja {E(beyond)} jää säästöön."
         return L(en, fi)
     return tidy(L(f"Your account shows {E(bal)}, and it has to last until payday on {until}.", f"Tililläsi on {E(bal)}, ja sen pitää riittää palkkapäivään {until} asti."))
 
@@ -161,9 +174,8 @@ def notices(m: Money, limit: int = 6, action: dict | None = None) -> list[dict]:
             L("What can you see about my money?", "Mitä näet rahoistani?"), metric=m.sweep_typical)
     elif m.linked_view:
         add("linked_view", "info", 95,
-            L("Your linked view adds the salary moved out", "Liitetty näkymä lisää siirtyneen palkan"),
-            L(f"This demo counts about {E(m.linked_view['amount_counted'])} moved to another bank as your money. It is an estimate from a simulated link.",
-              f"Tässä demossa noin {E(m.linked_view['amount_counted'])} toiseen pankkiin siirtynyttä rahaa lasketaan omaksesi. Arvio tulee simuloidusta linkistä."),
+            L("Your numbers include a simulated account", "Luvuissasi on mukana simuloitu tili"),
+            m.linked_view["note"],
             L("What did the other-bank link add?", "Mitä toisen pankin linkki lisäsi?"), metric=m.linked_view["amount_counted"])
 
     # 0b. pay has not arrived on the 15th this month
@@ -178,8 +190,8 @@ def notices(m: Money, limit: int = 6, action: dict | None = None) -> list[dict]:
     if not m.partial_view and s["budget"]["left"] < 0 and s["cash"]["free"] > 0:
         add("over_budget", "warn", 92,
             L("This pay cycle's everyday money is used up", "Tämän palkkajakson arkiraha on käytetty"),
-            L(f"You're {E(-s['budget']['left'])} past what your income leaves for everyday. There is still {E(s['cash']['free'])} free on the account, but this pay cycle was not going to touch it: spending it uses what you had before, not this month's income.",
-              f"Olet {E(-s['budget']['left'])} yli sen, mitä tuloistasi jää arkeen. Tilillä on vielä {E(s['cash']['free'])} vapaana, mutta tällä palkkajaksolla siihen ei ollut tarkoitus koskea: se on aiemmin kertynyttä rahaa, ei tämän kuun tuloja."),
+            L(f"You're {E(-s['budget']['left'])} past what your income leaves for everyday. There is still {E(s['cash']['free'])} free on the account, but this pay cycle's plan does not use it: it is savings from before, not this pay cycle's pay.",
+              f"Olet {E(-s['budget']['left'])} yli sen, mitä tuloistasi jää arkeen. Tilillä on vielä {E(s['cash']['free'])} vapaana, mutta tämän palkkajakson suunnitelma ei käytä sitä: se on aiemmin kertynyttä säästöä, ei tämän palkkajakson palkkaa."),
             L("Where did my everyday money go this pay cycle?", "Mihin arkirahani meni tällä palkkajaksolla?"), metric=s["budget"]["left"])
 
     # 1. runway to payday
@@ -203,6 +215,20 @@ def notices(m: Money, limit: int = 6, action: dict | None = None) -> list[dict]:
                   f"Tavallisella tahdillasi tililläsi olisi {E(low)}, kun palkkasi tulee"),
                 L(f"Payday is {fmt_day(pay, lang)}.{rent_txt} Your safe pace is {E(s['per_day'], True)} a day; your usual is {E(s['usual_per_day'], True)}.",
                   f"Palkkapäivä on {fmt_day(pay, lang)}.{rent_txt} Turvallinen tahtisi on {E(s['per_day'], True)} päivässä; tavallinen tahtisi on {E(s['usual_per_day'], True)}."),
+                L("What is safe for me to spend this week?", "Paljonko voin turvallisesti käyttää tällä viikolla?"),
+                card="forecast", metric=low)
+        elif s["limit"] == "budget" and s["usual_per_day"] > s["per_day"] + 0.005:
+            # The account lasts, but the usual pace is above what this pay cycle's plan leaves: the rest is savings.
+            add("runway", "info", 40,
+                L(f"At your usual pace the account has {E(low)} when your pay lands", f"Tavallisella tahdillasi tililläsi on {E(low)}, kun palkkasi tulee"),
+                L(f"Your usual pace is {E(s['usual_per_day'], True)} a day and this pay cycle's plan leaves {E(s['per_day'], True)} a day, "
+                  f"so the difference comes out of your savings.",
+                  f"Tavallinen tahtisi on {E(s['usual_per_day'], True)} päivässä ja tämän palkkajakson suunnitelma jättää {E(s['per_day'], True)} päivässä, "
+                  f"joten erotus otetaan säästöistäsi.") if s["amount"] > 0.005 else
+                L(f"Your usual pace is {E(s['usual_per_day'], True)} a day and this pay cycle's everyday money is used up, "
+                  f"so until payday it comes out of your savings.",
+                  f"Tavallinen tahtisi on {E(s['usual_per_day'], True)} päivässä ja tämän palkkajakson arkiraha on käytetty, "
+                  f"joten palkkapäivään asti se otetaan säästöistäsi."),
                 L("What is safe for me to spend this week?", "Paljonko voin turvallisesti käyttää tällä viikolla?"),
                 card="forecast", metric=low)
         else:
@@ -259,8 +285,10 @@ def notices(m: Money, limit: int = 6, action: dict | None = None) -> list[dict]:
         r = recent.sort_values("spend").iloc[-1]
         add("surprise", "info", 55,
             L(f"A {E(r['spend'])} surprise landed on {fmt_day(r['date'], lang)}", f"{E(r['spend'])} yllätys osui {fmt_day(r['date'], lang)}"),
-            L(f"{cat_label(r['category'], lang)}. You can't skip these and you can't time them. Over the past year yours have averaged {E(m.usual[SURPRISE])} a month, so that is what I hold back for you.",
-              f"{cat_label(r['category'], lang)}. Näitä ei voi ohittaa eikä ajoittaa. Viimeisen vuoden aikana niitä on tullut keskimäärin {E(m.usual[SURPRISE])} kuussa, joten sen verran pidän sinulle varalla."),
+            L(f"{cat_label(r['category'], lang)}. You can't skip these and you can't time them. Over the past year yours have averaged {E(m.usual[SURPRISE])} a month. "
+              f"For the {s['days_to_payday']} {'day' if s['days_to_payday'] == 1 else 'days'} left before payday that is {E(s['cash']['surprise_reserve'])}, and I hold it back for you.",
+              f"{cat_label(r['category'], lang)}. Näitä ei voi ohittaa eikä ajoittaa. Viimeisen vuoden aikana niitä on tullut keskimäärin {E(m.usual[SURPRISE])} kuussa. "
+              f"Palkkapäivään on {s['days_to_payday']} päivää, ja niiden osuus on {E(s['cash']['surprise_reserve'])}. Sen pidän sinulle varalla."),
             L("How big should my surprise reserve be?", "Kuinka iso yllätysvarani pitäisi olla?"), metric=r2(r["spend"]))
 
     # 6. below zero in the past year

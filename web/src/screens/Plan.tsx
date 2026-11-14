@@ -4,11 +4,11 @@ import { WhatIfBody } from "../components/cards/bodies";
 import { Ledger, StatusChip, type LedgerRow } from "../components/cards/parts";
 import { TwoLine } from "../components/charts/Charts";
 import { SpokenBar } from "../components/charts/SpokenBar";
-import { Button, CatIcon, Chip, ErrorInline, Money, SectionHead, Skel, cx } from "../components/ui/bits";
-import { api, type PlanPut } from "../lib/api";
+import { Button, CatIcon, Chip, ErrorInline, LinkedNote, LinkedTag, Money, SectionHead, Skel, cx } from "../components/ui/bits";
+import { api, ApiError, type PlanPut } from "../lib/api";
 import { humanize, money, num, pct } from "../lib/format";
 import { useApp } from "../lib/store";
-import type { BasketKey, Change, PlanResponse, WhatIfData, WhatIfLine } from "../lib/types";
+import type { BasketKey, Change, Lang, PlanResponse, WhatIfData, WhatIfLine } from "../lib/types";
 import { useQuery, type Query } from "../lib/useQuery";
 import { ScreenHeader } from "../shell/Shell";
 
@@ -39,7 +39,10 @@ function Typical({ d }: { d: PlanResponse }) {
   ];
   return (
     <section className="rounded-card border border-line bg-surface px-4 pb-3 pt-3.5">
-      <h2 className="mb-3 text-[15px] font-semibold leading-5 tracking-[-0.01em] text-ink">{t("plan.typical")}</h2>
+      <div className="mb-3">
+        <h2 className="text-[15px] font-semibold leading-5 tracking-[-0.01em] text-ink">{t("plan.typical")}</h2>
+        <LinkedTag label={d.linked_view?.label} className="mt-0.5" />
+      </div>
       <SpokenBar items={bar} legend={false} />
       <div className="mt-2.5">
         <Ledger rows={rows} />
@@ -176,7 +179,7 @@ function Lab({ d }: { d: PlanResponse }) {
                   <p className="text-[14px] font-medium leading-5 text-ink">{t("plan.leftOverLine")}</p>
                   <p className="text-[13px] leading-[18px] text-ink-2">{t("plan.noChange")}</p>
                 </div>
-                <Money value={res ? res.left_over.now : d.usual.left_over} className="shrink-0 text-[22px] font-semibold leading-7 tracking-[-0.02em] text-ink" />
+                <Money value={res?.left_over.now ?? d.usual.left_over} className="shrink-0 text-[22px] font-semibold leading-7 tracking-[-0.02em] text-ink" />
               </div>
             ) : (
               <div className={cx("transition-opacity duration-150", !live && "opacity-50")}>
@@ -189,7 +192,7 @@ function Lab({ d }: { d: PlanResponse }) {
                     {res && <Money value={res.monthly_effect} sign cents className={cx("font-medium", res.monthly_effect < 0 ? "!text-ink" : "text-ink")} />} {t("common.perMonthShort")}
                   </span>
                 </div>
-                {res && (
+                {res && res.left_over.now != null && res.left_over.after != null && (
                   <p className="num mt-0.5 flex items-center gap-1.5 text-[13px] leading-[18px] text-ink-2">
                     {t("plan.leftOverLine")}
                     <span className="ml-auto text-ink-3">{money(res.left_over.now, lang)}</span>
@@ -212,6 +215,8 @@ function Lab({ d }: { d: PlanResponse }) {
       </div>
 
       <div className="mt-3 rounded-card border border-line bg-surface px-4 pb-2.5 pt-3.5">
+        {/* with part of the month unseen the engine sends no lines, only its reason */}
+        {!res || res.series.length > 1 ? (
         <div className="mb-1 flex flex-wrap gap-x-4 gap-y-0.5 text-[12px] leading-4 text-ink-2">
           <span className="inline-flex items-center gap-1.5">
             <span className={cx("h-[2.5px] w-3.5 rounded-full", m >= 0 ? "bg-brand" : "bg-warn-ink")} aria-hidden />
@@ -222,8 +227,13 @@ function Lab({ d }: { d: PlanResponse }) {
             {t("whatif.baseline")}
           </span>
         </div>
+        ) : null}
         {res ? (
-          <TwoLine series={res.series} />
+          res.series.length > 1 ? (
+            <TwoLine series={res.series} />
+          ) : (
+            <p className="text-[13px] leading-[18px] text-ink-2">{res.projection?.reason || t("plan.noChange")}</p>
+          )
         ) : failed ? (
           <div className="flex h-[132px] items-center">
             <ErrorInline onRetry={() => setNonce((n) => n + 1)} className="w-full !border-0 !px-0" />
@@ -240,10 +250,10 @@ function Lab({ d }: { d: PlanResponse }) {
                 ? t("plan.goalNoRoom")
                 : live && res.goal.months_after !== res.goal.months_now
                   ? t("plan.goalEta", {
-                      now: res.goal.months_now == null ? "–" : num(res.goal.months_now, lang, 1),
-                      after: res.goal.months_after == null ? "–" : num(res.goal.months_after, lang, 1),
+                      now: res.goal.months_now == null ? "–" : howLong(res.goal.months_now, lang, t),
+                      after: res.goal.months_after == null ? "–" : howLong(res.goal.months_after, lang, t),
                     })
-                  : t("plan.goalEtaNow", { now: res.goal.months_now == null ? "–" : num(res.goal.months_now, lang, 1) })}
+                  : t("plan.goalEtaNow", { now: res.goal.months_now == null ? "–" : howLong(res.goal.months_now, lang, t) })}
             </span>
           </p>
         )}
@@ -371,6 +381,16 @@ function OneOff() {
 
 /* ------------------------------------------------------------------- goal */
 
+/** A goal over a million is not a goal; the form says so instead of computing centuries. */
+const MAX_GOAL = 1_000_000;
+
+/** Months up to two years, years after that, and no number past a lifetime. */
+function howLong(months: number, lang: Lang, t: ReturnType<typeof useApp>["t"]): string {
+  if (months > 1200) return t("plan.goalLifetime");
+  if (months > 24) return t("plan.years", { n: num(months / 12, lang, 1) });
+  return t("plan.months", { n: num(months, lang, 1) });
+}
+
 function GoalBlock({ q }: { q: Query<PlanResponse> }) {
   const { customer, lang, t, bump, showToast } = useApp();
   const d = q.data as PlanResponse;
@@ -379,8 +399,11 @@ function GoalBlock({ q }: { q: Query<PlanResponse> }) {
   const [name, setName] = useState("");
   const [raw, setRaw] = useState("");
   const [busy, setBusy] = useState(false);
+  // the server's own sentence when it turns a goal down (over €1,000,000 or not an amount), in the customer's language
+  const [refused, setRefused] = useState<string | null>(null);
   const amount = Number(raw.replace(",", ".").replace(/\s/g, ""));
-  const valid = name.trim().length > 0 && Number.isFinite(amount) && amount > 0;
+  const tooBig = Number.isFinite(amount) && amount > MAX_GOAL;
+  const valid = name.trim().length > 0 && Number.isFinite(amount) && amount > 0 && !tooBig;
 
   const put = async (body: Partial<PlanPut>) => {
     setBusy(true);
@@ -388,8 +411,10 @@ function GoalBlock({ q }: { q: Query<PlanResponse> }) {
       q.setData(await api.putPlan({ customer, lang, ...body }));
       bump();
       setEditing(false);
-    } catch {
-      showToast(t("plan.saveFail"));
+      setRefused(null);
+    } catch (e) {
+      if (e instanceof ApiError && e.status === 400 && e.message) setRefused(e.message);
+      else showToast(t("plan.saveFail"));
     } finally {
       setBusy(false);
     }
@@ -407,7 +432,7 @@ function GoalBlock({ q }: { q: Query<PlanResponse> }) {
             <p className="min-w-0 flex-1 text-[16px] font-semibold leading-[22px] text-ink">{g.name}</p>
             <p className="num shrink-0 text-[16px] font-semibold leading-[22px] text-ink">{money(g.amount, lang)}</p>
           </div>
-          <p className="mt-1 text-[13px] leading-[18px] text-ink-2">{g.months == null ? t("plan.goalNoRoom") : t("plan.goalEtaNow", { now: num(g.months, lang, 1) })}</p>
+          <p className="mt-1 text-[13px] leading-[18px] text-ink-2">{g.months == null ? t("plan.goalNoRoom") : t("plan.goalEtaNow", { now: howLong(g.months, lang, t) })}</p>
           <div className="-ml-3 mt-1.5 flex gap-1 border-t border-line pt-1.5">
             <Button
               variant="ghost"
@@ -436,13 +461,30 @@ function GoalBlock({ q }: { q: Query<PlanResponse> }) {
           <div className="flex gap-2">
             <label className="min-w-0 flex-[1.6]">
               <span className="mb-1 block text-[12px] leading-4 text-ink-2">{t("plan.goalName")}</span>
-              <input value={name} onChange={(e) => setName(e.target.value)} maxLength={40} placeholder={t("plan.goalNamePh")} className={field} />
+              <input value={name} onChange={(e) => { setName(e.target.value); setRefused(null); }} maxLength={40} placeholder={t("plan.goalNamePh")} className={field} />
             </label>
             <label className="min-w-0 flex-1">
               <span className="mb-1 block text-[12px] leading-4 text-ink-2">{t("plan.goalAmount")} (€)</span>
-              <input value={raw} onChange={(e) => setRaw(e.target.value)} inputMode="decimal" placeholder="0" className={cx(field, "num")} />
+              <input
+                value={raw}
+                onChange={(e) => {
+                  setRaw(e.target.value.replace(/[^\d.,\s]/g, ""));
+                  setRefused(null);
+                }}
+                inputMode="decimal"
+                maxLength={12}
+                placeholder="0"
+                aria-invalid={tooBig || !!refused || undefined}
+                aria-describedby={tooBig || refused ? "goal-max" : undefined}
+                className={cx(field, "num", (tooBig || refused) && "border-warn")}
+              />
             </label>
           </div>
+          {(tooBig || refused) && (
+            <p id="goal-max" role="status" className="mt-2 text-[13px] leading-[18px] text-warn-ink">
+              {tooBig ? t("plan.goalMax", { v: money(MAX_GOAL, lang) }) : refused}
+            </p>
+          )}
           <div className="mt-3 flex gap-2">
             <Button type="submit" variant="primary" disabled={!valid || busy}>
               {t("plan.goalSave")}
@@ -599,6 +641,8 @@ export function Plan() {
       ) : (
         <div className="px-5 pb-8 pt-2">
           <Typical d={d} />
+          {/* what the simulated link added, once on this screen, under the month it changes */}
+          <LinkedNote note={d.linked_view?.note} className="mt-2 px-1" />
           <Lab key={customer} d={d} />
           <OneOff key={`o-${customer}`} />
           <GoalBlock q={q} />

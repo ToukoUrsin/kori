@@ -3,6 +3,7 @@ import {
   Coffee,
   HeartPulse,
   House,
+  Link2,
   Plane,
   RotateCcw,
   ShoppingBag,
@@ -242,6 +243,25 @@ export const BASKET_SOFT: Record<BasketKey, string> = {
   surprise: "bg-surprise-soft",
   everyday: "bg-everyday-soft",
 };
+
+/**
+ * The other bank in this demo is simulated: every figure it changes carries this quiet tag, so nobody reads it as bank data.
+ * Its note (what the link added) is said once per screen with `LinkedNote`.
+ */
+export function LinkedTag({ label, className }: { label?: string; className?: string }) {
+  if (!label) return null;
+  return (
+    <span className={cx("inline-flex items-center gap-1 text-[12px] font-medium leading-4 text-ink-3", className)}>
+      <Link2 size={12} strokeWidth={2.2} aria-hidden className="shrink-0" />
+      {label}
+    </span>
+  );
+}
+
+export function LinkedNote({ note, className }: { note?: string; className?: string }) {
+  if (!note) return null;
+  return <p className={cx("text-pretty text-[12px] leading-[17px] text-ink-3", className)}>{note}</p>;
+}
 
 export function Dot({ k, className }: { k: string; className?: string }) {
   return <span aria-hidden className={cx("inline-block h-2.5 w-2.5 shrink-0 rounded-[3px]", BASKET_BG[k] || "bg-ink-3", className)} />;

@@ -37,6 +37,17 @@
 .kc-view .lab-frame-wrap{margin:0;border:0;border-radius:0;background:transparent}
 .kc-view .lab-frame-skeleton{display:none!important}
 
+/* the part of the screen still being built: calm blocks in its place, never white */
+.kc-ghost{display:flex;flex-direction:column;gap:14px;padding:6px 0 4px;animation:kc-in .32s cubic-bezier(.16,1,.3,1)}
+.kc-ghost i{display:block;border-radius:10px;background:linear-gradient(100deg,var(--kc-fill) 30%,#fafbf9 50%,var(--kc-fill) 70%);background-size:220% 100%;animation:kc-ghost 1.6s linear infinite}
+.kc-ghost-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.kc-ghost-row i{height:56px}
+.kc-ghost .kc-ghost-bar{height:12px;border-radius:6px}
+.kc-ghost .kc-ghost-line{height:44px}
+.kc-ghost .kc-ghost-line:last-child{width:72%}
+@keyframes kc-ghost{to{background-position:-120% 0}}
+@media (prefers-reduced-motion:reduce){.kc-ghost,.kc-ghost i{animation:none}}
+
 .kc-error,.kc-flag{color:#8a5a1c;font-size:14px;line-height:1.5}
 .kc-error button{padding:0;border:0;background:none;color:inherit;font:inherit;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
 .kc-chips{display:flex;flex-wrap:wrap;gap:8px}

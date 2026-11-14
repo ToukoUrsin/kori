@@ -17,6 +17,7 @@ import os
 import re
 import sys
 import traceback
+import unicodedata
 
 # The host talks on a duplicate of stdout; fd 1 itself is pointed at stderr so a stray print cannot break the protocol.
 _proto = os.fdopen(os.dup(1), "w", buffering=1)
@@ -83,6 +84,31 @@ _NAME = re.compile(r"^[a-z][a-z0-9_]{0,47}$")
 UNITS = {"eur", "eur_per_day", "eur_per_month", "pct", "count", "days", "months", "years", "date", "ratio", "text"}
 
 
+_EMPTY = re.compile(r"(?<![A-Za-z])(?:nan|NaN|NaT|<NA>)(?![A-Za-z])")
+_COL = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
+
+
+def _empty_word(text: str) -> str | None:
+    """'nan' or 'NaT' inside a sentence: a name or a figure that was missing when the sentence was built."""
+    m = _EMPTY.search(text)
+    return m.group(0) if m else None
+
+
+def _column(c, taken: set) -> str:
+    """A column name a view can always look up: plain letters, digits and underscores (Päivä -> Paiva, "per week" -> per_week)."""
+    c = str(c)
+    if not _COL.match(c):
+        c = unicodedata.normalize("NFKD", c).encode("ascii", "ignore").decode()
+        c = re.sub(r"[^A-Za-z0-9]+", "_", c).strip("_") or "col"
+        if c[0].isdigit():
+            c = "c_" + c
+    base, n = c, 2
+    while c in taken:
+        c, n = f"{base}_{n}", n + 1
+    taken.add(c)
+    return c
+
+
 def emit(name: str, value, unit: str = "eur", label: str = "") -> None:
     """Put one figure on the ledger. Only figures on the ledger may be shown to the customer."""
     if not _NAME.match(str(name)):
@@ -92,8 +118,8 @@ def emit(name: str, value, unit: str = "eur", label: str = "") -> None:
     v = _plain(value)
     if isinstance(v, (dict, list)):
         raise ValueError("emit takes one value; use table() for rows")
-    if v is None:
-        raise ValueError(f"emit {name}: the value is empty (None or NaN)")
+    if v is None or (isinstance(v, str) and (not v.strip() or _empty_word(v))):
+        raise ValueError(f"emit {name}: the value is empty (None or NaN). Find where it comes from: a row without a merchant has its category")
     _facts.append({"name": name, "value": v, "unit": unit, "label": str(label)[:120]})
 
 
@@ -116,6 +142,11 @@ def table(name: str, rows, label: str = "") -> None:
     recs = [_plain(r) for r in recs]
     if not recs or not isinstance(recs[0], dict):
         raise ValueError(f"table {name}: needs at least one row of named columns")
+    taken: set = set()
+    names = {k: _column(k, taken) for k in recs[0]}
+    if any(k != v for k, v in names.items()):                   # the view looks cells up by column name
+        print(f"[table {name}: columns are on the ledger as {', '.join(names.values())}]")
+    recs = [{names.get(k, k): (None if isinstance(v, str) and _EMPTY.fullmatch(v.strip()) else v) for k, v in r.items()} for r in recs]
     _tables.append({"name": name, "columns": list(recs[0].keys()), "rows": recs, "label": str(label)[:120]})
 
 
@@ -154,6 +185,12 @@ def num(value, digits: int = 1) -> str:
 def say(text) -> None:
     """The written answer, when the cell can already give it: the customer reads it the moment the cell has run."""
     t = " ".join(str(text).split())
+    bad = _empty_word(t)
+    if bad:
+        raise ValueError(f"say(): the sentence has {bad!r} in it, so a name or a figure was missing when it was built. "
+                         "Use a value that exists (a payment without a merchant has its category) and say() again")
+    if "{" in t or "}" in t:
+        raise ValueError("say(): the sentence has a brace in it; build it with an f-string so every value is filled in")
     if t:
         _said[:] = [t[:700]]
 

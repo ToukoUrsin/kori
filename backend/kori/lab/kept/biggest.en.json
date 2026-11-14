@@ -1,0 +1,85 @@
+{
+ "question": "What was my biggest purchase last month?",
+ "lang": "en",
+ "kept": "2026-11-14",
+ "by": {
+  "analyst": "kept view",
+  "designer": "kept view"
+ },
+ "title": "The biggest purchase",
+ "chips": [],
+ "cells": [
+  {
+   "title": "The biggest purchases of the last full month",
+   "by": "kept view",
+   "code": "MON = [\"January\", \"February\", \"March\", \"April\", \"May\", \"June\", \"July\", \"August\", \"September\", \"October\", \"November\", \"December\"]\nLBL = {\"Housing\": \"Housing\", \"Restaurants\": \"Eating out\", \"Groceries\": \"Groceries\", \"Home & Tech\": \"Home & tech\", \"Transportation\": \"Getting around\", \"Entertainment\": \"Fun\", \"Lifestyle\": \"Shopping\", \"Utilities\": \"Utilities\", \"Health\": \"Health\", \"Travel\": \"Trips\"}\nBAS = {\"fixed\": \"Fixed musts\", \"surprise\": \"Surprise musts\", \"everyday\": \"Everyday\"}\nlast = list(last12)[-1]\nmname = MON[int(last[5:]) - 1]\nbm = kori.baskets(last)\nONE = {\"fixed\": \"a fixed must\", \"surprise\": \"a surprise must\", \"everyday\": \"everyday spending\"}\nd = tx[tx[\"is_spend\"] & (tx[\"type\"] == \"purchase\") & (tx[\"month\"] == last)].sort_values(\"spend\", ascending=False)\nrows = [{\"what\": str(r.merchant) if isinstance(r.merchant, str) and r.merchant else LBL.get(r.category, r.category), \"category\": LBL.get(r.category, r.category),\n         \"basket\": BAS.get(r.basket, r.basket), \"tone\": r.basket, \"one\": ONE.get(r.basket, \"\"), \"date\": str(r.date), \"amount\": round(float(r.spend), 2)} for r in d.head(6).itertuples()]\nemit(\"month_gen\", mname, \"text\", \"The last full month\")\nemit(\"month_gen_lc\", mname, \"text\", \"The last full month\")\nemit(\"month_spend\", round(bm[\"spend\"], 2), \"eur\", \"Everything spent in the last full month\")\nif rows:\n    top = rows[0]\n    emit(\"top_amount\", top[\"amount\"], \"eur\", \"The biggest purchase\")\n    emit(\"top_what\", top[\"what\"], \"text\", \"Where\")\n    emit(\"top_share\", int(round(100 * top[\"amount\"] / bm[\"spend\"])) if bm[\"spend\"] > 0 else 0, \"pct\", \"Share of the month's spending\")\n    table(\"biggest\", rows, \"The biggest purchases in the last full month\")\n    day = int(top[\"date\"][8:])\n    say(f\"Your biggest purchase in {mname} was **{eur(top['amount'], True)}** at {top['what']} on {day} {mname}. It counts as {top['one']}.\")\n"
+  }
+ ],
+ "html": "<style>.k-tag{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:6px;background:var(--color-everyday)}.k-tag.fixed{background:var(--color-fixed)}.k-tag.surprise{background:var(--color-surprise)}</style>\n<p class=\"k-lede\">It was <b>{{top_share|pct}}</b> of the {{month_spend|eur0}} that went out in {{month_gen_lc|raw}}.</p>\n<div class=\"k-stack\"><p class=\"k-h\">The biggest purchases in {{month_gen|raw}}</p><div class=\"k-rows\"><k-each table=\"biggest\"><template><div class=\"k-row\"><div><span class=\"k-ellip\">{what}</span><small><i class=\"k-tag {tone}\"></i>{basket} · {category} · {date|date}</small></div><b>{amount|eur}</b></div></template></k-each></div></div>\n<p class=\"k-note\">Card and shop purchases only: rent and bills are not counted.</p>\n<div class=\"k-chips\"><button class=\"k-chip\" data-ask=\"How much did I spend on taxis last month?\">Taxis last month</button><button class=\"k-chip\" data-ask=\"Where does my money go in a usual month?\">A usual month</button></div>",
+ "match": [
+  [
+   "biggest",
+   "largest",
+   "most expensive",
+   "priciest",
+   "top",
+   "big",
+   "cost the most",
+   "costed the most"
+  ],
+  [
+   "purchase",
+   "buy",
+   "bought",
+   "spend",
+   "spending",
+   "expense",
+   "payment",
+   "transaction"
+  ]
+ ],
+ "unless": [
+  "category",
+  "categories",
+  "basket",
+  "this month",
+  "this year",
+  "year",
+  "week",
+  "today",
+  "ever",
+  "201",
+  "202",
+  "compare",
+  "others",
+  "save",
+  "cut",
+  "afford",
+  "safe to spend",
+  "this week",
+  "balance",
+  "pay cycle",
+  "bills",
+  "bill ",
+  "subscription",
+  "repeating",
+  "recurring",
+  "broke",
+  "broken",
+  "payday",
+  "laptop",
+  "weather",
+  "bitcoin",
+  "crypto",
+  "stock",
+  "invest",
+  "fund",
+  "loan",
+  "mortgage",
+  "interest"
+ ],
+ "also": [
+  "What was my biggest purchase?",
+  "Biggest purchase last month?"
+ ]
+}

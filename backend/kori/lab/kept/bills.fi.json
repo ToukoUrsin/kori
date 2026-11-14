@@ -1,0 +1,91 @@
+{
+ "question": "Mitä laskuja on tulossa ennen palkkapäivää?",
+ "lang": "fi",
+ "kept": "2026-11-14",
+ "by": {
+  "analyst": "kept view",
+  "designer": "kept view"
+ },
+ "title": "Laskut ennen palkkapäivää",
+ "chips": [],
+ "cells": [
+  {
+   "title": "Tulossa olevat laskut",
+   "by": "kept view",
+   "code": "PENSION = (me.get(\"age\") or 0) >= 68\nPAY = \"eläkepäivä\" if PENSION else \"palkkapäivä\"\nPAY_TO = \"eläkepäivään\" if PENSION else \"palkkapäivään\"\nCYCLE = \"eläkejakso\" if PENSION else \"palkkajakso\"\ndef day(s):\n    d = datetime.date.fromisoformat(str(s)[:10])\n    return f\"{d.day}.{d.month}.\"\nemit(\"pay_word\", PAY, \"text\", \"Päivä, jona rahat tulevat\")\nemit(\"pay_to\", PAY_TO, \"text\", \"Päivä, jona rahat tulevat\")\n\nb = kori.bills()\ns = kori.safe_to_spend()\nitems = [{\"label\": i[\"label\"], \"date\": i[\"date\"], \"amount\": i[\"amount\"]} for i in b.get(\"items\") or []]\nif items and abs(sum(i[\"amount\"] for i in items) - b[\"total\"]) < 0.005:      # the rows add up to the total on screen\n    emit(\"bills_total\", b[\"total\"], \"eur\", b[\"label\"])\n    emit(\"bills_count\", b[\"count\"], \"count\", \"Laskuja ennen palkkapäivää\")\n    emit(\"next_payday\", s[\"next_payday\"], \"date\", \"Seuraava palkkapäivä\")\n    table(\"bills\", items, b[\"label\"])\n    say(f\"Ennen {PAY}ä {day(s['next_payday'])} sinulla on laskuja yhteensä **{eur(b['total'], True)}**, {b['count']} {'maksu' if b['count'] == 1 else 'maksua'}.\")\n"
+  }
+ ],
+ "html": "<p class=\"k-lede\">Kaikki tämä on varattu ennen kuin turvallinen käyttövara lasketaan, joten nämä eivät yllätä.</p>\n<div class=\"k-rows\"><k-each table=\"bills\"><template><div class=\"k-row\"><div>{label}<small>{date|date}</small></div><b>{amount|eur}</b></div></template></k-each>\n<div class=\"k-row total\"><div>Varattu laskuihin<small>ennen {{next_payday|date}}</small></div><b>{{bills_total|eur}}</b></div></div>\n<div class=\"k-chips\"><button class=\"k-chip\" data-ask=\"Mitä maksan joka kuukausi?\">Mikä toistuu</button><button class=\"k-chip\" data-ask=\"Miksi saldoni ei ole budjettini?\">Miksi ei saldo</button></div>",
+ "wordings": [
+  "Mitä laskuja on tulossa ennen palkkapäivää?",
+  "laskut?",
+  "mitä laskuja mulla on tulossa",
+  "tulevat laskut",
+  "onko laskuja tulossa",
+  "mitä maksettavaa on ennen palkkapäivää",
+  "mitkä laskut erääntyy ennen palkkaa",
+  "laskut ennen eläkepäivää",
+  "mitä laskuja on vielä maksamatta",
+  "mitä maksuja on tulossa"
+ ],
+ "match": [
+  [
+   "lasku",
+   "eräpäiv",
+   "erääntyy",
+   "erääntyv",
+   "maksettav",
+   "tulossa olevat maksut",
+   "tulevat maksut",
+   "mitä maksuja on tulossa"
+  ]
+ ],
+ "unless": [
+  "joka kuu",
+  "kuukausittain",
+  "toistuv",
+  "tilau",
+  "kuussa",
+  "vuodessa",
+  "viime",
+  "maksoin",
+  "kattaa",
+  "varaa",
+  "riittää",
+  "säästä",
+  "sijoit",
+  "laskee",
+  "laskea",
+  "laske",
+  "laskin",
+  "laskelm",
+  "suurin",
+  "isoin",
+  "korkein",
+  "nousi",
+  "nous",
+  "kallistu",
+  "miten maksan",
+  "miten maksa",
+  "miten voin maksaa",
+  "laskujen jälkeen",
+  "1",
+  "2",
+  "3",
+  "4",
+  "5",
+  "6",
+  "7",
+  "8",
+  "9",
+  "€1",
+  "€2",
+  "€3",
+  "€4",
+  "€5",
+  "€6",
+  "€7",
+  "€8",
+  "€9"
+ ]
+}

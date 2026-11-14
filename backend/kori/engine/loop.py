@@ -107,12 +107,14 @@ def _cycle_row(m: Money, start: date, end: date, detail: bool = True) -> dict:
     income = r2(d[d["category"].isin(["Salary", "Other Income"])]["amount"].sum())
     if not m.prefs.other_bank_linked:
         income = r2(income + d[d["category"] == "Salary Sweep"]["amount"].sum())     # sweeps are negative
-    fixed = r2(d[d["basket"] == "fixed"]["spend"].sum())
+    # linked view: the simulated other account paid its bills and its share of everyday in this cycle too
+    other = m.other_paid(start - timedelta(days=1), end - timedelta(days=1))
+    fixed = r2(d[d["basket"] == "fixed"]["spend"].sum() + sum(v for c, v in other.items() if m._basket_of(c) == "fixed"))
     surprise = r2(m.usual["surprise"] * days / DAYS_PER_MONTH)
-    saving = r2(m.savings_plan * days / DAYS_PER_MONTH)
+    saving = m.saving_in_cycle(days)     # the habit by the length of the cycle, what was set aside on top whole
     available = r2(max(0.0, income - fixed - surprise - saving))
     everyday = d[d["basket"] == EVERYDAY]
-    spent = r2(everyday["spend"].sum())
+    spent = r2(everyday["spend"].sum() + sum(v for c, v in other.items() if m._basket_of(c) == EVERYDAY))
     row = {"start": start.isoformat(), "end": end.isoformat(), "last_day": (end - timedelta(days=1)).isoformat(), "days": days,
            "income": income, "fixed": fixed, "surprise_reserve": surprise, "planned_saving": saving,
            "everyday_available": available, "everyday_spent": spent, "within": bool(spent <= available + 0.005),
@@ -126,7 +128,7 @@ def _cycle_row(m: Money, start: date, end: date, detail: bool = True) -> dict:
         cd = everyday[everyday["category"] == c]
         if not len(cd):
             continue
-        amount = r2(cd["spend"].sum())
+        amount = r2(cd["spend"].sum() + other.get(c, 0.0))
         usual = r2(m.usual["categories"].get(c, 0.0) * days / DAYS_PER_MONTH)
         top = cd.sort_values(["spend", "date"], ascending=[False, True])
         biggest = _purchase(next(top.itertuples()))
@@ -183,13 +185,13 @@ def check_in(m: Money) -> dict:
 
     if partial:
         headline = L(f"On this account, everyday spending was {E(row['everyday_spent'])} last {w.cycle}. Without the account "
-                     f"your salary goes to, I cannot say whether the cycle held.",
+                     f"your salary goes to, I cannot say whether the cycle fit.",
                      f"Tältä tililtä arkeen meni viime {w.cycle_on} {E(row['everyday_spent'])}. Ilman tiliä, jolle palkkasi "
-                     f"menee, en voi sanoa, pitikö jakso.")
+                     f"menee, en voi sanoa, mahtuiko jakso.")
     elif row["within"]:
-        headline = L(f"Last {w.cycle} held: {E(row['everyday_spent'])} went to everyday, {E(row['difference'])} less than {w.from_pay} "
+        headline = L(f"Last {w.cycle} fit: {E(row['everyday_spent'])} went to everyday, {E(row['difference'])} less than {w.from_pay} "
                      f"left room for.",
-                     f"Viime {w.cycle} piti: arkeen meni {E(row['everyday_spent'])}, eli {E(row['difference'])} vähemmän kuin "
+                     f"Viime {w.cycle} mahtui: arkeen meni {E(row['everyday_spent'])}, eli {E(row['difference'])} vähemmän kuin "
                      f"{w.from_pay} jäi arkeen.")
     else:
         headline = L(f"Last {w.cycle} went {E(row['over_by'])} over: {E(row['everyday_spent'])} went to everyday, and {w.from_pay} left "
@@ -222,8 +224,8 @@ def check_in(m: Money) -> dict:
             if row["within"]:
                 driver_line = L(f"{w.cat(drv['category'])} ran above your usual: {E(drv['spent'])} against {E(drv['usual'])}.",
                                 f"{w.cat(drv['category'])} ylittivät tavallisen: {E(drv['spent'])}, kun tavallisesti {E(drv['usual'])}.")
-    history_line = None if partial else L(f"{history['within']} of your last {history['total']} {w.cycles} held.",
-                                          f"Viimeisestä {history['total']} {w.cycles} {history['within']} piti.")
+    history_line = None if partial else L(f"Everyday spending fit in {history['within']} of your last {history['total']} {w.cycles}.",
+                                          f"Arkimenot mahtuivat {history['within']} kertaa viimeisestä {history['total']} {w.cycles}.")
     note = (L("I can compare spending on this account, but not your whole month: your salary moves to another bank.",
               "Voin verrata tämän tilin menoja, mutta en koko kuukauttasi: palkkasi siirtyy toiseen pankkiin.") if partial else
             L("Counted from this account: the pay that came in, the bills that left, a share for surprises, and everyday spending.",
@@ -240,8 +242,7 @@ def check_in(m: Money) -> dict:
            "can_judge": {"everyday_spending": True, "full_income": not partial, "whole_financial_picture": not partial}}
     if m.linked_view:
         out["linked_view"] = m.linked_view
-        out["note"] = L("An estimate from the simulated link to your other bank in this demo: the salary that moves out is counted as yours.",
-                        "Arvio tämän demon simuloidusta linkistä toiseen pankkiisi: pois siirtyvä palkka lasketaan sinun rahaksesi.")
+        out["note"] = m.linked_view["note"]
     return out
 
 

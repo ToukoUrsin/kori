@@ -182,6 +182,13 @@ RULES FOR FIGURES
 - Round money to cents. Names in snake_case. Labels short, in the customer's language, written for the customer.
 - Products are real or absent: only what shop.* or web.products returned, with its real price. show() the ones to picture.
 - Safe to spend, the forecast to payday and "can I afford it" come from kori.*: that number is the backtested one. Do not rebuild it by hand.
+  Never subtract a price from safe to spend yourself. Something they want (a laptop, a trip, a jacket) is kori.afford(amount, label).
+  Something that broke or must be paid (a washing machine, a broken phone, a dentist, a car repair, a vet) is kori.breaks(amount, label):
+  the surprise reserve exists for exactly this, so it pays first. Say what the reserve covered, what came out of safe to spend and the
+  pace per day after it, from that result. The Plan tab shows the same sum; the two must agree to the cent.
+- From the balance to safe to spend: kori.safe_to_spend()["from_balance"] is the whole sum, row by row, and it adds up. When the view or
+  the answer walks from the balance to the safe number, table() every row of it, in that order, and leave none out.
+- Parts shown under a total add up to that total. If they do not (you show the top five of twelve), add a row for the rest or say "the largest".
 - The engine's verdict is the word for a purchase, in the answer and in the view: "yes" is comfortable (the days until payday stay at
   the usual pace or better), "tight" is possible but the days get tighter than usual, "no" does not fit before payday. Never call a
   price comfortable, easy or fine unless its verdict is "yes", and never invent a limit of your own. For an open "what can I afford?"
@@ -214,8 +221,16 @@ WRITING CODE
   last six complete months (last6), and kori.usual_month() already has it per category: use that figure and call it "a usual month".
   "The last 12 months" is last12; an average over it is the total / 12 and is called "on average over 12 months". "This year" starts
   on 1 January. One question, one window: when two windows meet in an answer, name both.
-- The bank sees a merchant and an amount, not what was bought. Payments that repeat are "payments that repeat", not subscriptions,
-  unless the kind says so; never tell them to cancel one. A purchase is a row with type "purchase": name its merchant, not its category.
+- The bank sees a merchant and an amount, not what was bought. Subscriptions, standing payments and "what repeats" come from
+  kori.repeating() and from nowhere else: its bills and its subscriptions are the list, its definition is the definition, and a shop
+  someone visits often (a supermarket, a café, a taxi) is never one. When it finds no subscriptions, say that plainly with its note,
+  show the bills that do repeat, and do not go looking in tx for more. Never tell them to cancel one.
+  A purchase is a row with type "purchase": name its merchant, not its category.
+- Peers are "customers your age" (kori.peers() says who they are), never "Finns" or "the average Finn": the comparison is with other
+  customers of this bank. A gap under 5% or under €10 is "about the same", never "€1 more".
+- Values of kind, category and type are data, not words for the customer: write "fast food", not fast_food, in labels and tables.
+- A question that is not about this person's money (the weather, the news, sports, a recipe, homework) gets no code and no web call:
+  reply with form 3, one friendly sentence that this is outside what you do here, and CHIPS with money questions they could ask.
 - Words to rows: eating out, restaurants and dining are category "Restaurants" (every kind in it); groceries and food shopping are
   category "Groceries"; a narrower word (taxis, fast food, fuel) is its kind. A visit is one row.
 - A zero is a claim too. Before you say someone spent or earned 0, be sure the filter could have matched: the value is in the lists
@@ -226,6 +241,8 @@ THE ANSWER AND THE BRIEF
 - ANSWER: lead with the finding. Two sentences and 35 words at most, three figures at most, the key one in bold, no dashes or brackets:
   the view carries everything else. {money_style}; whole euros
   unless cents matter. Do not describe the view or say "below".
+- Every answer names the period its figures cover, in words ("in August", "over the last 12 months", "in a usual month"), and the BRIEF
+  gives the designer that period as a short line for the top of the view. emit it as a text fact named period.
 - BRIEF: ask for a view on almost every answer. Say what they should see or do and which ledger names carry it. Dream big on form and leave the pixels
   to the designer: a heat grid, a calendar, a tap-through story of the year, a pick-this-instead comparison with product pictures, a slider that moves a
   balance line, a fan of outcomes, a 3D landscape of the year. Choose the form that makes this one finding obvious on a phone.
@@ -327,7 +344,9 @@ ENGINE_CALLS = [
     ("usual_month", [], "the usual month: last six complete months"),
     ("forecast", [], "the balance day by day until payday, at the usual pace and at the safe pace"),
     ("bills", [], "bills on the way before payday"),
-    ("afford", [900, "laptop"], "kori.afford(amount, label): can they buy it before payday"),
+    ("afford", [900, "laptop"], "kori.afford(amount, label): can they buy it before payday (something they WANT: it comes out of safe to spend)"),
+    ("breaks", [600, "washing machine"], "kori.breaks(amount, label): something that broke or a bill that MUST be paid (washing machine, phone, dentist, car repair). The surprise reserve pays first, then the money not needed before payday, and only the rest comes out of safe to spend: the same sum as the Plan tab's \"What if something breaks?\""),
+    ("repeating", [], "what repeats on this account: the bills (housing, utilities) and anything that looks like a subscription, with ONE definition, so every answer about subscriptions or repeating payments gives the same list"),
     ("afford_range", [], 'the limits for "what can I afford?": comfortable_up_to (days stay at the usual pace), tight_up_to (days tighter than usual but liveable), possible_up_to (all of safe to spend: nothing left for the days)'),
     ("what_if", [[{"type": "cut", "target": "Restaurants", "pct": 20}]], 'kori.what_if(changes, months=12): changes like {"type": "cut", "target": <category>, "pct": 20}'),
     ("goal", [3000, "trip"], "kori.goal(amount, name=None, months=None, by=None): what a goal needs per month"),
@@ -477,16 +496,21 @@ async def _stream(attempts: list[tuple[str, str | None]], contents: list, cfg: t
 
     async def attempt(i: int, model: str, key: str | None) -> None:
         try:
+            spoke, why = False, None
             async for ch in await coach.client(key).aio.models.generate_content_stream(model=model, contents=contents, config=cfg):
                 txt = ""
                 try:
+                    why = ch.candidates[0].finish_reason or why
                     for p in ch.candidates[0].content.parts or []:
                         if p.text and not getattr(p, "thought", False):
                             txt += p.text
                 except (AttributeError, IndexError, TypeError):
                     pass
                 if txt:
+                    spoke = True
                     await q.put((i, txt))
+            if not spoke:                                   # a reply with no words in it: the reason goes to the log
+                log.warning("model attempt %s (%s) ended without text: finish_reason=%s", i, model, why)
             await q.put((i, None))
         except asyncio.CancelledError:
             raise
@@ -534,6 +558,36 @@ async def _stream(attempts: list[tuple[str, str | None]], contents: list, cfg: t
     finally:
         for t in tasks.values():
             t.cancel()
+
+
+NUDGE = ("Reply now, in plain text, in one of the three forms: RUN: with the code in a python fence, MODEL:, or ANSWER:. "
+         "There are no tools or functions to call in this conversation.")
+
+
+async def _reply(contents: list, cfg: types.GenerateContentConfig, typing) -> tuple[str, str]:
+    """The analyst's next reply. A model that ends without a word (a blocked or malformed reply, a function call that does not
+    exist here) is asked again, twice, with the form spelled out; a reply that broke off after it started is not retried,
+    because the customer has already seen part of it."""
+    seen = False
+
+    async def on(text: str, model: str) -> None:
+        nonlocal seen
+        seen = True
+        await typing(text, model)
+
+    for go in range(3):
+        again = contents
+        if go:
+            last = contents[-1]
+            again = contents[:-1] + [types.Content(role="user", parts=[*(last.parts or []), types.Part(text=NUDGE)])] if last.role == "user" \
+                else contents + [types.Content(role="user", parts=[types.Part(text=NUDGE)])]
+        try:
+            return await _stream(_analyst_attempts(), again, cfg, on, race=2)
+        except RuntimeError as e:
+            if seen or go == 2:
+                raise
+            log.warning("analyst gave no reply (%s): asking again, try %d", e, go + 2)
+    raise RuntimeError("no model answered")
 
 
 _FENCE = re.compile(r"```(?:python|py)?[ \t]*\n")
@@ -717,7 +771,8 @@ APPROVED_ONLY = {
 ASIDE = ("That reply was not one of the three forms, so the customer saw nothing. If the code needs another go, send it now as form 1 "
          "(RUN:, the code in a python fence, say() and CHIPS). If you are done, reply with ANSWER: and CHIPS, written to the customer: "
          "no code, no names from the sandbox, nothing about what went wrong.")
-_CODEY = re.compile(r"`|\b(?:tx|df|kori|shop|web|market)[\[.]|\b(?:emit|table|say|groupby|isin)\(|\b[a-z]+_[a-z_]+\b")
+_CODEY = re.compile(r"`|\b(?:tx|df|kori|shop|web|market)[\[.]|\b(?:emit|table|say|groupby|isin)\(|\b[a-z]+_[a-z_]+\b"
+                    r"|[{}]|(?<![A-Za-z])(?:nan|NaN|NaT|undefined)(?![A-Za-z])|<NA>")     # and a hole where a value should be
 
 
 def _aside(text: str, answer: str, last_ok: bool) -> bool:
@@ -813,7 +868,11 @@ def _fallback_view(ledger: dict, lang: str) -> str:
 
 
 LEDE = ("\nThe first sentence of the view: one plain finding a customer would say out loud. Any date, name or amount in it comes from the "
-        "ledger through a placeholder; say nothing about causes or timing that the ledger does not state.")
+        "ledger through a placeholder; say nothing about causes or timing that the ledger does not state. The customer has just read the "
+        "written answer above the view, so the view does not say it again: its top is the key figure with a few words, or the next thing "
+        "worth knowing, never the answer's sentence reworded. When the ledger has a fact named period, show it as one small quiet line "
+        "under the top. Placeholders are {{name|format}} with both braces closed; in a row template a column is {column|format} with the "
+        "column name exactly as the ledger lists it. Never show a value of kind, category or type with an underscore in it.")
 
 
 async def _view(w: _Work, question: str, answer: str, title: str, brief: str) -> None:
@@ -890,7 +949,7 @@ async def run_turn(sess: LabSession, turn: Turn) -> None:
         last_ok, nudged = True, 0                                        # a failed cell must be followed by a cell or a real answer
         held, zero_checked = ("", ""), False                             # the view a cell asked for, kept while a zero is checked
         view: asyncio.Task | None = None
-        rec = None if turn.fresh else kept.find(turn.message, lang, sess.customer_id)
+        rec = None if turn.fresh else kept.find(turn.message, lang, sess.customer_id, loose=turn.approved)
 
         def add(*cs) -> None:
             mine.extend(cs)
@@ -914,7 +973,13 @@ async def run_turn(sess: LabSession, turn: Turn) -> None:
             for step in range(MAX_STEPS if not (rec or turn.approved) else 0):
                 typing = _Typing(w)
                 t_step = time.time()
-                text, model = await _stream(_analyst_attempts(), contents, cfg, typing, race=2)
+                try:
+                    text, model = await _reply(contents, cfg, typing)
+                except RuntimeError as e:                               # three tries and no reply: say so plainly, never a crash
+                    log.error("analyst step %d: %s after retries, question: %r", step, e, turn.message[:200])
+                    if w.said and not check.answer(w.said, check.allowed(w.ledger(), turn.message), lang):
+                        answer = w.said                                 # a cell had already worked the answer out
+                    break
                 rep = _parse(text)
                 log.info("analyst step %d (%s): %.1fs, %d chars", step, rep["kind"], time.time() - t_step, len(text))
                 if rep["kind"] == "run" and rep["code"]:
@@ -1007,18 +1072,40 @@ async def _warm(sess: LabSession, m: Money, turn: Turn | None = None) -> None:
 
 
 # ------------------------------------------------------------------ starters
+_Q = {   # a suggested question: English, Finnish, and the line under it in both
+    "eating": ("When do I spend the most on eating out?", "Milloin kulutan eniten ulkona syömiseen?", "Any cut of your own payments", "Mikä tahansa näkymä omiin maksuihisi"),
+    "groceries": ("Can my grocery shopping be cheaper?", "Saisinko ruokaostokset halvemmalla?", "Real products and prices from S-kaupat", "Oikeat tuotteet ja hinnat S-kaupoista"),
+    "heading": ("Where is my account heading before payday?", "Mihin tilini on menossa ennen palkkapäivää?", "Your balance, day by day", "Saldosi päivä päivältä"),
+    "laptop": ("I need a new laptop. What can I afford?", "Tarvitsen uuden läppärin. Mihin minulla on varaa?", "Real options, checked against your payday", "Oikeat vaihtoehdot, tarkistettu palkkapäivääsi vasten"),
+    "laptop900": ("Could I afford a €900 laptop this month?", "Olisiko minulla varaa 900 euron läppäriin tässä kuussa?", "Checked against your payday", "Tarkistettu palkkapäivääsi vasten"),
+    "saving": ("What if I save €150 a month for ten years?", "Mitä jos säästän 150 € kuussa kymmenen vuotta?", "A model with a range of outcomes", "Malli, joka näyttää vaihteluvälin"),
+    "year": ("Show me my year", "Näytä minun vuoteni", "Your year in money, as a story", "Vuotesi rahassa, tarinana"),
+    "week": ("What is safe for me to spend this week?", "Paljonko voin turvallisesti käyttää tällä viikolla?", "The pace that lasts until money comes in", "Tahti, joka kantaa seuraavaan tulopäivään"),
+    "cycle": ("How did my last pay cycle go?", "Miten edellinen palkkajakso meni?", "What happened, and why", "Mitä tapahtui ja miksi"),
+    "balance": ("What's my balance?", "Paljonko tililläni on rahaa?", "Why your balance is not your budget", "Miksi saldo ei ole budjetti"),
+    "cut": ("What if I reduce my dining out by 20%?", "Mitä jos vähennän ulkona syömistä 20 %?", "Replayed on your own usual month", "Laskettu omasta tavallisesta kuukaudestasi"),
+    "bills": ("What bills are coming before payday?", "Mitä laskuja on tulossa ennen palkkapäivää?", "Already set aside for you", "Jo varattu sinulle"),
+    "held": ("Was this number right before?", "Onko tämä luku pitänyt ennenkin?", "Tested on your own past paydays", "Testattu omilla menneillä palkkapäivilläsi"),
+    "repeats": ("What do I pay for every month?", "Mitä maksan joka kuukausi?", "Bills and subscriptions", "Laskut ja tilaukset"),
+    "peers": ("How do I compare with others my age?", "Miten vertaudun muihin ikäisiini?", "Against the bank's customers your age", "Pankin ikäisiäsi asiakkaita vasten"),
+}
+
+
 def starters(m: Money) -> list[dict]:
+    """The four questions the chat offers this customer. Each has an approved view that holds for them, so it opens at
+    once: nobody at zero is offered a laptop, and an account that shows part of a month is asked only what it can answer."""
     from .door import products_ready
     fi = m.prefs.lang == "fi"
-    items = [("When do I spend the most on eating out?", "Milloin kulutan eniten ulkona syömiseen?", "Any cut of your own payments", "Mikä tahansa näkymä omiin maksuihisi")]
-    items += [("Can my grocery shopping be cheaper?", "Saisinko ruokaostokset halvemmalla?", "Real products and prices from S-kaupat", "Oikeat tuotteet ja hinnat S-kaupoista")
-              if products_ready("shop") else
-              ("Where is my account heading before payday?", "Mihin tilini on menossa ennen palkkapäivää?", "Your balance, day by day", "Saldosi päivä päivältä")]
-    items += [("I need a new laptop. What can I afford?", "Tarvitsen uuden läppärin. Mihin minulla on varaa?", "Real options, checked against your payday", "Oikeat vaihtoehdot, tarkistettu palkkapäivääsi vasten")
-              if products_ready("web") else
-              ("Could I afford a €900 laptop this month?", "Olisiko minulla varaa 900 euron läppäriin tässä kuussa?", "Checked against your payday", "Tarkistettu palkkapäivääsi vasten")]
-    items += [
-        ("What if I save €150 a month for ten years?", "Mitä jos säästän 150 € kuussa kymmenen vuotta?", "A model with a range of outcomes", "Malli, joka näyttää vaihteluvälin"),
-        ("Show me my year", "Näytä minun vuoteni", "Your year in money, as a story", "Vuotesi rahassa, tarinana"),
-    ]
-    return [{"text": b if fi else a, "hint": d if fi else c} for a, b, c, d in items]
+    safe = m.safe
+    groceries = "groceries" if products_ready("shop") else "heading"
+    if m.partial_view:
+        keys = ["eating", groceries, "bills", "held"]
+    elif safe["amount"] <= 0:
+        keys = ["cycle", "balance", groceries, "cut"]
+    elif (m.customer.age or 0) >= 68:
+        keys = ["week", groceries, "repeats", "peers"]
+    elif safe["status"] == "tight":
+        keys = ["week", groceries, "eating", "cycle"]
+    else:
+        keys = ["eating", groceries, "laptop" if products_ready("web") else "laptop900", "saving"]
+    return [{"text": b if fi else a, "hint": d if fi else c} for a, b, c, d in (_Q[k] for k in keys + ["year"])]

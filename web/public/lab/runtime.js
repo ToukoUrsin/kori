@@ -50,7 +50,8 @@
       v = +v; var c = Math.round(Math.abs(v) * 100 + 1e-7), e = Math.floor((c + 50) / 100), p = [v < 0 && e ? MINUS : "", grp(String(e))];
       return fi() ? p[0] + p[1] + NB + "€" : p[0] + "€" + p[1];
     },
-    pct: function (v) { var a = Math.abs(+v), p = parts(v, a < 10 && a % 1 ? 1 : 0); return p[0] + p[1] + p[2] + (fi() ? NB + "%" : "%"); },
+    // a fee of 0.43% is not "0.4%": under one percent keeps two decimals
+    pct: function (v) { var a = Math.abs(+v), f = Math.abs(a * 10 - Math.round(a * 10)) > 1e-6, p = parts(v, a % 1 ? (a < 1 && f ? 2 : a < 10 ? 1 : 0) : 0); return p[0] + p[1] + p[2] + (fi() ? NB + "%" : "%"); },
     int: function (v) { var p = parts(v, 0); return p[0] + p[1]; },
     // a count, days or months: whole when it is whole, one decimal when it is not ("2.2 months", never "2")
     count: function (v) { var n = +v; if (Math.abs(n - Math.round(n)) < 0.05) return fmt.int(n); var p = parts(n, 1); return p[0] + p[1] + p[2]; },
@@ -70,6 +71,8 @@
   var UNIT_FMT = { eur: "eur", eur_per_day: "eur", eur_per_month: "eur", pct: "pct", count: "count", days: "count", months: "count", years: "count", date: "date", ratio: "num", text: "raw" };
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
   var NUMF = /^(eur|eur0|pct|int|count|num|signed)$/;
+  // a year reads 2025, never 2,025: a whole number in that range under a name that says year
+  function yearish(name, v) { return typeof v === "number" && v >= 1900 && v <= 2100 && v % 1 === 0 && /(^|[._])(year|yr|vuosi|vuoden|vuonna)($|[._])/i.test(String(name)); }
   function apply(v, f) {
     if (NUMF.test(f) && !(typeof v === "number" ? isFinite(v) : typeof v === "string" && v.trim() !== "" && isFinite(v))) return "–";   // a missing value, never "€NaN"
     return (fmt[f] || (typeof v === "number" ? fmt.num : fmt.raw))(v);
@@ -85,7 +88,7 @@
   function fact(name) { var f = S.data.facts && S.data.facts[name]; return f == null ? cell(name) : (typeof f === "object" ? f.v : f); }
   // "table.3.column", "table.last.column": one cell of a table, when a view asks for it as a single figure
   function cell(name) {
-    var m = /^([\w-]+)\.(\d+|first|last)\.([\w-]+)$/.exec(String(name)); if (!m) return undefined;
+    var m = /^([\w-]+)\.(\d+|first|last)\.([^{}|]+)$/.exec(String(name)); if (!m) return undefined;
     var t = S.data.tables && S.data.tables[m[1]], rows = t && t.rows; if (!rows || !rows.length) return undefined;
     var r = rows[m[2] === "first" ? 0 : m[2] === "last" ? rows.length - 1 : +m[2]], v = r && r[m[3]];
     return v == null ? undefined : v;
@@ -114,6 +117,7 @@
   }
   // "a.b" on a row; a string that is a product id opens that product
   function dig(row, path) {
+    if (row && typeof row === "object" && Object.prototype.hasOwnProperty.call(row, path)) return row[path];
     var v = row, segs = path.split(".");
     for (var i = 0; i < segs.length; i++) {
       if (typeof v === "string") v = product(v);
@@ -124,9 +128,10 @@
   }
   // "{col|fmt}" in a row template
   function fillRow(tpl, row, i) {
-    return tpl.replace(/\{([\w.$]+)(?:\|(\w+))?\}/g, function (_, path, f) {
+    return tpl.replace(/\{\s*([^{}|<>"'=;:\n]{1,60}?)\s*(?:\|\s*(\w+)\s*)?\}/g, function (_, path, f) {
       var v = path === "$i" ? i : dig(row, path);
       if (v == null) return "";
+      if (yearish(path, v) && (!f || /^(int|count|num)$/.test(f))) return String(v);
       return f === "eur" ? figHtml(v, f) : esc(apply(v, f));
     });
   }
@@ -139,10 +144,12 @@
   }, true);
 
   /* ---------------- placeholders ---------------- */
-  var PH = /\{\{\s*([\w.-]+)\s*(?:\|\s*(\w+)\s*)?(\|[^{}]*)?\}\}/g; // anything after the format is ignored, never shown
+  var PH = /\{\{\s*([^{}|]+?)\s*(?:\|\s*(\w+)\s*)?(\|[^{}]*)?\}\}?/g; // anything after the format is ignored, never shown; one closing brace is enough
   function phText(name, f) {
     var v = fact(name); if (v === undefined) return "–";
-    return apply(v, f || UNIT_FMT[factUnit(name)] || (typeof v === "number" ? "num" : "raw"));
+    f = f || UNIT_FMT[factUnit(name)] || (typeof v === "number" ? "num" : "raw");
+    if (yearish(name, v) && /^(int|count|num)$/.test(f)) return String(v);
+    return apply(v, f);
   }
   function fillTree(node) {
     var kids = Array.prototype.slice.call(node.childNodes);
@@ -158,6 +165,7 @@
           var sp = document.createElement("span"), v = fact(m[1]), f = m[2] || UNIT_FMT[factUnit(m[1])] || (typeof v === "number" ? "num" : "raw");
           sp.className = "k-n"; sp.setAttribute("data-trace", m[1]);
           if (v === undefined) sp.textContent = "–";
+          else if (yearish(m[1], v) && /^(int|count|num)$/.test(f)) sp.textContent = String(v);
           else { sp.innerHTML = figHtml(v, f); if (typeof v === "number") { sp.setAttribute("data-v", v); sp.setAttribute("data-f", f); } }
           last = m.index + m[0].length;
           if (m[3] && /hidden/.test(m[3])) continue;
@@ -248,8 +256,16 @@
       syncKit();
       var sl = root.querySelectorAll("k-slides"); for (i = 0; i < sl.length; i++) sl[i].play && sl[i].play();
       document.documentElement.setAttribute("data-k-done", "");
+      scrub();
     }
     reportHeight();
+  }
+  // a finished screen never shows a placeholder as it was typed: what could not be filled becomes a dash
+  function scrub() {
+    var w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT), n, hit = [];
+    while ((n = w.nextNode())) if (/\{\{|\}\}|\{[^{}\s][^{}]{0,60}\}/.test(n.data) && !(n.parentNode && n.parentNode.closest("script,style,template"))) hit.push(n);
+    hit.forEach(function (t) { t.data = t.data.replace(/\{\{[^{}]*\}?\}?|\{[^{}\s][^{}]{0,60}\}|\}\}/g, "–"); });
+    if (hit.length) post({ kori: "scrubbed", n: hit.length });
   }
   function runScript(code) {
     var s = document.createElement("script");
@@ -678,8 +694,13 @@
       this._clear(); if (!rows.length) return;
       var vmax = Math.max.apply(null, rows.map(val0).concat(0)) || 1, pickMode = this.getAttribute("pick") || "max", sel = -1;
       if (pickMode === "max") rows.forEach(function (r, i) { if (sel < 0 || val0(r) > val0(rows[sel])) sel = i; }); else if (pickMode === "last") sel = rows.length - 1; else if (/^\d+$/.test(pickMode)) sel = Math.min(+pickMode, rows.length - 1);
-      var lab = function (r) { return xf ? apply(r[xc], xf) : String(r[xc]); };
+      var lab = function (r) { return xf ? apply(r[xc], xf) : String(r[xc] == null ? "" : r[xc]); };
       var tpl = this.getAttribute("readout");
+      // a few bars named in words ("Getting around", "Home & tech") do not fit under upright bars: they lie down, with the whole name
+      if (!horiz && rows.length <= 8) {
+        var slot = Math.floor((Math.max(1, W / rows.length) - 4) / 6.6), names = rows.map(lab);
+        if (names.some(function (t) { return t.length > slot; }) && names.every(function (t) { return !/^\d/.test(t) && !(isNaN(+t) && wdIndex(t) >= 0); })) horiz = true;
+      }
       if (horiz) {
         var items = rows.map(function (r, i) {
           var b = h("button", "k-hbar", "<span>" + esc(lab(r)) + '</span><i style="--w:' + ((Math.max(0, val0(r)) / vmax) * 100).toFixed(1) + ";--i:" + i + '"></i><b class="k-n">' + esc(apply(r[yc], f)) + "</b>");
@@ -694,9 +715,15 @@
       var svg = el("svg", { viewBox: "0 0 " + W + " " + H, height: H }); svg.setAttribute("data-k-own", ""); this.appendChild(svg);
       el("line", { x1: 0, x2: W, y1: T + ph + 0.5, y2: T + ph + 0.5, class: "k-grid" }, svg);
       var step = Math.max(1, Math.ceil(34 / band)), bars = [], labs = [], val = el("text", { class: "k-ax on", "text-anchor": "middle" }, svg);
-      // a label gets the width of its slot: a long weekday becomes its short form, anything else is cut with an ellipsis
-      var maxCh = Math.max(2, Math.floor((band * step - 4) / 6.6)), full = lab, all = rows.map(full);
+      // a label gets the width of its slot: a long weekday becomes its short form; other labels are shown whole and fewer of them
+      // ("15 Aug" under every third bar, never "15…"), and only a label wider than a third of the chart is cut
+      var full = lab, all = rows.map(full), maxCh = Math.max(2, Math.floor((band * step - 4) / 6.6));
       var days = all.some(function (t) { return t.length > maxCh; }) && all.every(function (t) { return isNaN(+t) && wdIndex(t) >= 0; }); // one long weekday: all go short together
+      if (!days) {
+        var widest = Math.min(Math.max.apply(null, all.map(function (t) { return t.length; }).concat(1)), Math.floor(W / 3 / 6.6));
+        step = Math.max(step, Math.ceil((widest * 6.6 + 10) / band));
+        maxCh = Math.max(2, Math.floor((band * step - 4) / 6.6));
+      }
       lab = function (r) {
         var t = full(r); if (days) t = loc().wd[wdIndex(t)];
         return t.length <= maxCh ? t : t.slice(0, Math.max(1, maxCh - 1)).replace(/\s+$/, "") + "…";
@@ -707,7 +734,7 @@
         b.style.transition = "fill 200ms"; b.style.transformBox = "fill-box"; b.style.transformOrigin = "bottom";
         if (firstDraw && !REDUCED) b.animate([{ transform: "scaleY(0)" }, { transform: "scaleY(1)" }], { duration: 700, delay: 120 + i * (360 / n), fill: "backwards", easing: "cubic-bezier(0.16, 1, 0.3, 1)" });
         bars.push(b);
-        var t = el("text", { x: i * band + band / 2, y: H - 5, class: "k-ax", "text-anchor": "middle" }, svg); var endL = step === 2 && i === n - 1, nearEnd = step === 2 && i !== n - 1 && n - 1 - i < step; /* the last bar keeps its label, so its neighbour gives way */ t.textContent = (i % step === 0 && !nearEnd) || endL ? lab(r) : ""; labs.push(t);
+        var t = el("text", { x: Math.max(lab(r).length * 3.3, Math.min(W - lab(r).length * 3.3, i * band + band / 2)), y: H - 5, class: "k-ax", "text-anchor": "middle" }, svg); var endL = step === 2 && i === n - 1, nearEnd = step === 2 && i !== n - 1 && n - 1 - i < step; /* the last bar keeps its label, so its neighbour gives way */ t.textContent = (i % step === 0 && !nearEnd) || endL ? lab(r) : ""; labs.push(t);
         var hitr = el("rect", { x: i * band, y: 0, width: band, height: H, fill: "transparent", class: "k-hit" }, svg);
         hitr.addEventListener("pointerdown", function () { choose(i); }); hitr.addEventListener("pointerenter", function (e) { if (e.buttons) choose(i); });
       });

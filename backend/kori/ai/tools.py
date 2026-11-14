@@ -8,7 +8,7 @@ from __future__ import annotations
 import copy
 from dataclasses import dataclass, field
 
-from ..engine import insights, lessons, persona
+from ..engine import answers, insights, lessons, persona
 from ..engine.afford import afford
 from ..engine.core import Money
 from ..engine import loop
@@ -183,7 +183,7 @@ DECLARATIONS = [
      "description": "Plain-language explanation of a money concept, with the user's own numbers. Use when the user asks what something means.",
      "parameters": {"type": "object", "required": ["concept"], "properties": {"concept": {"type": "string", "enum": CONCEPTS}}}},
     {"name": "start_lesson",
-     "description": "Open a one-minute lesson in the app (three slides, one question, say-it-back). Use when the user wants to learn or practise a concept.",
+     "description": "Open a two-minute lesson in the app (three slides, one question, say-it-back). Use when the user wants to learn or practise a concept.",
      "parameters": {"type": "object", "required": ["lesson"], "properties": {"lesson": {"type": "string", "enum": lessons.ORDER}}}},
 ]
 
@@ -340,6 +340,18 @@ def _thing_progress(p: dict) -> dict:
 
 
 def execute(m: Money, state: dict, name: str, args: dict, allowed: set[float] | None = None) -> ToolOut:
+    """Run one tool. With the other bank linked, its cards and its result say that a simulated account is counted in."""
+    out = _execute(m, state, name, args, allowed)
+    lv = m.linked_view
+    if lv:
+        for c in out.cards:
+            C.stamp(m, c)
+        if isinstance(out.result, dict) and "simulated_account" not in out.result:
+            out.result = {**out.result, "simulated_account": lv["note"]}
+    return out
+
+
+def _execute(m: Money, state: dict, name: str, args: dict, allowed: set[float] | None = None) -> ToolOut:
     args = dict(args or {})
     if name == "safe_to_spend":
         return ToolOut(m.safe, [C.safe_card(m)])
@@ -516,7 +528,11 @@ def execute(m: Money, state: dict, name: str, args: dict, allowed: set[float] | 
         if args.get("monthly_saving") is not None:
             p["savings_goal_monthly"] = max(0.0, float(args["monthly_saving"])); changed.append("monthly_saving")
         if args.get("goal_amount") is not None:
-            p["goal"] = {"name": args.get("goal_name") or ("Goal" if m.prefs.lang == "en" else "Tavoite"), "amount": float(args["goal_amount"])}
+            try:
+                amount = answers.goal_amount(args["goal_amount"], m.prefs.lang)
+            except ValueError as e:
+                return ToolOut({"error": str(e), "say": "Tell the user this sentence as it is. Nothing was saved."})
+            p["goal"] = {"name": args.get("goal_name") or ("Goal" if m.prefs.lang == "en" else "Tavoite"), "amount": amount}
             changed.append("goal")
         if args.get("move_category") and args.get("to_basket"):
             p.setdefault("basket_overrides", {})[args["move_category"]] = args["to_basket"]; changed.append("basket")

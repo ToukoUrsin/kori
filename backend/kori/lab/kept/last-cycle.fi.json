@@ -1,0 +1,82 @@
+{
+ "question": "Miten edellinen palkkajakso meni?",
+ "lang": "fi",
+ "kept": "2026-11-14",
+ "by": {
+  "analyst": "kept view",
+  "designer": "kept view"
+ },
+ "title": "Edellinen palkkajakso",
+ "chips": [],
+ "cells": [
+  {
+   "title": "Viimeinen täysi palkkajakso, kuten etusivulla",
+   "by": "kept view",
+   "code": "PENSION = (me.get(\"age\") or 0) >= 68\nPAY = \"eläkepäivä\" if PENSION else \"palkkapäivä\"\nPAY_TO = \"eläkepäivään\" if PENSION else \"palkkapäivään\"\nCYCLE = \"eläkejakso\" if PENSION else \"palkkajakso\"\ndef day(s):\n    d = datetime.date.fromisoformat(str(s)[:10])\n    return f\"{d.day}.{d.month}.\"\nemit(\"pay_word\", PAY, \"text\", \"Päivä, jona rahat tulevat\")\nemit(\"pay_to\", PAY_TO, \"text\", \"Päivä, jona rahat tulevat\")\n\nlc = kori.last_cycle()\ncy = lc.get(\"cycle\") or {}\nparts = [{\"label\": \"Laskut\", \"amount\": cy.get(\"fixed\", 0)}, {\"label\": \"Osuus yllätyksiin\", \"amount\": cy.get(\"surprise_reserve\", 0)}]\nif (cy.get(\"planned_saving\") or 0) > 0:\n    parts.append({\"label\": \"Suunniteltu säästö\", \"amount\": cy[\"planned_saving\"]})\nhist = [{\"label\": h[\"label\"], \"last_day\": h[\"last_day\"], \"everyday_spent\": h[\"everyday_spent\"], \"everyday_available\": h[\"everyday_available\"],\n         \"within\": h[\"within\"]} for h in (lc.get(\"history\") or {}).get(\"cycles\") or []]\nok = lc.get(\"available\") and not lc.get(\"partial_view\") and cy and hist and lc.get(\"history_line\") and \\\n    abs(cy[\"income\"] - sum(p[\"amount\"] for p in parts) - cy[\"everyday_available\"]) < 0.005\nif ok:                                            # only part of the money on this account: no kept answer, worked out fresh\n    emit(\"period\", cy[\"label\"], \"text\", \"Viimeinen täysi jakso\")\n    emit(\"income\", cy[\"income\"], \"eur\", \"Tilille tullut raha\")\n    emit(\"everyday_available\", cy[\"everyday_available\"], \"eur\", \"Arkeen jäi\")\n    emit(\"everyday_spent\", cy[\"everyday_spent\"], \"eur\", \"Arkeen meni\")\n    emit(\"difference\", cy[\"difference\"], \"eur\", \"Yli\" if not cy[\"within\"] else \"Jäi käyttämättä\")\n    emit(\"history_line\", lc[\"history_line\"], \"text\", \"Kuinka usein se mahtui\")\n    table(\"parts\", parts, \"Vähennetään ensin\")\n    table(\"history\", hist, \"Viimeiset jaksot\")\n    text = f\"Edellinen {CYCLE} {cy['label']} meni **{eur(cy['difference'], True)}** yli: arkeen meni {eur(cy['everyday_spent'])}, kun tilaa oli {eur(cy['everyday_available'])}.\" if not cy[\"within\"] else f\"Edellinen {CYCLE} {cy['label']} mahtui, ja **{eur(cy['difference'], True)}** jäi yli: arkeen meni {eur(cy['everyday_spent'])}, kun tilaa oli {eur(cy['everyday_available'])}.\"\n    if lc.get(\"driver_line\"):\n        emit(\"what_did_it\", lc[\"driver_line\"], \"text\", \"Mistä se johtui\")\n        text += \" \" + lc[\"driver_line\"]\n    say(text)\n"
+  }
+ ],
+ "html": "<style>.kw .k-n{white-space:normal;color:inherit;font-weight:inherit}</style>\n<p class=\"k-lede kw\">{{history_line|raw}}</p>\n<div class=\"k-rows\"><div class=\"k-row\"><div>Tuli tilille<small>{{period|raw}}</small></div><b>{{income|eur}}</b></div>\n<k-each table=\"parts\"><template><div class=\"k-row\"><div class=\"k-dim\">{label}</div><b class=\"k-dim\">−{amount|eur}</b></div></template></k-each>\n<div class=\"k-row total\"><div>Arkeen jäi</div><b>{{everyday_available|eur}}</b></div>\n<div class=\"k-row\"><div>Arkeen meni</div><b>{{everyday_spent|eur}}</b></div></div>\n<div class=\"k-stack\"><p class=\"k-h\">Arkimenot jakso jaksolta</p><k-bars table=\"history\" x=\"last_day\" xfmt=\"date\" y=\"everyday_spent\" fmt=\"eur0\" pick=\"last\" readout=\"**{label}** · {everyday_spent|eur0} / {everyday_available|eur0}\"></k-bars></div>\n<div class=\"k-chips\"><button class=\"k-chip\" data-ask=\"Paljonko voin turvallisesti käyttää tällä viikolla?\">Turvallista tällä viikolla</button><button class=\"k-chip\" data-ask=\"Onko tämä luku pitänyt ennenkin?\">Onko luku pitänyt</button></div>",
+ "wordings": [
+  "Miten edellinen palkkajakso meni?",
+  "miten viime palkkajakso meni",
+  "viime jakso?",
+  "miten mulla meni viime kuussa",
+  "miten viime kuu meni",
+  "mahtuiko edellinen palkkajakso",
+  "menikö viime palkkajakso yli",
+  "miten edellinen eläkejakso meni",
+  "miten viime kuukausi meni",
+  "edellisen palkkajakson yhteenveto"
+ ],
+ "match": [
+  [
+   "jakso",
+   "palkkajakso",
+   "eläkejakso",
+   "miten viime kuu meni",
+   "miten viime kuukausi meni",
+   "miten edellinen kuukausi meni",
+   "miten mulla meni viime kuussa",
+   "miten minulla meni viime kuussa",
+   "miten viime kuussa meni",
+   "miten viime kuu sujui"
+  ]
+ ],
+ "unless": [
+  "tämä",
+  "tällä",
+  "tämän",
+  "nykyi",
+  "ensi",
+  "seuraava",
+  "turvall",
+  "lasku",
+  "säästä",
+  "sijoit",
+  "ruoka",
+  "ulkona",
+  "lopussa",
+  "jää",
+  "mikä on",
+  "mitä on",
+  "tarkoittaa",
+  "1",
+  "2",
+  "3",
+  "4",
+  "5",
+  "6",
+  "7",
+  "8",
+  "9",
+  "€1",
+  "€2",
+  "€3",
+  "€4",
+  "€5",
+  "€6",
+  "€7",
+  "€8",
+  "€9"
+ ]
+}

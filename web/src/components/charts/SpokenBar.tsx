@@ -43,10 +43,15 @@ export function SpokenBar({ items, legend = true, animateIn = true }: { items: S
       {legend && (
         <ul className="mt-3 space-y-1.5">
           {rows.map((s) => (
-            <li key={s.key} className="flex min-w-0 items-center gap-2 text-[13px] leading-[18px]">
-              <Dot k={s.key} />
-              <span className={cx("min-w-0 flex-1", s.key === "safe" ? "font-semibold text-ink" : "text-ink-2")}>{s.label}</span>
-              <span className={cx("num shrink-0", s.key === "safe" ? "font-semibold text-ink" : "text-ink")}>{money(s.amount, lang)}</span>
+            <li key={s.key} className="text-[13px] leading-[18px]">
+              <div className="flex min-w-0 items-center gap-2">
+                <Dot k={s.key} />
+                <span className={cx("min-w-0 flex-1", s.key === "safe" ? "font-semibold text-ink" : "text-ink-2")}>{s.label}</span>
+                {/* to the cent: the rows add up to the balance exactly, and match the sum the chat shows */}
+                <span className={cx("num shrink-0", s.key === "safe" ? "font-semibold text-ink" : "text-ink")}>{money(s.amount, lang, { cents: true })}</span>
+              </div>
+              {/* "Kept as savings" says what it is: savings this pay cycle's plan does not use, not spending money */}
+              {s.detail && <p className="mt-0.5 pl-[18px] text-[12px] leading-4 text-ink-3">{s.detail}</p>}
             </li>
           ))}
         </ul>

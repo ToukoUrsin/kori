@@ -50,7 +50,8 @@ def _norm(ch: dict) -> dict:
     return out
 
 
-def _safe_effect(m: Money, limit_change: float, everyday_change: float, one_off_total: float, one_off_basket: str | None) -> dict:
+def _safe_effect(m: Money, limit_change: float, everyday_change: float, one_off_total: float, one_off_basket: str | None,
+                 extra_saving: float = 0.0) -> dict:
     """What the changes do to safe to spend.
 
     Safe to spend is a limit: what a pay cycle's income leaves for everyday after musts, the surprise reserve and saving.
@@ -66,9 +67,10 @@ def _safe_effect(m: Money, limit_change: float, everyday_change: float, one_off_
     pay = date.fromisoformat(s["next_payday"])
     cycle_days = s["budget"]["cycle_days"]
     cycle_now = s["budget"]["everyday_budget"]
-    cycle_delta = r2(limit_change * cycle_days / DAYS_PER_MONTH)
+    # income and musts scale with the length of the pay cycle; a saving set on top of the habit comes off whole
+    cycle_delta = r2((limit_change + extra_saving) * cycle_days / DAYS_PER_MONTH - extra_saving)
     cycle_after = r2(cycle_now + cycle_delta)
-    day_change = r2(limit_change / DAYS_PER_MONTH)
+    day_change = r2(cycle_delta / cycle_days)
     budget_after = r2(s["budget"]["left"] + cycle_delta)
     safe_after = r2(max(0.0, min(s["cash"]["free"], budget_after))) if not partial else s["amount"]
     kind = ("limit_and_pace" if abs(limit_change) >= 0.005 and abs(everyday_change) >= 0.005 else
@@ -226,7 +228,7 @@ def what_if(m: Money, changes: list[dict], months: int = 12, goal_amount: float 
                            "change alone adds up to, not where your money will be.",
                            "Suurin osa palkastasi siirtyy toiseen pankkiin, joten näen vain osan kuukaudestasi. Viivat näyttävät, "
                            "mitä tämä muutos yksin tekee, eivät sitä, missä rahasi ovat.")},
-        "safe_effect": _safe_effect(m, r2(non_everyday - extra_saving), r2(everyday_change), one_off_total, one_off_basket),
+        "safe_effect": _safe_effect(m, r2(non_everyday - extra_saving), r2(everyday_change), one_off_total, one_off_basket, r2(extra_saving)),
     }
     if extra_saving > 0:
         room = max(0.0, base_left + monthly_freed)
@@ -303,7 +305,8 @@ def what_if(m: Money, changes: list[dict], months: int = 12, goal_amount: float 
                                "note": {"en": "The 4% line is an example for learning how compounding works, not a forecast or advice.",
                                         "fi": "4 %:n rivi on esimerkki korkoa korolle -ilmiöstä, ei ennuste eikä sijoitusneuvo."}[lang]}
     if goal_amount:
-        g = float(goal_amount)
+        from .answers import goal_amount as _goal_amount          # local import: answers imports this module
+        g = _goal_amount(goal_amount, lang)
         room_now = max(0.0, base_left) if not partial else 0.0
         room_new = max(0.0, base_left + monthly_freed) if not partial else 0.0
         out["goal"] = {"name": goal_name or {"en": "your goal", "fi": "tavoitteesi"}[lang], "amount": r2(g),

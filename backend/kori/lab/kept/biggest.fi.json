@@ -1,0 +1,86 @@
+{
+ "question": "Mikä oli suurin ostokseni viime kuussa?",
+ "lang": "fi",
+ "kept": "2026-11-14",
+ "by": {
+  "analyst": "kept view",
+  "designer": "kept view"
+ },
+ "title": "Suurin ostos",
+ "chips": [],
+ "cells": [
+  {
+   "title": "Viimeisimmän täyden kuukauden suurimmat ostokset",
+   "by": "kept view",
+   "code": "MON = [\"tammikuu\", \"helmikuu\", \"maaliskuu\", \"huhtikuu\", \"toukokuu\", \"kesäkuu\", \"heinäkuu\", \"elokuu\", \"syyskuu\", \"lokakuu\", \"marraskuu\", \"joulukuu\"]\nLBL = {\"Housing\": \"Asuminen\", \"Restaurants\": \"Ravintolat\", \"Groceries\": \"Ruokaostokset\", \"Home & Tech\": \"Koti ja tekniikka\", \"Transportation\": \"Liikkuminen\", \"Entertainment\": \"Huvit\", \"Lifestyle\": \"Ostokset\", \"Utilities\": \"Laskut ja sähkö\", \"Health\": \"Terveys\", \"Travel\": \"Matkat\"}\nBAS = {\"fixed\": \"Kiinteät pakolliset\", \"surprise\": \"Yllättävät pakolliset\", \"everyday\": \"Arjen menot\"}\nlast = list(last12)[-1]\nmname = MON[int(last[5:]) - 1]\nbm = kori.baskets(last)\nONE = {\"fixed\": \"kiinteisiin pakollisiin menoihin\", \"surprise\": \"yllättäviin pakollisiin menoihin\", \"everyday\": \"arjen menoihin\"}\nd = tx[tx[\"is_spend\"] & (tx[\"type\"] == \"purchase\") & (tx[\"month\"] == last)].sort_values(\"spend\", ascending=False)\nrows = [{\"what\": str(r.merchant) if isinstance(r.merchant, str) and r.merchant else LBL.get(r.category, r.category), \"category\": LBL.get(r.category, r.category),\n         \"basket\": BAS.get(r.basket, r.basket), \"tone\": r.basket, \"one\": ONE.get(r.basket, \"\"), \"date\": str(r.date), \"amount\": round(float(r.spend), 2)} for r in d.head(6).itertuples()]\nemit(\"month_gen\", mname.capitalize() + \"n\", \"text\", \"Viimeisin täysi kuukausi\")\nemit(\"month_gen_lc\", mname + \"n\", \"text\", \"Viimeisin täysi kuukausi\")\nemit(\"month_spend\", round(bm[\"spend\"], 2), \"eur\", \"Kaikki menot viimeisimpänä täytenä kuukautena\")\nif rows:\n    top = rows[0]\n    emit(\"top_amount\", top[\"amount\"], \"eur\", \"Suurin ostos\")\n    emit(\"top_what\", top[\"what\"], \"text\", \"Missä\")\n    emit(\"top_share\", int(round(100 * top[\"amount\"] / bm[\"spend\"])) if bm[\"spend\"] > 0 else 0, \"pct\", \"Osuus kuukauden menoista\")\n    table(\"biggest\", rows, \"Suurimmat ostokset viimeisimpänä täytenä kuukautena\")\n    day = int(top[\"date\"][8:])\n    say(f\"{mname.capitalize()}n suurin ostoksesi oli **{eur(top['amount'], True)}**: {top['what']} {day}.{int(last[5:])}. Se kuuluu {top['one']}.\")\n"
+  }
+ ],
+ "html": "<style>.k-tag{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:6px;background:var(--color-everyday)}.k-tag.fixed{background:var(--color-fixed)}.k-tag.surprise{background:var(--color-surprise)}</style>\n<p class=\"k-lede\">Se oli <b>{{top_share|pct}}</b> {{month_gen_lc|raw}} menoistasi, jotka olivat yhteensä {{month_spend|eur0}}.</p>\n<div class=\"k-stack\"><p class=\"k-h\">{{month_gen|raw}} suurimmat ostokset</p><div class=\"k-rows\"><k-each table=\"biggest\"><template><div class=\"k-row\"><div><span class=\"k-ellip\">{what}</span><small><i class=\"k-tag {tone}\"></i>{basket} · {category} · {date|date}</small></div><b>{amount|eur}</b></div></template></k-each></div></div>\n<p class=\"k-note\">Vain kortti- ja kauppaostokset: vuokraa ja laskuja ei lasketa.</p>\n<div class=\"k-chips\"><button class=\"k-chip\" data-ask=\"Paljonko käytin takseihin viime kuussa?\">Taksit viime kuussa</button><button class=\"k-chip\" data-ask=\"Mihin rahani menevät tavallisena kuukautena?\">Tavallinen kuukausi</button></div>",
+ "match": [
+  [
+   "suurin",
+   "suurimma",
+   "isoin",
+   "isoimma",
+   "kallein",
+   "kalleimma",
+   "isompi"
+  ],
+  [
+   "osto",
+   "hankin",
+   "ostin",
+   "meno",
+   "maksu",
+   "kulu",
+   "tapahtum"
+  ]
+ ],
+ "unless": [
+  "luoka",
+  "luokka",
+  "kategor",
+  "kori",
+  "tässä kuussa",
+  "vuonna",
+  "vuoden",
+  "vuodessa",
+  "viiko",
+  "tänään",
+  "kaikkien aikojen",
+  "201",
+  "202",
+  "vert",
+  "muihin",
+  "säästä",
+  "leikka",
+  "varaa",
+  "turvallista käyttää",
+  "tällä viikolla",
+  "saldo",
+  "tilillä",
+  "palkkajakso",
+  "lasku",
+  "tilaus",
+  "toistuv",
+  "hajos",
+  "rikki",
+  "palkkapäiv",
+  "läppär",
+  "sää on",
+  "sääenn",
+  "säätila",
+  "millainen sää",
+  "bitcoin",
+  "krypto",
+  "osake",
+  "sijoit",
+  "rahasto",
+  "laina",
+  "korko"
+ ],
+ "also": [
+  "Mikä oli suurin ostokseni?",
+  "Mikä oli mun isoin ostos viime kuussa?"
+ ]
+}
