@@ -415,9 +415,12 @@ export function WhatIfBody({ d, showChanges }: { d: WhatIfData; showChanges?: bo
   const hasMonthly = Math.abs(m) >= 0.5;
   const o = d.one_off;
   const months = (v: number | null | undefined) => (v == null ? "–" : num(v, lang, 1));
+  const se = d.safe_effect;
+  // a cut that leaves the limit where it was: the money saved leads, the limit gets one quiet sentence
+  const flat = !!se && Math.abs(se.per_cycle.change) < 0.5 && Math.abs(se.per_day.change) < 0.5 && Math.abs(se.safe_to_spend.change) < 0.5;
   return (
     <div>
-      {d.safe_effect ? (
+      {d.safe_effect && !flat ? (
         <div className="rounded-[10px] bg-sunk px-3 py-2.5">
           <p className="text-[14px] font-medium leading-5 text-ink">{d.safe_effect.text}</p>
           <div className="mt-2 grid grid-cols-2 gap-3 text-[13px] leading-[18px]">{d.safe_effect.per_cycle.now != null && <div><p className="text-ink-3">{t("whatif.fullCycle")}</p><p className="num font-semibold text-ink">{money(d.safe_effect.per_cycle.now, lang)} → {money(d.safe_effect.per_cycle.after, lang)}</p></div>}{d.safe_effect.per_day.now != null && <div><p className="text-ink-3">{t("common.perDay")}</p><p className="num font-semibold text-ink">{money(d.safe_effect.per_day.now, lang)} → {money(d.safe_effect.per_day.after, lang)}</p></div>}{d.safe_effect.per_cycle.now == null && <div><p className="text-ink-3">{t("afford.safe")}</p><p className="num font-semibold text-ink">{money(d.safe_effect.safe_to_spend.before, lang)} → {money(d.safe_effect.safe_to_spend.after, lang)}</p></div>}</div>
@@ -448,6 +451,7 @@ export function WhatIfBody({ d, showChanges }: { d: WhatIfData; showChanges?: bo
       ) : (
         <p className="text-[15px] text-ink-2">{t("whatif.noEffect")}</p>
       )}
+      {se && flat && <p className="mt-2 text-[13px] leading-[18px] text-ink-2">{se.text}</p>}
 
       {d.saving && <div className="mt-3 rounded-[10px] border border-line px-3 py-2.5 text-[13px] leading-[18px]"><div className="flex items-baseline justify-between gap-3"><span className="text-ink-2">{t("whatif.savingMonthly")}</span><span className="num font-semibold text-ink">{money(d.saving.monthly, lang)}</span></div><div className="mt-1 flex items-baseline justify-between gap-3"><span className="text-ink-2">{t("whatif.savingYearly")}</span><span className="num font-semibold text-ink">{money(d.saving.yearly, lang)}</span></div><p className="mt-2 text-ink-2">{t("whatif.savingSplit", { left: money(d.saving.from_left_over, lang), trim: money(d.saving.from_trim, lang) })}</p></div>}
       {d.gap && <p className="mt-3 text-[13px] leading-[18px] text-ink-2">{d.gap.text}</p>}
