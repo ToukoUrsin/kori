@@ -427,6 +427,7 @@ export function HostDemo() {
   const [iframeLoadedState, setIframeLoadedState] = useState(false);
   const [bridgeReady, setBridgeReady] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [shownCustomer, setShownCustomer] = useState<string | null>(null);
   const [error, setError] = useState(false);
   const [consentApiAvailable, setConsentApiAvailable] = useState<boolean | null>(null);
   const [contractOpen, setContractOpen] = useState(false);
@@ -458,12 +459,12 @@ export function HostDemo() {
     let cancelled = false;
     setLoading(true);
     setError(false);
-    setSafe(null);
     setConsentApiAvailable(null);
     Promise.all([api.home(customer, lang), api.transactions({ customer, lang, limit: 6 }), api.personas(lang)])
       .then(([nextHome, nextTransactions, nextPersonas]) => {
         if (cancelled) return;
         setHome(nextHome);
+        setShownCustomer(customer);
         setTransactions(nextTransactions);
         setPersonas(nextPersonas);
       })
@@ -496,8 +497,12 @@ export function HostDemo() {
     setIframeLoadedState(false);
     setBridgeReady(false);
     pendingRef.current = [];
-    setSafe(null);
   }, [customer, lang]);
+
+  // the number on the tile is this customer's: a change of language keeps it, a change of customer does not
+  useEffect(() => {
+    setSafe(null);
+  }, [customer]);
 
   useEffect(() => {
     const onMessage = (event: MessageEvent) => {
@@ -643,7 +648,7 @@ export function HostDemo() {
               <PermissionsSheet lang={lang} consent={consent} canLink={!!persona?.partial_view} onLink={() => setSheet("link")} onWithdraw={withdraw} onClose={() => setSheet(null)} />
             )}
             {sheet === "link" && <LinkSheet lang={lang} onLink={() => void linkOtherBank()} onClose={() => setSheet(null)} />}
-            {loading && <div className="host-banner">{text(lang, "Loading the selected demo customer…", "Ladataan valittua demoasiakasta…")}</div>}
+            {loading && shownCustomer !== customer && <div className="host-banner">{text(lang, "Loading the selected demo customer…", "Ladataan valittua demoasiakasta…")}</div>}
             {error && <div className="host-banner">{text(lang, "The demo data did not load. Try again.", "Demodata ei latautunut. Yritä uudelleen.")}</div>}
           </div>
         </section>

@@ -38,7 +38,7 @@ export default {
 		await shot('tile');
 		await page.getByRole('combobox', {name: 'Language'}).selectOption('fi');
 		mark('suomeksi');
-		await wait(3000);
+		await wait(4000);
 		await shot('fi');
 	},
 };
