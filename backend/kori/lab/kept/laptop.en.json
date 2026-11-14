@@ -3,15 +3,15 @@
  "lang": "en",
  "kept": "2026-11-14",
  "by": {
-  "analyst": "gemini-4-hydrogen",
-  "designer": "claude-opus-5-5"
+  "analyst": "kept view",
+  "designer": "kept view"
  },
  "title": "What a laptop does to your days",
  "chips": [],
  "cells": [
   {
    "title": "The engine's limits and laptops on sale today",
-   "by": "gemini-4-hydrogen",
+   "by": "kept view",
    "code": "rng = kori.afford_range()\num = kori.usual_month()\ncomf, tight, poss = rng[\"comfortable_up_to\"], rng[\"tight_up_to\"], rng[\"possible_up_to\"]\nleft_over = um[\"left_over\"]\n\nemit(\"comfortable_up_to\", comf, \"eur\", \"Keeps your usual pace up to\")\nemit(\"tight_up_to\", tight, \"eur\", \"Fits with tighter days up to\")\nemit(\"possible_up_to\", poss, \"eur\", \"The most that fits before payday\")\nemit(\"safe_to_spend\", rng[\"safe_to_spend\"], \"eur\", \"Safe to spend\")\nemit(\"per_day_now\", rng[\"per_day_now\"], \"eur_per_day\", \"Your pace a day now\")\nemit(\"usual_per_day\", rng[\"usual_per_day\"], \"eur_per_day\", \"Your usual day\")\nemit(\"days_to_payday\", rng[\"days_to_payday\"], \"days\", \"Days to payday\")\nemit(\"left_over_monthly\", round(left_over, 2), \"eur_per_month\", \"A usual month leaves\")\n\nsteps = []\nfor p in sorted({200, comf, 500, tight, 900, poss}):\n    if 0 < p <= poss:\n        a = kori.afford(p, \"laptop\")\n        steps.append({\"price\": p, \"verdict\": a[\"verdict\"], \"per_day_after\": a[\"per_day\"][\"after\"], \"safe_after\": a[\"safe\"][\"after\"],\n                      \"months_to_save\": math.ceil(p / left_over) if left_over > 0 else 0})\ntable(\"price_steps\", steps, \"What a price does to your days\")\nemit(\"start_step\", next((i for i, r in enumerate(steps) if r[\"price\"] == comf), 0), \"count\", \"Where the price picker starts\")\n\nprods = web.products(\"laptop under 800 euros\", n=5)\nrows = []\nfor i, pr in enumerate(prods):\n    a = kori.afford(pr[\"price\"], pr[\"name\"])\n    rows.append({\"product\": f\"p{i + 1}\", \"name\": pr[\"name\"], \"price\": pr[\"price\"], \"store\": pr[\"store\"], \"verdict\": a[\"verdict\"],\n                 \"per_day_after\": a[\"per_day\"][\"after\"], \"url\": pr[\"url\"]})\nif prods:\n    show(prods)\ntable(\"laptop_options\", rows, \"Laptops on sale today, checked against your payday\")\n\nif comf > 0 and tight > comf:            # no room before payday: no kept answer, the question is worked out fresh\n    text = f\"Up to **{eur(comf)}** keeps your usual pace until payday. Up to {eur(tight)} fits, with tighter days.\"\n    if left_over > 0:\n        text += f\" Or set aside the {eur(left_over)} a usual month leaves and buy it later.\"\n    say(text)\n"
   }
  ],

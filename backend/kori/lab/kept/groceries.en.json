@@ -3,15 +3,15 @@
  "lang": "en",
  "kept": "2026-11-14",
  "by": {
-  "analyst": "gemini-4-hydrogen",
-  "designer": "claude-opus-5-5"
+  "analyst": "kept view",
+  "designer": "kept view"
  },
  "title": "Cheaper basket",
  "chips": [],
  "cells": [
   {
    "title": "Find own-brand twins for her brands",
-   "by": "gemini-4-hydrogen",
+   "by": "kept view",
    "code": "s = shop.swaps(4)\num = kori.usual_month()\nleft_over = um[\"left_over\"]\ngroceries = s[\"month_spend\"]\neating_out = um[\"categories\"].get(\"Restaurants\", 0.0)\nbigger = eating_out > groceries * 1.2\n\nemit(\"saving_month\", round(s[\"saving_month\"], 2), \"eur_per_month\", \"Saving a month with every swap\")\nemit(\"saving_year\", round(s[\"saving_year\"], 2), \"eur\", \"Saving a year with every swap\")\nemit(\"swaps\", s[\"swaps\"], \"count\", \"Brand products with an own-brand twin\")\nemit(\"month_spend\", round(groceries, 2), \"eur_per_month\", \"Groceries in a usual month\")\nemit(\"left_over\", round(left_over, 2), \"eur_per_month\", \"A usual month leaves\")\nemit(\"left_over_with\", round(left_over + s[\"saving_month\"], 2), \"eur_per_month\", \"A usual month leaves with every swap\")\nemit(\"eating_out_month\", round(eating_out, 2), \"eur_per_month\", \"Eating out in a usual month\")\ntable(\"swaps\", s[\"rows\"], \"Own-brand swaps\")\nemit(\"eating_out_bigger\", 1 if bigger else 0, \"count\", \"A bigger cost than groceries\")\n\nif s[\"swaps\"] > 0:                       # nothing to swap: no kept answer, the question is worked out fresh\n    text = f\"Based on sample receipts, {s['swaps']} of your brand products have an own-brand twin: **{eur(s['saving_month'])}** less a month, {eur(s['saving_year'])} a year.\"\n    if bigger:\n        text += f\" Your bigger lever is eating out, though: {eur(eating_out)} in a usual month against {eur(groceries)} for groceries.\"\n    say(text)\n"
   }
  ],

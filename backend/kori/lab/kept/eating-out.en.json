@@ -3,15 +3,15 @@
  "lang": "en",
  "kept": "2026-11-14",
  "by": {
-  "analyst": "gemini-4-hydrogen",
-  "designer": "claude-opus-5-5"
+  "analyst": "kept view",
+  "designer": "kept view"
  },
  "title": "When you eat out",
  "chips": [],
  "cells": [
   {
    "title": "Eating out by weekday and month",
-   "by": "gemini-4-hydrogen",
+   "by": "kept view",
    "code": "um = kori.usual_month()\neating_usual = round(um[\"categories\"].get(\"Restaurants\", 0.0), 2)\ngroceries_usual = round(um[\"categories\"].get(\"Groceries\", 0.0), 2)\nleft_over_usual = round(um[\"left_over\"], 2)\n\nthis_month = today.strftime(\"%Y-%m\")\nmonths = sorted(m for m in tx[\"month\"].unique() if m < this_month)[-12:]          # the last 12 complete months\ndf = tx[tx[\"is_spend\"] & (tx[\"category\"] == \"Restaurants\") & tx[\"month\"].isin(months)].copy()\ndf[\"wd\"] = pd.to_datetime(df[\"date\"]).dt.weekday\nDAYS = [\"Monday\", \"Tuesday\", \"Wednesday\", \"Thursday\", \"Friday\", \"Saturday\", \"Sunday\"]\nSHORT = [\"Mon\", \"Tue\", \"Wed\", \"Thu\", \"Fri\", \"Sat\", \"Sun\"]\nMON = [\"Jan\", \"Feb\", \"Mar\", \"Apr\", \"May\", \"Jun\", \"Jul\", \"Aug\", \"Sep\", \"Oct\", \"Nov\", \"Dec\"]\n\nby_wd = df.groupby(\"wd\")[\"spend\"].agg([\"sum\", \"count\"]).reindex(range(7), fill_value=0)\nwd_rows = [{\"day\": SHORT[i], \"weekday\": DAYS[i], \"spend\": round(float(by_wd.loc[i, \"sum\"]), 2), \"visits\": int(by_wd.loc[i, \"count\"])} for i in range(7)]\ntop = int(by_wd[\"sum\"].idxmax()) if len(df) else 5\ntotal = float(df[\"spend\"].sum())\nfri_sun_pct = int(round(100.0 * float(df[df[\"wd\"] >= 4][\"spend\"].sum()) / total)) if total > 0 else 0\n\nby_m = df.groupby(\"month\")[\"spend\"].sum().reindex(months, fill_value=0.0)\nm_rows = [{\"short\": MON[int(m[5:]) - 1], \"label\": MON[int(m[5:]) - 1] + \" \" + m[:4], \"spend\": round(float(v), 2)} for m, v in by_m.items()]\n\nvisits = len(df)\nvisits_per_month = round(visits / max(1, len(months)), 1)\navg_visit = round(total / visits, 2) if visits else 0.0\nwhat_if = [{\"fewer_visits\": n, \"monthly_saving\": round(n * avg_visit, 2), \"yearly_saving\": round(n * avg_visit * 12, 2),\n            \"left_over_after\": round(left_over_usual + n * avg_visit, 2)} for n in range(0, max(1, int(round(visits_per_month))) + 1)]\n\nTOPW = DAYS[top] + \"s\"\nemit(\"top_weekday\", DAYS[top].capitalize(), \"text\", \"The weekday that takes the most\")\nemit(\"fri_sun_pct\", fri_sun_pct, \"pct\", \"Share that lands Friday to Sunday\")\nemit(\"eating_usual\", eating_usual, \"eur_per_month\", \"Eating out in a usual month\")\nemit(\"groceries_usual\", groceries_usual, \"eur_per_month\", \"Groceries in a usual month\")\nemit(\"left_over_usual\", left_over_usual, \"eur_per_month\", \"A usual month leaves\")\nemit(\"avg_visit\", avg_visit, \"eur\", \"An average visit\")\nemit(\"visits_per_month\", visits_per_month, \"count\", \"Visits a month\")\nemit(\"months\", len(months), \"months\", \"Complete months looked at\")\ntable(\"by_weekday\", wd_rows, \"Eating out by weekday\")\ntable(\"by_month\", m_rows, \"Eating out by month\")\ntable(\"what_if\", what_if, \"Eating out fewer times a month\")\n\nif visits >= 6:                          # too little eating out to say anything: no kept answer, the question is worked out fresh\n    text = f\"You eat out most on **{TOPW}**, and {fri_sun_pct}% of it lands Friday to Sunday.\"\n    text += f\" In a usual month it is {eur(eating_usual)}, more than your groceries ({eur(groceries_usual)}).\" if eating_usual > groceries_usual else f\" In a usual month it is {eur(eating_usual)}.\"\n    say(text)\n"
   }
  ],

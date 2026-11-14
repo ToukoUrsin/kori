@@ -754,8 +754,7 @@ def _kept_view(w: _Work, rec: dict) -> None:
     ledger = w.ledger()
     by = (rec.get("by") or {}).get("designer") or "kept"
     w.models["designer"] = by
-    if (rec.get("by") or {}).get("modeller"):
-        w.models["modeller"] = rec["by"]["modeller"]
+    w.models["analyst"] = (rec.get("by") or {}).get("analyst") or w.models["analyst"]   # a kept view is named as one, not as a model
     t.emit("ui", {"id": uid, "phase": "start", "title": rec.get("title") or "", "data": ledger})
     t.emit("ui", {"id": uid, "phase": "delta", "html": rec["html"]})
     t.emit("ui", {"id": uid, "phase": "done", "ms": 0, "by": by, "kept": True,

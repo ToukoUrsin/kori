@@ -3,15 +3,15 @@
  "lang": "fi",
  "kept": "2026-11-14",
  "by": {
-  "analyst": "gemini-4-hydrogen",
-  "designer": "claude-opus-5-5"
+  "analyst": "kept view",
+  "designer": "kept view"
  },
  "title": "Mitä läppäri tekee päivillesi",
  "chips": [],
  "cells": [
   {
    "title": "Moottorin rajat ja tänään myynnissä olevat läppärit",
-   "by": "gemini-4-hydrogen",
+   "by": "kept view",
    "code": "rng = kori.afford_range()\num = kori.usual_month()\ncomf, tight, poss = rng[\"comfortable_up_to\"], rng[\"tight_up_to\"], rng[\"possible_up_to\"]\nleft_over = um[\"left_over\"]\n\nemit(\"comfortable_up_to\", comf, \"eur\", \"Tavallinen tahtisi säilyy tähän asti\")\nemit(\"tight_up_to\", tight, \"eur\", \"Mahtuu tiukemmilla päivillä tähän asti\")\nemit(\"possible_up_to\", poss, \"eur\", \"Suurin summa, joka mahtuu ennen palkkapäivää\")\nemit(\"safe_to_spend\", rng[\"safe_to_spend\"], \"eur\", \"Turvallisesti käytettävissä\")\nemit(\"per_day_now\", rng[\"per_day_now\"], \"eur_per_day\", \"Tahtisi päivässä nyt\")\nemit(\"usual_per_day\", rng[\"usual_per_day\"], \"eur_per_day\", \"Tavallinen päiväsi\")\nemit(\"days_to_payday\", rng[\"days_to_payday\"], \"days\", \"Päiviä palkkapäivään\")\nemit(\"left_over_monthly\", round(left_over, 2), \"eur_per_month\", \"Tavallisesta kuukaudesta jää\")\n\nsteps = []\nfor p in sorted({200, comf, 500, tight, 900, poss}):\n    if 0 < p <= poss:\n        a = kori.afford(p, \"laptop\")\n        steps.append({\"price\": p, \"verdict\": a[\"verdict\"], \"per_day_after\": a[\"per_day\"][\"after\"], \"safe_after\": a[\"safe\"][\"after\"],\n                      \"months_to_save\": math.ceil(p / left_over) if left_over > 0 else 0})\ntable(\"price_steps\", steps, \"Mitä hinta tekee päivillesi\")\nemit(\"start_step\", next((i for i, r in enumerate(steps) if r[\"price\"] == comf), 0), \"count\", \"Mistä hinnan valitsin alkaa\")\n\nprods = web.products(\"laptop under 800 euros\", n=5)\nrows = []\nfor i, pr in enumerate(prods):\n    a = kori.afford(pr[\"price\"], pr[\"name\"])\n    rows.append({\"product\": f\"p{i + 1}\", \"name\": pr[\"name\"], \"price\": pr[\"price\"], \"store\": pr[\"store\"], \"verdict\": a[\"verdict\"],\n                 \"per_day_after\": a[\"per_day\"][\"after\"], \"url\": pr[\"url\"]})\nif prods:\n    show(prods)\ntable(\"laptop_options\", rows, \"Tänään myynnissä olevat läppärit, tarkistettu palkkapäivääsi vasten\")\n\nif comf > 0 and tight > comf:            # no room before payday: no kept answer, the question is worked out fresh\n    text = f\"**{eur(comf)}** asti tavallinen tahtisi säilyy palkkapäivään. {eur(tight)} asti mahtuu, mutta päivät ovat tiukempia.\"\n    if left_over > 0:\n        text += f\" Tai laita sivuun se {eur(left_over)}, joka tavallisesta kuukaudesta jää, ja osta myöhemmin.\"\n    say(text)\n"
   }
  ],

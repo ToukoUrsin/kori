@@ -1,9 +1,10 @@
 """Kept views: the questions the chat suggests itself open the same approved screen every time.
 
-For each one, the code Kori wrote and the screen it built were saved once, after a person looked at them
-(`kept/*.json`, written by scripts/keep_view.py from a real turn). Asking one runs that code again on this customer's
-own data, so every figure is computed now and goes through the same check; only the writing is skipped. Anything
-typed in other words is built fresh, and `fresh` on the request builds a suggested one fresh too.
+For each one, the code and the screen were written once with the models, then edited and approved by a person
+(`kept/*.json`; scripts/keep_view.py saves one from a real turn). Asking one runs that code again on this customer's
+own data, so every figure is computed now and goes through the same check; only the writing is skipped, and the work
+view names it a kept view, not a model. Anything typed in other words is built fresh, and `fresh` on the request
+builds a suggested one fresh too.
 """
 from __future__ import annotations
 

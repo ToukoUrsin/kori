@@ -18,6 +18,8 @@ The customer types or speaks a question. An agent answers it by writing code, no
 
 Speed: the customer reads the answer when the code has run, not when the view is done. The cell that computes the figures also writes the sentence (`say`, with money through `eur`), the same check runs on it, and the designer starts on the view at that moment. If the sentence has a figure that is not on the ledger it is dropped and the analyst writes the answer in a second round. Two analyst attempts start together and the first to finish is used.
 
+Kept views: the four questions the chat suggests itself open the same approved screen every time (`backend/kori/lab/kept/*.json`, four questions in two languages; `backend/kori/lab/kept.py`). For each one the code and the screen were written once with the models, then edited and approved by a person. Asking one runs that code again in this session's sandbox on this customer's own data, so every figure is computed now and goes through the same check; only the writing is skipped. It opens in about a second, looks the same on every take, and the work view names it a kept view, not a model. If the code fails for this customer, writes no answer, or anything fails the check, the question is built fresh as before. A question typed in other words is always built fresh, and `fresh: true` on the request (`?fresh=1` on the page) builds a suggested one fresh too. The saving question is kept as a family: any amount from €10 to €5,000 a month opens the same view with that amount, which is how "Save the difference" in the grocery and eating-out views hands its amount on.
+
 Pitch line that is true of this design: *no number is guessed. The agent writes code that runs on your own transactions, and every figure on screen traces to a run you can open.*
 
 ## Parts and owners
@@ -32,7 +34,7 @@ Pitch line that is true of this design: *no number is guessed. The agent writes 
 
 ## 1. Stream: `POST /api/lab/chat`
 
-Request: `{"customer": "CUST01885", "lang": "en"|"fi", "session": "<uuid>", "message": "..."}` plus the usual `X-Kori-Device` header.
+Request: `{"customer": "CUST01885", "lang": "en"|"fi", "session": "<uuid>", "message": "...", "fresh": false}` plus the usual `X-Kori-Device` header. `fresh: true` builds the answer new even when the question has a kept view.
 Response: `text/event-stream`. Each event is `event: <name>\ndata: <json>\n\n`. Order is free; `done` or `error` is last. A `ui` often starts before the `text` does: the designer begins as soon as the cell that feeds it has run, while the analyst is still writing the answer.
 
 | Event | Data | Meaning |
@@ -54,6 +56,8 @@ Response: `text/event-stream`. Each event is `event: <name>\ndata: <json>\n\n`. 
 
 `GET /api/lab/session?session=...` returns the turns so far (same events, grouped per turn) so a reload keeps the conversation.
 `POST /api/lab/reset` `{session}` forgets it.
+`POST /api/lab/warm` `{customer, lang, session}` starts the session's sandbox; the chat calls it when it opens, so the first question does not wait for the start.
+A turn answered from a kept view has `kept: true` on its `ui` `done` event and on `done`.
 
 ## 2. Frame
 

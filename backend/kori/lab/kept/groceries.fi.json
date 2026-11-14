@@ -3,15 +3,15 @@
  "lang": "fi",
  "kept": "2026-11-14",
  "by": {
-  "analyst": "gemini-4-hydrogen",
-  "designer": "claude-opus-5-5"
+  "analyst": "kept view",
+  "designer": "kept view"
  },
  "title": "Halvempi ostoskori",
  "chips": [],
  "cells": [
   {
    "title": "Etsi oman merkin vastineet",
-   "by": "gemini-4-hydrogen",
+   "by": "kept view",
    "code": "s = shop.swaps(4)\num = kori.usual_month()\nleft_over = um[\"left_over\"]\ngroceries = s[\"month_spend\"]\neating_out = um[\"categories\"].get(\"Restaurants\", 0.0)\nbigger = eating_out > groceries * 1.2\n\nemit(\"saving_month\", round(s[\"saving_month\"], 2), \"eur_per_month\", \"Säästö kuussa kaikilla vaihdoilla\")\nemit(\"saving_year\", round(s[\"saving_year\"], 2), \"eur\", \"Säästö vuodessa kaikilla vaihdoilla\")\nemit(\"swaps\", s[\"swaps\"], \"count\", \"Merkkituotteet, joille löytyy oma merkki\")\nemit(\"month_spend\", round(groceries, 2), \"eur_per_month\", \"Ruokaostokset tavallisena kuukautena\")\nemit(\"left_over\", round(left_over, 2), \"eur_per_month\", \"Tavallisesta kuukaudesta jää\")\nemit(\"left_over_with\", round(left_over + s[\"saving_month\"], 2), \"eur_per_month\", \"Tavallisesta kuukaudesta jää vaihtojen kanssa\")\nemit(\"eating_out_month\", round(eating_out, 2), \"eur_per_month\", \"Ulkona syöminen tavallisena kuukautena\")\ntable(\"swaps\", s[\"rows\"], \"Vaihdot omaan merkkiin\")\nemit(\"eating_out_bigger\", 1 if bigger else 0, \"count\", \"Isompi meno kuin ruokaostokset\")\n\nif s[\"swaps\"] > 0:                       # nothing to swap: no kept answer, the question is worked out fresh\n    text = f\"Esimerkkikuittien perusteella {s['swaps']} merkkituotteellesi löytyy sama tuote S-ryhmän omana merkkinä: **{eur(s['saving_month'])}** vähemmän kuussa, {eur(s['saving_year'])} vuodessa.\"\n    if bigger:\n        text += f\" Isompi vipusi on silti ulkona syöminen: {eur(eating_out)} tavallisena kuukautena, kun ruokaostoksiin menee {eur(groceries)}.\"\n    say(text)\n"
   }
  ],

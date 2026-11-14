@@ -57,15 +57,17 @@ with a sandbox of its own (the contract is in `docs/LAB.md`):
 | "Is there a cheaper oat drink than the one I buy?" | Your carton (€2.05) and three real cheaper ones to pick from (the cheapest €1.15). |
 | "I need a new laptop. What can I afford?" | Two limits from the engine (up to €287 keeps the usual pace, up to €715 is tight), a price picker against your payday, then laptops on sale today at Prisma.fi and Verkkokauppa.com. |
 | "What if I save €150 a month for ten years?" | 4,000 outcomes with one of S-Pankki's own funds and its real fee, as a range you can drag. An illustration, not investment advice. |
-| "When do I spend the most on eating out?" | Your week by day and hour, built for this question. |
+| "When do I spend the most on eating out?" | Your eating out by weekday and by month, and what fewer visits a month would leave you. |
 
 The world is **real or absent** (`docs/WORLD.md`): 621 products read from S-kaupat (one Prisma, dated 14.11.2026),
 live web-shop results, 15 fund and saving facts read from s-pankki.fi, each with its link and date. Nothing is invented
 to fill a gap. One thing is sample data and says so: receipt lines. A bank sees the store total, not the lines, so the
 demo builds sample receipts from the real catalogue that add up to each real supermarket payment.
 
-Measured on the live site: for groceries, the oat drink and the laptop the written answer is there in 3 to 8 seconds
-and the finished screen in 9 to 17. The ten-year model takes about 30. The answer is fast because the code that
+Measured on the live site: the four questions the chat suggests open in 1 to 2 seconds. Their code and screen were
+approved once (kept views, `docs/LAB.md`); asking one runs the code again on your data, so the numbers are computed
+now and checked, and the screen is the same on every take. A question in your own words is built fresh: the written
+answer is there in 3 to 8 seconds and the finished screen in 9 to 17. A ten-year model built fresh takes about 30. The answer is fast because the code that
 computes the figures also writes the sentence, so no second round with a model is needed.
 
 ## Why the numbers can be trusted
@@ -178,7 +180,7 @@ PYTHONPATH=. uv run uvicorn kori.app:app --port 8811
 cd ../web && pnpm install && pnpm dev      # http://localhost:8812
 ```
 
-Tests (199: engine arithmetic, number check, API, the sandbox, the shop and swap rules, the demo customers in both languages):
+Tests (209: engine arithmetic, number check, API, the sandbox, the shop and swap rules, the demo customers in both languages):
 
 ```bash
 cd backend && PYTHONPATH=. uv run pytest -q
