@@ -240,28 +240,60 @@ def build(m: Money) -> list[dict]:
     return out
 
 
+SORT_WHY = {
+    "Housing": ("The same amount leaves every month. Decided once, then it runs: a fixed must.",
+                "Sama summa lähtee joka kuukausi. Päätetty kerran, sitten se pyörii: kiinteä pakollinen."),
+    "Utilities": ("It comes every month whether you think about it or not: a fixed must.",
+                  "Se tulee joka kuukausi, ajattelit sitä tai et: kiinteä pakollinen."),
+    "Health": ("You need it, but you cannot pick the day: a surprise must.",
+               "Tarvitset sen, mutta et voi valita päivää: yllättävä pakollinen."),
+    "Home & Tech": ("Things break when they break. You cannot skip it or time it: a surprise must.",
+                    "Tavarat hajoavat silloin kun hajoavat. Sitä ei voi jättää väliin eikä ajoittaa: yllättävä pakollinen."),
+    "Groceries": ("You have to eat, but how much it costs is yours to steer: everyday.",
+                  "Syödä täytyy, mutta sen hintaa ohjaat itse: arjen meno."),
+    "Restaurants": ("You choose it each time, so you can steer it: everyday.",
+                    "Valitset sen joka kerta, joten voit ohjata sitä: arjen meno."),
+    "Transportation": ("It goes out in small pieces, day by day: everyday.", "Se lähtee pieninä paloina päivä kerrallaan: arjen meno."),
+    "Entertainment": ("Nice to have, and yours to choose each time: everyday.", "Mukava lisä, ja valitset sen joka kerta: arjen meno."),
+    "Lifestyle": ("You choose it each time, so you can steer it: everyday.", "Valitset sen joka kerta, joten voit ohjata sitä: arjen meno."),
+    "Travel": ("A choice, even when it is a big one: everyday.", "Valinta, vaikka se olisi iso: arjen meno."),
+}
+
+
 def sort_items(m: Money) -> list[dict]:
-    """Six recognisable recent payments, covering all baskets where possible."""
-    d = m.df[(m.df["spend"] > 0) & (m.df["date"] >= m.today - __import__("datetime").timedelta(days=120))].copy()
-    chosen = []
+    """Six of the person's own recent payments to sort: two from each basket where the data has them, mixed up."""
+    from datetime import timedelta
+    lang = m.prefs.lang
+    d = m.df[(m.df["spend"] > 0) & (m.df["date"] >= m.today - timedelta(days=120))]
+    picked: dict[str, list] = {}
     for b in (FIXED, SURPRISE, EVERYDAY):
         x = d[d["basket"] == b].sort_values(["date", "spend"], ascending=[False, False])
-        if len(x): chosen.append(x.iloc[0])
-    remaining = d[~d.index.isin([r.name for r in chosen])].sort_values(["date", "spend"], ascending=[False, False])
-    chosen.extend([r for _, r in remaining.iterrows()][:max(0, 6 - len(chosen))])
-    chosen = chosen[:6]
-    lang = m.prefs.lang
-    L = lambda en, fi: en if lang == "en" else fi
-    why = {FIXED: L("The same kind of payment repeats: a fixed must.", "Samantyyppinen maksu toistuu: kiinteä pakollinen."),
-           SURPRISE: L("You need it, but you cannot know exactly when: a surprise must.", "Tarvitset sen, mutta et voi tietää tarkkaa ajankohtaa: yllättävä pakollinen."),
-           EVERYDAY: L("It is everyday spending you can steer as you go.", "Se on arjen menoa, jota voit ohjata matkan varrella.")}
-    out = []
-    for r in chosen:
-        out.append({"id": int(r.id), "merchant": r.merchant if isinstance(r.merchant, str) else None, "date": r.date.isoformat(), "amount": r2(r.spend),
-                    "category": r.category, "category_label": cat_label(r.category, lang), "basket": r.basket,
-                    "basket_label": {FIXED: "Fixed musts", SURPRISE: "Surprise musts", EVERYDAY: "Everyday"}[r.basket] if lang == "en" else {FIXED: "Kiinteät pakolliset", SURPRISE: "Yllättävät pakolliset", EVERYDAY: "Arjen menot"}[r.basket],
-                    "why": why[r.basket]})
-    return out
+        rows, cats = [], set()
+        for r in x.itertuples():                       # two different kinds of payment per basket when possible
+            if r.category not in cats:
+                rows.append(r)
+                cats.add(r.category)
+            if len(rows) == 2:
+                break
+        if len(rows) < 2:
+            rows += [r for r in x.itertuples() if r.id not in {q.id for q in rows}][:2 - len(rows)]
+        picked[b] = rows
+    order = [(EVERYDAY, 0), (FIXED, 0), (SURPRISE, 0), (EVERYDAY, 1), (SURPRISE, 1), (FIXED, 1)]
+    chosen = [picked[b][i] for b, i in order if len(picked[b]) > i]
+    if len(chosen) < 6:                                # a thin basket: fill with more everyday payments
+        have = {r.id for r in chosen}
+        extra = d[(d["basket"] == EVERYDAY) & ~d["id"].isin(have)].sort_values(["date", "spend"], ascending=[False, False])
+        chosen += list(extra.head(6 - len(chosen)).itertuples())
+    labels = {FIXED: ("Fixed musts", "Kiinteät pakolliset"), SURPRISE: ("Surprise musts", "Yllättävät pakolliset"),
+              EVERYDAY: ("Everyday", "Arjen menot")}
+    i = 0 if lang == "en" else 1
+    return [{"id": int(r.id), "merchant": r.merchant if isinstance(r.merchant, str) else None, "date": r.date.isoformat(),
+             "amount": r2(r.spend), "category": r.category, "category_label": cat_label(r.category, lang), "basket": r.basket,
+             "basket_label": labels[r.basket][i],
+             "why": SORT_WHY.get(r.category, ("", ""))[i] if CATEGORIES[r.category]["basket"] == r.basket else
+                    (f"You moved {cat_label(r.category, lang).lower()} to this basket yourself.",
+                     f"Siirsit tämän ({cat_label(r.category, lang).lower()}) tähän koriin itse.")[i]}
+            for r in chosen]
 
 
 def get(m: Money, lesson_id: str) -> dict | None:
