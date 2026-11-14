@@ -126,6 +126,7 @@ class LabReq(BaseModel):
     turn: str | None = None
     after: int = 0
     fresh: bool = False          # build the view new, even for a question that has a kept one
+    approved: bool = False       # the bank's switch: only answers whose code was reviewed, no model in the turn
 
 
 class ResetReq(BaseModel):
@@ -181,7 +182,8 @@ async def chat(req: LabReq, x_kori_device: str | None = Header(None)):
     turn = sess.turn(req.turn) if req.turn else None
     if turn is None:
         turn = sess.new_turn(req.message.strip()[:1500], req.turn)
-        turn.fresh = bool(req.fresh)
+        turn.fresh = bool(req.fresh) and not req.approved
+        turn.approved = bool(req.approved)
 
         async def work():
             try:

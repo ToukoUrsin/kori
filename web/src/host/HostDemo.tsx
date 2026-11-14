@@ -252,6 +252,7 @@ function ContractPanel({ lang, logs, onClose }: { lang: Lang; logs: LogEntry[]; 
         <p><strong>Host → Kori</strong> <code>kori:init</code> with customer, language and consent.</p>
         <p><strong>Host → Kori</strong> <code>kori:ask</code> or <code>kori:open</code> for a deep link.</p>
         <p><strong>Kori → host</strong> <code>kori:safe</code>, navigation, events and link requests.</p>
+        <p><strong>Host → Kori</strong> <code>approved=1</code> {text(lang, "on the web-view address: approved answers only, no AI model in the turn.", "web-näkymän osoitteessa: vain hyväksytyt vastaukset, ei tekoälymallia.")}</p>
         <p>{text(lang, "The host owns consent. Kori never links another bank itself.", "Suostumus on isäntäsovelluksen. Kori ei yhdistä toista pankkia itse.")}</p>
       </div>
       <div className="host-log-heading">
@@ -359,20 +360,26 @@ function ConsentSheet({ lang, onAllow, onClose }: { lang: Lang; onAllow: () => v
   );
 }
 
-function ScopeRow({ title, note, state, on }: { title: string; note: string; state: string; on: boolean }) {
+function ScopeRow({ title, note, state, on, onToggle }: { title: string; note: string; state: string; on: boolean; onToggle?: () => void }) {
   return (
     <div className="host-scope-row">
       <div>
         <strong>{title}</strong>
         <small>{note}</small>
       </div>
-      <span className={on ? "host-state is-on" : "host-state"}>{state}</span>
+      {onToggle ? (
+        <button type="button" role="switch" aria-checked={on} aria-label={title} data-switch="ai" className={on ? "host-state host-state-button is-on" : "host-state host-state-button"} onClick={onToggle}>
+          {state}
+        </button>
+      ) : (
+        <span className={on ? "host-state is-on" : "host-state"}>{state}</span>
+      )}
     </div>
   );
 }
 
 /** What Kori may read, and the way to take it back. */
-function PermissionsSheet({ lang, consent, canLink, onLink, onTryLink, onWithdraw, onClose }: { lang: Lang; consent: HostConsent; canLink: boolean; onLink: () => void; onTryLink: () => void; onWithdraw: () => void; onClose: () => void }) {
+function PermissionsSheet({ lang, consent, canLink, aiNew, onAiNew, onLink, onTryLink, onWithdraw, onClose }: { lang: Lang; consent: HostConsent; canLink: boolean; aiNew: boolean; onAiNew: () => void; onLink: () => void; onTryLink: () => void; onWithdraw: () => void; onClose: () => void }) {
   return (
     <SheetFrame lang={lang} icon={<ShieldCheck size={20} aria-hidden />} onClose={onClose}>
       <h2>{text(lang, "Data and permissions", "Tiedot ja luvat")}</h2>
@@ -389,6 +396,17 @@ function PermissionsSheet({ lang, consent, canLink, onLink, onTryLink, onWithdra
           note={text(lang, "Optional · simulated in this demo", "Valinnainen · simuloitu tässä demossa")}
           state={consent.other_bank ? text(lang, "Linked", "Yhdistetty") : text(lang, "Off", "Pois")}
           on={consent.other_bank}
+        />
+        <ScopeRow
+          title={text(lang, "New answers written by AI", "Tekoälyn kirjoittamat uudet vastaukset")}
+          note={
+            aiNew
+              ? text(lang, "On: Kori writes code for any question. Switch off for approved answers only.", "Päällä: Kori kirjoittaa koodin mihin tahansa kysymykseen. Pois päältä: vain hyväksytyt vastaukset.")
+              : text(lang, "Off: only answers whose code the bank has reviewed. No AI model runs.", "Pois: vain vastaukset, joiden koodin pankki on tarkastanut. Tekoälymallia ei ajeta.")
+          }
+          state={aiNew ? text(lang, "On", "Päällä") : text(lang, "Off", "Pois")}
+          on={aiNew}
+          onToggle={onAiNew}
         />
       </div>
       {canLink ? (
@@ -464,7 +482,9 @@ export function HostDemo() {
   const screenRef = useRef<"coach" | "home">("coach");
 
   const persona = useMemo(() => personas.find((item) => item.id === customer) || home?.persona, [customer, home?.persona, personas]);
-  const frameSrc = `/?embed=1&customer=${encodeURIComponent(customer)}&lang=${lang}`;
+  /** the bank decides whether Kori may write new answers with a model, or only give the ones whose code it has reviewed */
+  const [aiNew, setAiNew] = useState(true);
+  const frameSrc = `/?embed=1&customer=${encodeURIComponent(customer)}&lang=${lang}${aiNew ? "" : "&approved=1"}`;
 
   const log = (direction: LogEntry["direction"], message: HostToKori | Record<string, unknown>) => {
     const type = String((message as { type?: unknown }).type || "message");
@@ -542,7 +562,7 @@ export function HostDemo() {
 
   useEffect(() => {
     resetFrame();
-  }, [customer, lang]);
+  }, [customer, lang, aiNew]);
 
   // the number on the tile is this customer's: a change of language keeps it, a change of customer does not
   useEffect(() => {
@@ -694,6 +714,8 @@ export function HostDemo() {
                 lang={lang}
                 consent={consent}
                 canLink={!!persona?.partial_view || consent.other_bank}
+                aiNew={aiNew}
+                onAiNew={() => setAiNew((on) => !on)}
                 onLink={() => setSheet("link")}
                 onTryLink={() => {
                   setTab("home");

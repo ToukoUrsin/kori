@@ -72,6 +72,8 @@ function fmtValue(value: number | string, unit: string, lang: LabLang) {
 
 // `?fresh=1`: a suggested question is built new, as a typed one always is (docs/LAB.md, kept views).
 const FRESH = new URLSearchParams(location.search).get("fresh") === "1";
+// `?approved=1`: the bank's switch. Only answers whose code was reviewed are given, and no model is called for the turn.
+const APPROVED = new URLSearchParams(location.search).get("approved") === "1";
 
 // One turn as events. The turn keeps running on the server if the connection drops (a lift, a tunnel, a booth's wifi):
 // the same turn id with the last event number picks the stream up where it broke.
@@ -79,7 +81,7 @@ async function* realEvents(customer: string, lang: LabLang, session: string, mes
   let last = 0, tries = 0, finished = false;
   while (!finished) {
     try {
-      const response = await fetch("/api/lab/chat", { method: "POST", headers: { "Content-Type": "application/json", Accept: "text/event-stream", "X-Kori-Device": readStored("kori.device") || "lab-web" }, body: JSON.stringify({ customer, lang, session, message, turn, after: last, fresh: FRESH }), signal });
+      const response = await fetch("/api/lab/chat", { method: "POST", headers: { "Content-Type": "application/json", Accept: "text/event-stream", "X-Kori-Device": readStored("kori.device") || "lab-web" }, body: JSON.stringify({ customer, lang, session, message, turn, after: last, fresh: FRESH, approved: APPROVED }), signal });
       if (!response.ok || !response.body) {
         if (response.status >= 400 && response.status < 500) throw Object.assign(new Error(`Chat request failed (${response.status})`), { final: true });
         throw new Error(`Chat request failed (${response.status})`);
@@ -409,6 +411,7 @@ export default function LabChat({ onVoice, embed }: { onVoice?: () => void; embe
         })}{queued && <article className="kc-turn" data-state="queued"><div className="kc-user kc-queued">{keepFigures(queued)}</div></article>}</div>}
       </div>
       {turns.length === 0 && <div className="kc-starters">{starters.slice(0, 4).map((starter) => <button type="button" key={starter} onClick={() => void runQuestion(starter)}>{starter}</button>)}</div>}
+      {APPROVED && <p className="kc-mode" role="note">{copy.approved}</p>}
       <form className="kc-composer" onSubmit={submit}>
         <div className="kc-pill">
           <textarea ref={inputRef} value={draft} onChange={(e) => { setDraft(e.target.value); if (micNote) setMicNote(""); }} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(draft); } }} placeholder={recording ? copy.listening : hearing ? copy.writingDown : copy.ask} rows={1} aria-label={copy.ask} readOnly={recording || hearing} />

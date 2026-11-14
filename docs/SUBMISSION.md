@@ -39,6 +39,7 @@ She can type it or say it. The questions Kori suggests open in about a second: t
 
 - https://kori-coach.fly.dev/host shows Kori inside a stand-in bank app. The host asks for consent, opens Kori in a web view and gets the safe-to-spend number back for its own home screen.
 - The code runs inside the bank, next to the data. The model gets the question and what the calculations return.
+- A bank can start with no model in the loop. On /host, under More, switch off "New answers written by AI": the suggested questions still answer in a second with code the bank has reviewed, and anything else gets a plain "not on the approved list".
 - When the salary goes to another bank, Kori says what it can't see and doesn't guess.
 - It says it's an AI and gives no investment or credit advice. A fund or a loan is shown as an example, with its assumptions named.
 
@@ -49,6 +50,6 @@ Every figure is calculated by code and checked before you see or hear it. The ch
 - Gemini (gemini-4-hydrogen) writes and runs the code in the chat and searches the web with Google Search. A larger one (gemini-4-carbon) runs the ten-year model. In the coach, Gemini chooses which of 22 calculations to run (function calling) and grades the lessons.
 - ElevenLabs Agents run the voice conversation with our own server as the brain, so the voice goes through the same check. Spoken questions in the chat are written down by ElevenLabs too.
 - Claude only draws: each screen is built from what Gemini's code produced.
-- 247 automated tests.
+- 248 automated tests.
 
 Open it on your phone and ask anything.

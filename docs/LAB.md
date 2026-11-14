@@ -34,7 +34,7 @@ Pitch line that is true of this design: *no number is guessed. The agent writes 
 
 ## 1. Stream: `POST /api/lab/chat`
 
-Request: `{"customer": "CUST01885", "lang": "en"|"fi", "session": "<uuid>", "message": "...", "fresh": false}` plus the usual `X-Kori-Device` header. `fresh: true` builds the answer new even when the question has a kept view.
+Request: `{"customer": "CUST01885", "lang": "en"|"fi", "session": "<uuid>", "message": "...", "fresh": false, "approved": false}` plus the usual `X-Kori-Device` header. `fresh: true` builds the answer new even when the question has a kept view.
 Response: `text/event-stream`. Each event is `event: <name>\ndata: <json>\n\n`. Order is free; `done` or `error` is last. A `ui` often starts before the `text` does: the designer begins as soon as the cell that feeds it has run, while the analyst is still writing the answer.
 
 | Event | Data | Meaning |
@@ -158,6 +158,10 @@ market.history(symbol, years=10)              # monthly closes of an index or fu
 ```
 
 `kori`, `shop`, `web` and `market` are the **door**: the only way out of the sandbox. Each call is a line on the kernel's pipe that the host answers; the host runs the allow-listed function, logs it (a `call` event) and writes the result back. Code in the sandbox never holds a socket or a key.
+
+### Approved answers only
+
+`"approved": true` on the request (the chat sends it when its address has `approved=1`; the stand-in bank app sets that from its "New answers written by AI" switch) means no model is called for the turn. A question with a kept view runs its reviewed code on this customer's data and shows its reviewed screen. Any other question gets one fixed sentence and the kept questions as chips. `done` carries `approved_only: true` and, for a question that was not on the list, an empty `models`.
 
 ### What keeps the chat and the cards in step
 

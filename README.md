@@ -143,6 +143,11 @@ before?" and see the months it held, the months it did not, and the reason for e
 - **Inside a bank app.** `/host` runs Kori in a web view inside a stand-in bank app: consent first, a typed and
   versioned message bridge, and the safe-to-spend number handed back to the host's own home screen. The contract is
   in `docs/INTEGRATION.md`.
+- **A way in without a model.** The bank can start with approved answers only: on `/host`, under More, switch off
+  "New answers written by AI". The suggested questions still answer in about a second, with code and a screen that
+  were reviewed once and numbers computed again on the customer's data, and no model is called for the turn
+  (`approved=1` on the web-view address, `approved: true` on `/api/lab/chat`). Any other question gets a plain "not
+  on the approved list". Fresh answers can be switched on later, question family by question family.
 - **PSD2 view.** One demo customer has their salary in another bank. Kori says so, shows what it cannot see and
   refuses to guess. With the (simulated) link to the other bank switched on, it sees the whole month.
 - **Rules.** Kori discloses that it is an AI, gives no investment or credit advice, and says "pension" instead of
@@ -180,7 +185,7 @@ PYTHONPATH=. uv run uvicorn kori.app:app --port 8811
 cd ../web && pnpm install && pnpm dev      # http://localhost:8812
 ```
 
-Tests (247: engine arithmetic, number check, API, the sandbox, the shop and swap rules, the demo customers in both languages):
+Tests (248: engine arithmetic, number check, API, the sandbox, the shop and swap rules, the demo customers in both languages):
 
 ```bash
 cd backend && PYTHONPATH=. uv run pytest -q

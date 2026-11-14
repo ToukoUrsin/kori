@@ -78,3 +78,5 @@
 .kc-checked{display:flex;align-items:center;gap:6px;margin-top:-4px;color:var(--kc-soft);font-size:13px;line-height:1.4;animation:kc-in .45s cubic-bezier(.16,1,.3,1)}
 .kc-checked svg{flex:none;color:#2f7a5b}
 @media (prefers-reduced-motion:reduce){.kc-checked{animation:none}}
+
+.kc-mode{margin:0 16px 6px;font-size:12px;line-height:17px;color:var(--kc-soft);text-align:center}

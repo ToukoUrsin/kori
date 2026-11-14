@@ -74,3 +74,36 @@ def test_a_note_to_itself_is_never_shown_as_the_answer():
     good = "ANSWER: You pay **€42** a month to 3 payments that repeat.\nCHIPS: a | b"
     assert not agent._aside(good, agent._parse(good)["answer"], last_ok=False)
     assert not agent._aside("Hi! Ask me anything about your money.", "Hi! Ask me anything about your money.", last_ok=True)     # small talk
+
+
+def test_approved_answers_only_never_calls_a_model(monkeypatch):
+    """The bank's switch: a question without reviewed code gets a plain "not on the list" and the ones that are; no model runs."""
+    async def no_model(*a, **k):
+        raise AssertionError("a model was called in approved-only mode")
+    monkeypatch.setattr(agent, "_stream", no_model)
+    monkeypatch.setattr(agent, "_view", no_model)
+
+    async def go(message):
+        sid = uuid.uuid4().hex
+        sess = agent.session(sid, "dev-" + sid[:8], ELLI, "en")
+        try:
+            turn = sess.new_turn(message)
+            turn.approved = True
+            await agent.run_turn(sess, turn)
+            return turn.events.items
+        finally:
+            await agent.forget(sid)
+
+    ev = asyncio.run(go("Why is the sky blue and should I buy bitcoin?"))
+    text = "".join(d["delta"] for k, d in ev if k == "text")
+    done = next(d for k, d in ev if k == "done")
+    chips = next(d["items"] for k, d in ev if k == "chips")
+    assert text == agent.APPROVED_ONLY["en"] and done["approved_only"] and not done["kept"] and not done["models"]
+    assert "Can my grocery shopping be cheaper?" in agent.kept.questions("en", ELLI) and len(chips) == 3
+
+    ev = asyncio.run(go("When do I spend the most on eating out?"))
+    done = next(d for k, d in ev if k == "done")
+    text = "".join(d["delta"] for k, d in ev if k == "text")
+    if text == agent.APPROVED_ONLY["en"]:
+        pytest.skip("no sandbox on this machine")
+    assert done["kept"] and done["approved_only"] and "Saturdays" in text

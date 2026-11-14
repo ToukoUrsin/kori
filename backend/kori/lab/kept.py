@@ -60,3 +60,8 @@ def find(message: str, lang: str, customer: str | None = None) -> dict | None:
             return None
         rec = {**rec, "cells": [{**c, "code": c["code"].replace(par["token"], value)} for c in rec["cells"]]}
     return rec
+
+
+def questions(lang: str, customer: str | None = None) -> list[str]:
+    """The questions that have a kept view in this language, as the customer would ask them."""
+    return [r["question"] for (lg, _), r in records().items() if lg == lang and not (r.get("only") and customer not in r["only"])]

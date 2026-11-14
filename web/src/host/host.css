@@ -222,3 +222,6 @@
   .host-contract-mobile .host-log { max-height: none; }
   .host-contract-mobile .host-icon-button { margin: -8px -10px 0 0; }
 }
+
+.host-state-button { border: 0; cursor: pointer; font-family: inherit; min-height: 32px; padding: 6px 14px; }
+.host-state-button:focus-visible { outline: 2px solid var(--color-brand); outline-offset: 2px; }
