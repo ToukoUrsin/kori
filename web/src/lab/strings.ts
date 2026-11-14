@@ -16,6 +16,7 @@ type Strings = {
   thinkingShort: string;
   drawing: string;
   approved: string;
+  queued: string;
   ask: string;
   work: string;
   working: string;
@@ -62,7 +63,8 @@ export const strings: Record<LabLang, Strings> = {
     thinking: "Kori is working…",
     thinkingShort: "Thinking",
     drawing: "Building the screen for this answer",
-    approved: "Approved answers only. No AI model writes code in this mode.",
+    queued: "Asked when this answer is done",
+    approved: "Approved answers only. No AI model runs in this mode.",
     ask: "Ask anything",
     work: "Show the work",
     working: "Working",
@@ -113,7 +115,8 @@ export const strings: Record<LabLang, Strings> = {
     thinking: "Kori työskentelee…",
     thinkingShort: "Mietin",
     drawing: "Rakennan näkymää tälle vastaukselle",
-    approved: "Vain hyväksytyt vastaukset. Tekoälymalli ei kirjoita koodia tässä tilassa.",
+    queued: "Kysyn tämän, kun vastaus on valmis",
+    approved: "Vain hyväksytyt vastaukset. Tekoälymalli ei ole käytössä tässä tilassa.",
     ask: "Kysy mitä vain",
     work: "Näytä työ",
     working: "Työn alla",

@@ -200,11 +200,13 @@ small[data-k-new] {
 
 /* ---------- type ---------- */
 /* the one finding in words. <b> inside it is the accent */
+/* the written answer sits right above every view and says it first: the lede is the view's title, a step up from the
+   answer's 16 px, not a second, louder copy of it */
 .k-lede {
-  font-size: 23px;
-  line-height: 29px;
-  font-weight: 560;
-  letter-spacing: -0.018em;
+  font-size: 20px;
+  line-height: 26px;
+  font-weight: 580;
+  letter-spacing: -0.017em;
   text-wrap: balance;
 }
 .k-lede b,
@@ -903,9 +905,15 @@ k-bars .k-readout {
   margin-top: 10px;
   font-size: 14px;
 }
+/* ranked bars share one label column, as wide as the longest label up to 44%: "Breathing room" is never cut while
+   there is room, and every bar starts on the same line */
 k-bars[dir="h"] {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: fit-content(44%) minmax(0, 1fr) auto;
+  column-gap: 10px;
+}
+k-bars[dir="h"] > * {
+  grid-column: 1 / -1;
 }
 .k-hbar {
   display: grid;
@@ -945,6 +953,9 @@ k-bars[dir="h"] {
 .k-hbar[aria-current="true"] > span:first-child {
   color: var(--color-ink);
   font-weight: 560;
+}
+k-bars[dir="h"] > .k-hbar {
+  grid-template-columns: subgrid;
 }
 @keyframes k-grow {
   from {
@@ -1242,8 +1253,8 @@ k-slides .k-readout b {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
   gap: 12px;
-  align-items: center;
-  padding: 12px 0;
+  align-items: start;
+  padding: 14px 0;
   border-top: 1px solid var(--color-line);
   cursor: pointer;
 }
@@ -1253,9 +1264,19 @@ k-slides .k-readout b {
   gap: 4px;
   flex: none;
 }
+/* two small tiles, so the words get the width: the one they buy now faded, the one to buy instead in full */
+.k-pair > .k-pic {
+  width: 44px;
+  height: 44px;
+  padding: 4px;
+  border-radius: 10px;
+}
 .k-pair > .k-pic:first-child {
-  opacity: 0.6;
+  opacity: 0.55;
   filter: grayscale(0.5);
+}
+.k-swap > input.k-switch {
+  align-self: center;
 }
 .k-swap > :nth-child(2) {
   display: flex;
@@ -1264,9 +1285,10 @@ k-slides .k-readout b {
 }
 .k-swap b {
   text-wrap: balance;
-  font-weight: 540;
+  font-weight: 560;
   font-size: 14px;
-  line-height: 18px;
+  line-height: 19px;
+  margin-bottom: 1px;
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
@@ -1282,8 +1304,9 @@ k-slides .k-readout b {
   text-overflow: ellipsis;
 }
 .k-swap small.k-pos {
+  margin-top: 3px;
   color: var(--color-brand);
-  font-weight: 540;
+  font-weight: 560;
   overflow: visible;
   white-space: normal; /* the saving is never cut and never runs under the switch: a long one (Finnish) takes a second line */
 }
@@ -1295,7 +1318,9 @@ k-slides .k-readout b {
 }
 /* the rest of a list, on request */
 .k-more {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 8px;
   width: 100%;
   min-height: 44px;
   padding: 0;
@@ -1308,6 +1333,15 @@ k-slides .k-readout b {
   color: var(--color-ink-2);
   text-align: left;
   cursor: pointer;
+}
+.k-more::after {
+  content: "";
+  width: 6px;
+  height: 6px;
+  margin-top: -3px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(45deg);
 }
 .k-more:active {
   color: var(--color-ink);

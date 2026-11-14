@@ -24,6 +24,8 @@ function firstSentence(text: string): string {
 
 function Header({ d }: { d?: Home }) {
   const { lang } = useApp();
+  // inside the bank app the bank shows who is signed in and owns the language: Kori starts with its number
+  if (isEmbedMode()) return <div className="pt-3">{d && <h1 className="sr-only">{d.greeting}</h1>}</div>;
   // who, then the day: the name already sits in the switcher, so the greeting is for screen readers and the date stands alone
   return (
     <header className="flex items-center gap-3 px-5 pb-1 pt-[max(12px,var(--safe-t))]">
@@ -64,7 +66,7 @@ function Hero({ d }: { d: Home }) {
         )}
         {s.days_to_payday === 1 ? t("today.dayTo", { word: payWord, date }) : t("today.daysTo", { n: s.days_to_payday, word: payWord, date })}
       </p>
-      <p className="mt-3 max-w-[34ch] text-[15px] leading-[21px] text-ink-2">{d.hero?.sentence}</p>
+      <p className="mt-3 text-pretty text-[15px] leading-[21px] text-ink-2">{d.hero?.sentence}</p>
     </section>
   );
 }

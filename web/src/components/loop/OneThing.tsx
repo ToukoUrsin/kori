@@ -35,13 +35,16 @@ function Eyebrow({ check, api }: { check: LoopCheckIn & { period_title?: string 
   const { t } = useApp();
   const judged = !check.partial_view && !!check.history_line && !!check.history?.length;
   return (
-    <div className="flex items-start justify-between gap-3">
-      <p className="flex min-w-0 flex-wrap gap-x-1.5 text-[12px] leading-4 text-ink-3">
-        <span className="font-medium text-ink-2">{check.period_title || t(api.pension ? "loop.lastCyclePension" : "loop.lastCycle")}</span>
-        {check.period && <span className="num whitespace-nowrap">{check.period}</span>}
-        {check.period_note && <span className="basis-full">{check.period_note}</span>}
-      </p>
-      {judged && <HistoryDots rows={check.history!} line={check.history_line!} />}
+    <div>
+      <div className="flex items-start justify-between gap-3">
+        <p className="flex min-w-0 flex-wrap gap-x-1.5 text-[12px] leading-4 text-ink-3">
+          <span className="font-medium text-ink-2">{check.period_title || t(api.pension ? "loop.lastCyclePension" : "loop.lastCycle")}</span>
+          {check.period && <span className="num whitespace-nowrap">{check.period}</span>}
+        </p>
+        {judged && <HistoryDots rows={check.history!} line={check.history_line!} />}
+      </div>
+      {/* the note takes the card's full width, not the narrow column beside the dots */}
+      {check.period_note && <p className="mt-0.5 text-pretty text-[12px] leading-4 text-ink-3">{check.period_note}</p>}
     </div>
   );
 }

@@ -711,8 +711,8 @@ ZERO = ("CHECK BEFORE THIS IS SHOWN. These came out as 0: {names}. A filter that
 
 
 APPROVED_ONLY = {
-    "en": "That one is not on the approved list. In this mode I answer only with code the bank has reviewed, and no AI model writes anything. These I can answer now.",
-    "fi": "Tämä kysymys ei ole hyväksyttyjen listalla. Tässä tilassa vastaan vain pankin tarkastamalla koodilla, eikä tekoälymalli kirjoita mitään. Näihin voin vastata nyt.",
+    "en": "That one is not on the approved list. In this mode I give only answers the bank has checked, and no AI model runs. These I can answer now.",
+    "fi": "Tämä kysymys ei ole hyväksyttyjen listalla. Tässä tilassa annan vain pankin tarkastamia vastauksia, eikä tekoälymalli ole käytössä. Näihin voin vastata nyt.",
 }
 ASIDE = ("That reply was not one of the three forms, so the customer saw nothing. If the code needs another go, send it now as form 1 "
          "(RUN:, the code in a python fence, say() and CHIPS). If you are done, reply with ANSWER: and CHIPS, written to the customer: "

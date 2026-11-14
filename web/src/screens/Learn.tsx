@@ -53,7 +53,7 @@ export function Learn() {
         ) : (
           <>
             <div>
-              <p className="num text-[13px] leading-[18px] text-ink-2">{t("learn.progress", { done, total: home.data?.lessons_total ?? list.length })}</p>
+              <p className="num text-[13px] leading-[18px] text-ink-2">{t("learn.doneOf", { done, total: home.data?.lessons_total ?? list.length })}</p>
               <div className="mt-2 flex gap-1" role="img" aria-label={t("learn.progress", { done, total: home.data?.lessons_total ?? list.length })}>
                 {list.map((l) => (
                   <span key={l.id} className={cx("h-1.5 flex-1 rounded-full transition-colors duration-300", l.done ? "bg-brand" : "bg-line-strong")} />

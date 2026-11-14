@@ -163,6 +163,13 @@ export function vsUsualText(p: number | null | undefined, t: ReturnType<typeof u
   return t(p > 0 ? "baskets.vsUp" : "baskets.vsDown", { p: pct(Math.abs(p), lang) });
 }
 
+/** After "usual €992" the word is already said: "2% more", not "2% over usual". */
+export function vsUsualShort(p: number | null | undefined, t: ReturnType<typeof useApp>["t"], lang: "en" | "fi"): string {
+  if (p === null || p === undefined) return "";
+  if (Math.abs(p) < 1) return t("baskets.vsSame");
+  return t(p > 0 ? "baskets.vsUpShort" : "baskets.vsDownShort", { p: pct(Math.abs(p), lang) });
+}
+
 export function BasketBar({ baskets }: { baskets: BasketsData["baskets"] }) {
   const { lang } = useApp();
   const total = baskets.reduce((a, b) => a + Math.max(0, b.amount), 0) || 1;
@@ -201,7 +208,7 @@ export function BasketsBody({ d }: { d: BasketsData }) {
             </div>
             <p className="pl-[18px] text-[12px] leading-4 text-ink-3">
               {t("common.usual", { v: money(b.usual, lang) })}
-              {b.vs_usual_pct != null && ` · ${vsUsualText(b.vs_usual_pct, t, lang)}`}
+              {b.vs_usual_pct != null && ` · ${vsUsualShort(b.vs_usual_pct, t, lang)}`}
             </p>
             <ul className="mt-1.5 pl-[18px] text-[13px] leading-[18px]">
               {b.categories

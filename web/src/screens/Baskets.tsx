@@ -1,6 +1,6 @@
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { useMemo, useState } from "react";
-import { BasketBar, vsUsualText } from "../components/cards/bodies";
+import { BasketBar, vsUsualShort } from "../components/cards/bodies";
 import { Cell, Cells, TxList } from "../components/cards/parts";
 import { HistoryStrip } from "../components/charts/Charts";
 import { Button, CatIcon, Dot, ErrorInline, IconButton, Money, SectionHead, Segmented, Skel, cx, useLast } from "../components/ui/bits";
@@ -293,7 +293,7 @@ export function Baskets() {
                   </div>
                   <p className="num mt-0.5 pl-[18px] text-[13px] leading-[18px] text-ink-2">
                     {t("common.usual", { v: money(b?.usual ?? d.usual[key], lang) })}
-                    {b?.vs_usual_pct != null && ` · ${vsUsualText(b.vs_usual_pct, t, lang)}`}
+                    {b?.vs_usual_pct != null && ` · ${vsUsualShort(b.vs_usual_pct, t, lang)}`}
                   </p>
                   <p className="mt-1.5 pl-[18px] text-[12px] leading-[17px] text-ink-3">{b?.desc || d.labels[key].desc}</p>
                 </div>

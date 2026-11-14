@@ -219,6 +219,8 @@ const D = {
   "baskets.vsUp": ["{p} over usual", "{p} yli tavallisen"],
   "baskets.vsDown": ["{p} under usual", "{p} alle tavallisen"],
   "baskets.vsSame": ["as usual", "kuten tavallisesti"],
+  "baskets.vsUpShort": ["{p} more", "{p} enemmän"],
+  "baskets.vsDownShort": ["{p} less", "{p} vähemmän"],
   "baskets.ofSpend": ["{p} of spending", "{p} menoista"],
 
   "plan.title": ["Plan", "Suunnitelma"],
@@ -448,6 +450,7 @@ const D = {
 
   "learn.title": ["Learn", "Opi"],
   "learn.progress": ["{done} of {total} lessons done", "{done}/{total} oppituntia tehty"],
+  "learn.doneOf": ["{done} of {total} done", "{done}/{total} tehty"],
   "learn.lessons": ["Up to {n} lessons, picked for you", "Sinulle valitut oppitunnit, enintään {n}"],
   "learn.allDone": ["Every lesson is done. They stay open if you want another look.", "Kaikki oppitunnit on tehty. Ne pysyvät auki, jos haluat palata niihin."],
   "learn.about": ["About you", "Sinusta"],

@@ -408,7 +408,7 @@ export default function LabChat({ onVoice, embed }: { onVoice?: () => void; embe
             {turn.error && <div className="kc-error">{turn.error} <button type="button" onClick={() => void runQuestion(turn.question)}>{copy.tryAgain}</button></div>}
             {!turn.pending && !turn.views.length && turn.chips.length > 0 && <div className="kc-chips">{turn.chips.map((chip) => <button type="button" key={chip} onClick={() => void runQuestion(chip)}>{chip}</button>)}</div>}
           </article>;
-        })}{queued && <article className="kc-turn" data-state="queued"><div className="kc-user kc-queued">{keepFigures(queued)}</div></article>}</div>}
+        })}{queued && <article className="kc-turn kc-turn-queued" data-state="queued"><div className="kc-user kc-queued">{keepFigures(queued)}</div><div className="kc-queued-note" role="status">{copy.queued}</div></article>}</div>}
       </div>
       {turns.length === 0 && <div className="kc-starters">{starters.slice(0, 4).map((starter) => <button type="button" key={starter} onClick={() => void runQuestion(starter)}>{starter}</button>)}</div>}
       {APPROVED && <p className="kc-mode" role="note">{copy.approved}</p>}

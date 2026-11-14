@@ -45,6 +45,14 @@ export function AvatarButton() {
 }
 
 export function ScreenHeader({ title, sub }: { title: string; sub?: string }) {
+  // inside the bank app the tab row above already names the page: the title stays for screen readers only
+  if (isEmbedMode())
+    return (
+      <header className="px-5 pt-4">
+        <h1 className="sr-only">{title}</h1>
+        {sub && <p className="text-[14px] leading-5 text-ink-2">{sub}</p>}
+      </header>
+    );
   return (
     <header className="flex items-start justify-between gap-3 px-5 pb-1 pt-[max(14px,var(--safe-t))]">
       <div className="min-w-0">
@@ -104,6 +112,33 @@ function TabBar({ joined }: { joined?: boolean }) {
   );
 }
 
+/**
+ * Inside the bank app the bank's own tab bar is at the bottom, so Kori's places move to a row at the top: one app, one bar
+ * below. The coach is reached from the ask field, as everywhere else.
+ */
+function TopTabs() {
+  const { tab, setTab, t } = useApp();
+  return (
+    <nav aria-label={t("tab.nav")} className="relative z-10 flex shrink-0 gap-6 border-b border-line bg-ground px-5">
+      {TABS.map((x) => {
+        const on = tab === x.key;
+        return (
+          <button
+            key={x.key}
+            type="button"
+            onClick={() => setTab(x.key)}
+            aria-current={on ? "page" : undefined}
+            className={cx("relative h-11 shrink-0 text-[14px] font-medium leading-5 transition-colors duration-150", on ? "text-ink" : "text-ink-3 hover:text-ink-2")}
+          >
+            {t(x.label)}
+            {on && <motion.span layoutId="kori-top-tab" aria-hidden className="absolute inset-x-0 -bottom-px h-0.5 rounded-full bg-ink" transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }} />}
+          </button>
+        );
+      })}
+    </nav>
+  );
+}
+
 /* ---------------------------------------------------------------- ask bar */
 
 function AskBar() {
@@ -111,9 +146,11 @@ function AskBar() {
   const coach = useCoach();
   const starters = useStarters(customer, lang);
   const chips = LEGACY_COACH ? home.data?.suggestions : starters?.slice(0, 4);
+  // in the bank app the questions wait in the chat itself: the bottom stays one field above the bank's bar
+  const embed = isEmbedMode();
   return (
-    <div className={cx("shrink-0 bg-surface pb-1.5", minuteOn ? "pt-1" : "border-t border-line pt-2.5")}>
-      {!minuteOn && (
+    <div className={cx("shrink-0 bg-surface", embed ? "pb-2.5" : "pb-1.5", minuteOn ? "pt-1" : "border-t border-line pt-2.5")}>
+      {!minuteOn && !embed && (
         <div className="scroll-x flex h-11 items-start gap-2 px-4 [mask-image:linear-gradient(to_right,black_calc(100%-32px),transparent)]">
           {chips
             ? chips.map((q) => (
@@ -266,13 +303,14 @@ function ToastHost() {
   const reduce = useReducedMotion();
   // on Today the ask dock sits above the tab bar: the toast clears both, so it never covers the input
   const aboveDock = tab === "today" && !coachOpen && !chatOpen && !lessonId;
+  const embed = isEmbedMode();
   return (
     <AnimatePresence>
       {toast && (
         <motion.div
           key={toast.id}
           role="status"
-          className={cx("pointer-events-none absolute inset-x-0 z-[70] flex justify-center px-4", aboveDock ? "bottom-[calc(176px+var(--safe-b))]" : "bottom-[calc(76px+var(--safe-b))]")}
+          className={cx("pointer-events-none absolute inset-x-0 z-[70] flex justify-center px-4", embed ? (aboveDock ? "bottom-[calc(72px+var(--safe-b))]" : "bottom-[calc(16px+var(--safe-b))]") : aboveDock ? "bottom-[calc(176px+var(--safe-b))]" : "bottom-[calc(76px+var(--safe-b))]")}
           initial={reduce ? { opacity: 0 } : { opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, transition: { duration: 0.15 } }}
@@ -342,6 +380,7 @@ export function Shell() {
   const { tab, online, t, minuteOn, setMinuteOn, setMinuteFocus, customer } = useApp();
   const reduce = useReducedMotion();
   const main = useRef<HTMLElement>(null);
+  const embed = isEmbedMode();
 
   useEffect(() => {
     main.current?.scrollTo({ top: 0 });
@@ -365,6 +404,7 @@ export function Shell() {
           </p>
         </div>
       )}
+      {embed && <TopTabs />}
       <main ref={main} className="scroll-y relative min-h-0 flex-1">
         <motion.div key={tab} initial={reduce ? false : { opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}>
           {tab === "today" && <Today />}
@@ -375,7 +415,7 @@ export function Shell() {
       </main>
       {tab === "today" && minuteOn && <MinutePlayer />}
       {tab === "today" && <AskBar />}
-      <TabBar joined={tab === "today"} />
+      {!embed && <TabBar joined={tab === "today"} />}
       <ChatLayer />
       <CardSheet />
       <PersonaSheet />

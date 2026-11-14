@@ -368,8 +368,8 @@ function ScopeRow({ title, note, state, on, onToggle }: { title: string; note: s
         <small>{note}</small>
       </div>
       {onToggle ? (
-        <button type="button" role="switch" aria-checked={on} aria-label={title} data-switch="ai" className={on ? "host-state host-state-button is-on" : "host-state host-state-button"} onClick={onToggle}>
-          {state}
+        <button type="button" role="switch" aria-checked={on} aria-label={title} data-switch="ai" className="host-switch" onClick={onToggle}>
+          <span className="sr-only">{state}</span>
         </button>
       ) : (
         <span className={on ? "host-state is-on" : "host-state"}>{state}</span>
@@ -401,8 +401,8 @@ function PermissionsSheet({ lang, consent, canLink, aiNew, onAiNew, onLink, onTr
           title={text(lang, "New answers written by AI", "Tekoälyn kirjoittamat uudet vastaukset")}
           note={
             aiNew
-              ? text(lang, "On: Kori writes code for any question. Switch off for approved answers only.", "Päällä: Kori kirjoittaa koodin mihin tahansa kysymykseen. Pois päältä: vain hyväksytyt vastaukset.")
-              : text(lang, "Off: only answers whose code the bank has reviewed. No AI model runs.", "Pois: vain vastaukset, joiden koodin pankki on tarkastanut. Tekoälymallia ei ajeta.")
+              ? text(lang, "Kori can write a new answer to any question.", "Kori voi kirjoittaa uuden vastauksen mihin tahansa kysymykseen.")
+              : text(lang, "Only answers the bank has checked. No AI model runs.", "Vain pankin tarkastamat vastaukset. Tekoälymalli ei ole käytössä.")
           }
           state={aiNew ? text(lang, "On", "Päällä") : text(lang, "Off", "Pois")}
           on={aiNew}
