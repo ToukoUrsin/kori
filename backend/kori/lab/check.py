@@ -13,9 +13,20 @@ from ..ai import grounding
 
 PLACEHOLDER = re.compile(r"\{\{\s*([A-Za-z_][\w.]*)\s*(?:\|\s*(\w+))?\s*\}\}")
 REF = re.compile(r"K\.(table|fact)\(\s*['\"]([\w]+)['\"]")
+KIT_TABLE = re.compile(r"<k-[\w-]+\b[^>]*?\btable\s*=\s*['\"]([\w]+)['\"]")       # <k-each table="swaps">, <k-chart table="…">
+KIT_PRODUCTS = re.compile(r"<k-product\b|<k-each\b[^>]*\bproducts\b|K\.data\.products|K\.products")
 _BLOCKS = re.compile(r"<(style|script|template)\b[^>]*>.*?</\1\s*>", re.S | re.I)
 _TAGS = re.compile(r"<[^>]+>")
 _DIGITS = re.compile(r"\d+(?:[.,]\d+)?")
+
+
+def _no_links(v):
+    """A product without its addresses and codes: the digits in a picture path or an EAN are not figures anyone computed."""
+    if isinstance(v, dict):
+        return {k: _no_links(x) for k, x in v.items() if k not in ("image", "url", "id", "ean")}
+    if isinstance(v, list):
+        return [_no_links(x) for x in v]
+    return v
 
 
 def allowed(ledger: dict, *more) -> set[float]:
@@ -24,14 +35,27 @@ def allowed(ledger: dict, *more) -> set[float]:
     facts = ledger.get("facts") or {}
     grounding.collect([f.get("v") for f in facts.values()], acc)
     for t in (ledger.get("tables") or {}).values():
-        grounding.collect(t.get("rows"), acc)
+        grounding.collect(_no_links(t.get("rows")), acc)
         for c in t.get("columns") or []:                      # "p10", "year_5": a column name may carry a figure
             acc.update(float(x.replace(",", ".")) for x in _DIGITS.findall(str(c)))
     for p in ledger.get("products") or []:
-        grounding.collect({k: v for k, v in p.items() if k not in ("image", "url", "id", "ean")}, acc)
+        grounding.collect(_no_links(p), acc)
     for x in more:
         grounding.collect(x, acc)
     return acc
+
+
+def _cells(v) -> int:
+    """How many figures a row holds, counting the products inside it."""
+    if isinstance(v, bool):
+        return 0
+    if isinstance(v, (int, float)):
+        return 1
+    if isinstance(v, dict):
+        return sum(_cells(x) for k, x in v.items() if k not in ("ean", "id"))
+    if isinstance(v, list):
+        return sum(_cells(x) for x in v)
+    return 0
 
 
 def answer(text: str, ok: set[float], lang: str) -> list[str]:
@@ -46,19 +70,23 @@ def fragment(html: str, ledger: dict, ok: set[float], lang: str) -> dict:
     figures = traced = 0
     for name, _fmt in PLACEHOLDER.findall(html):
         figures += 1
-        if name.split(".")[0] in facts:
+        head = name.split(".")[0]
+        if head in facts or (head in tables and "." in name):        # {{saving}} or a table cell, {{months.5.month}}
             traced += 1
         else:
             flagged.append("{{" + name + "}}")
     for kind, name in REF.findall(html):
         if name not in (tables if kind == "table" else facts):
             flagged.append(f"K.{kind}({name})")
-    used = {n for k, n in REF.findall(html) if k == "table" and n in tables}
+    for name in KIT_TABLE.findall(html):
+        if name not in tables:
+            flagged.append(f'table="{name}"')
+    used = {n for k, n in REF.findall(html) if k == "table" and n in tables} | {n for n in KIT_TABLE.findall(html) if n in tables}
     for n in used:                                             # every cell of a table the view reads is a ledger figure
-        cells = sum(1 for r in tables[n].get("rows") or [] for v in r.values() if isinstance(v, (int, float)) and not isinstance(v, bool))
+        cells = sum(_cells(r) for r in tables[n].get("rows") or [])
         figures += cells
         traced += cells
-    if "K.data.products" in html or "K.products" in html:
+    if KIT_PRODUCTS.search(html):
         n = sum(1 for p in ledger.get("products") or [] if isinstance(p.get("price"), (int, float)))
         figures += n
         traced += n

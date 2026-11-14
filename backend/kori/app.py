@@ -791,6 +791,20 @@ async def stt(file: UploadFile = File(...), lang: str = Form("en")):
 
 # ---------------------------------------------------------------- warm start
 @app.on_event("startup")
+async def _warm_designer() -> None:
+    """The design system is a long prompt: keep it in the model's cache (an hour at a time) so no view starts cold."""
+    from .lab import designer
+
+    async def keep() -> None:
+        while True:
+            took = await designer.warm()
+            log.info("designer warm-up %.1fs", took)
+            await asyncio.sleep(50 * 60)
+
+    app.state.designer_warm = asyncio.create_task(keep())
+
+
+@app.on_event("startup")
 def _warm() -> None:
     """Load the data and the demo customers' numbers before the first visitor asks, so the first screen opens at once."""
     import threading

@@ -182,3 +182,49 @@ def test_a_swap_inside_a_mixed_kind_is_the_same_food():
     assert all("valkosipuli" in x["name"].lower() for x in world.cheaper_like(garlic))
     capers = world.shop_search("Fragata kapris", n=1)[0]
     assert all("kapris" in x["name"].lower() for x in world.cheaper_like(capers))
+
+
+# --------------------------------------------------------------------------------------------- the cheaper basket
+def _swaps(n=6, **kw):
+    pays = [{"date": f"2026-09-{d:02d}", "amount": a, "merchant": "Prisma"} for d, a in ((1, 64.02), (3, 65.05), (8, 45.23), (12, 26.72), (15, 71.4), (19, 38.9))][:n]
+    return world.swaps(world.receipts(pays, seed="CUST01885"), **kw)
+
+
+def test_swaps_are_own_brand_the_same_kind_and_never_dearer_at_the_till():
+    s = _swaps()
+    assert s["sample"] is True and s["swaps"] == len(s["rows"]) >= 8
+    seen = set()
+    for r in s["rows"]:
+        have, pick = r["have"], r["pick"]
+        assert pick["own_brand"] and not have["own_brand"] and have["kind"] == pick["kind"]
+        assert have.get("by_weight") or pick["price"] <= have["price"]
+        assert world.same_thing(have, pick)
+        assert have["image"].startswith("https://") and pick["image"].startswith("https://")
+        assert r["saving"] == round(r["saving_each"] * r["qty"], 2) > 0
+        assert have["name"] not in seen
+        seen.add(have["name"])
+    assert s["saving"] == round(sum(r["saving"] for r in s["rows"]), 2)
+    assert [r["saving"] for r in s["rows"]] == sorted((r["saving"] for r in s["rows"]), reverse=True)
+
+
+def test_swaps_scale_to_a_usual_month_and_the_rows_add_up():
+    s = _swaps(month_spend=344.21)
+    assert s["saving_month"] == round(sum(r["saving_month"] for r in s["rows"]), 2)
+    assert s["saving_year"] == round(sum(r["saving_year"] for r in s["rows"]), 2)
+    assert abs(s["saving_month"] - s["saving"] * 344.21 / s["spent"]) < 0.2
+    assert "saving_month" not in _swaps()
+
+
+def test_swaps_for_one_kind_only():
+    rows = _swaps(like="coffee")["rows"]
+    assert rows and {r["have"]["kind"] for r in rows} == {"ground_coffee"}
+
+
+def test_what_a_shopper_would_not_accept_as_the_same_thing():
+    same = world.same_thing
+    assert not same({"name": "Snellman Kunnon naudan jauheliha 10% 400g"}, {"name": "Kotimaista sika-nauta jauheliha 23 % 700 g"})
+    assert not same({"name": "Valio A+ kreikkalainen luonnonjogurtti maustamaton laktoositon 1 kg"}, {"name": "Kotimaista 1 kg Maustamaton jogurtti laktoositon"})
+    assert not same({"name": "Kultamuna luomu kananmuna M/L10 630g"}, {"name": "Kotimaista vapaan kanan munat M10"})
+    assert not same({"name": "Vaasan TaikaRuis 550g täysjyväruisviipaleet"}, {"name": "Kotimaista Pehmeät kaurapalaleivät 480g 8 kpl"})
+    assert same({"name": "Elovena 1l kaurajuoma kahviin"}, {"name": "Kotimaista 1l kaurajuoma UHT"})
+    assert same({"name": "Vaasan Ruispalat 660g 12 kpl täysjyväruispalaleipä"}, {"name": "Kotimaista ruisleipäpalat 12 kpl 660 g"})

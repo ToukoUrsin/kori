@@ -37,7 +37,7 @@ def gemini_fallback_key() -> str | None:
 
 # The chat's designer (the model that writes the interface for one answer) is Claude. The deployed app uses its own key;
 # on a developer's machine the same code talks to a local proxy.
-UI_MODEL = os.environ.get("KORI_UI_MODEL", "claude-opus-5-5")
+UI_MODEL = os.environ.get("KORI_UI_MODEL", "claude-fable-5-2")     # steadier first words than opus-5-5 in our runs (docs/LAB.md)
 ANTHROPIC_BASE_URL = os.environ.get("KORI_ANTHROPIC_BASE_URL") or (
     "https://api.anthropic.com" if os.environ.get("KORI_ANTHROPIC_API_KEY") or not os.environ.get("CLIPROXY_API_KEY") else "http://127.0.0.1:8317")
 

@@ -7,6 +7,7 @@ import io
 import json
 import logging
 import os
+import time
 import uuid
 from pathlib import Path
 
@@ -137,6 +138,35 @@ def _sse(n: int, event: str, data: dict) -> str:
 _tasks: set[asyncio.Task] = set()
 
 
+def _keep(sess, turn) -> None:
+    """Every finished turn goes on disk as one line: the question, each cell and what it printed, the ledger, the answer
+    and the view as written. A view's pieces are joined, so a line stays readable."""
+    try:
+        events, html, code = [], {}, {}
+        for kind, data in turn.events.items:
+            if kind == "run_code":
+                code[data.get("id")] = code.get(data.get("id"), "") + (data.get("delta") or "")
+            if kind in ("end", "run_code", "text"):
+                continue
+            if kind == "run_done" and code.get(data.get("id")):
+                data = {**data, "code": code[data.get("id")]}
+            if kind == "ui" and data.get("phase") == "delta":
+                html[data.get("id")] = html.get(data.get("id"), "") + (data.get("html") or "")
+                continue
+            if kind == "ui" and data.get("phase") == "done":
+                data = {**data, "html": html.get(data.get("id"), "")}
+            events.append([kind, data])
+        text = "".join(d.get("delta") or "" for k, d in turn.events.items if k == "text")
+        line = {"at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "session": sess.id, "turn": turn.id, "customer": sess.customer_id,
+                "lang": sess.lang, "message": turn.message, "answer": text, "events": events}
+        f = config.STATE_DIR / "lab_turns.jsonl"
+        f.parent.mkdir(parents=True, exist_ok=True)
+        with f.open("a") as out:
+            out.write(json.dumps(line, ensure_ascii=False, default=str) + "\n")
+    except Exception:   # noqa: BLE001 - the record never breaks a turn
+        log.exception("could not keep the turn")
+
+
 @router.post("/api/lab/chat")
 async def chat(req: LabReq, x_kori_device: str | None = Header(None)):
     """One turn as a stream of events (docs/LAB.md). The turn runs to its end even if the phone stops listening;
@@ -161,6 +191,7 @@ async def chat(req: LabReq, x_kori_device: str | None = Header(None)):
                                     "detail": f"{type(e).__name__}: {e}"[:300]})
             finally:
                 turn.emit("end", {})
+                _keep(sess, turn)
 
         t = asyncio.create_task(work())
         _tasks.add(t)

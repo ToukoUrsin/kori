@@ -309,8 +309,12 @@ mark.k-flag {
   gap: 0;
 }
 .k-stats > * {
-  padding: 0 14px;
+  padding: 0 12px;
   border-left: 1px solid var(--color-line);
+}
+:root:lang(fi) .k-stats .k-fig > small {
+  -webkit-hyphens: auto;
+  hyphens: auto; /* a long Finnish word breaks at a syllable, not one letter before its end */
 }
 .k-stats > :first-child {
   padding-left: 0;
@@ -1276,6 +1280,7 @@ k-slides .k-readout b {
   color: var(--color-brand);
   font-weight: 540;
   overflow: visible;
+  white-space: normal; /* the saving is never cut and never runs under the switch: a long one (Finnish) takes a second line */
 }
 .k-swap > :not(input) {
   transition: opacity 220ms var(--ease-out-expo);

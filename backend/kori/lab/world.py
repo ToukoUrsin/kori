@@ -698,6 +698,90 @@ def receipts(payments: list[dict], seed: str) -> list[dict]:
     return out
 
 
+# What a shopper would accept as "the same thing, cheaper". The kind is not enough: organic stays organic, lactose-free
+# stays lactose-free, rye stays rye, sliced stays sliced, beef stays beef. A word of _MUST_KEEP in the name they buy now
+# must also be in the name of the pick; the meats named must be the same; a stated fat share may differ by five points.
+_MUST_KEEP = ("luomu", "laktoosit", "gluteenit", "sokerit", "kreikkal", "turkkil", "ruis", "kaura", "vilja", "viipale", "pihvi",
+              "suikale", "barista", "rasvaton", "kevytmaito", "täysmaito", "savu", "vähemmän")
+_MEATS = {"beef": ("naud", "nauta"), "pork": ("sika", "sian", "possu", "porsa"), "chicken": ("kana", "broiler"), "turkey": ("kalkkun",),
+          "fish": ("lohi", "lohta", "seiti", "turska", "silakka", "tonnikala")}
+_FAT = re.compile(r"(\d+(?:[.,]\d+)?)\s*%")
+_SWAP_KEYS = ("ean", "name", "brand", "price", "unit_price", "unit", "size", "image", "url", "kind", "own_brand", "by_weight")
+
+
+def _meats(name: str) -> set[str]:
+    return {meat for meat, stems in _MEATS.items() if any(stem in name for stem in stems)}
+
+
+def same_thing(have: dict, pick: dict) -> bool:
+    """Would a shopper take `pick` home instead of `have` without feeling they bought something else?"""
+    a, b = str(have.get("name") or "").lower(), str(pick.get("name") or "").lower()
+    if any(word in a and word not in b for word in _MUST_KEEP):
+        return False
+    if _meats(a) != _meats(b):
+        return False
+    fa, fb = _FAT.search(a), _FAT.search(b)
+    if fa and fb and abs(float(fa.group(1).replace(",", ".")) - float(fb.group(1).replace(",", "."))) > 5:
+        return False
+    return True
+
+
+def swaps(receipt_list: list[dict], month_spend: float | None = None, like: str | None = None) -> dict:
+    """The cheaper basket: for every branded product on these receipts, S Group's own-brand product of the same kind
+    that passes `same_thing`, with what it saves for the quantity bought.
+
+    One row per product, largest saving first; a pick never costs more at the till than what it replaces. `saving` is on these receipts; `saving_month` scales it by
+    `month_spend` (the customer's real usual month of groceries) over what these receipts came to, so it reads "if a
+    usual month looks like these receipts". `like` keeps only one kind of product ("oat drink", "kahvi")."""
+    keep: Callable[[dict], bool] = lambda p: True
+    if like:
+        scores = _kind_scores(like)
+        top = max(scores.values(), default=0)
+        kinds = {k for k, v in scores.items() if v == top} if top else set()
+        words = _tokens(like)
+        keep = (lambda p: p.get("kind") in kinds) if kinds else (lambda p: any(_token_hit(t, _tokens(p["name"])) for t in words))
+    bought: dict[str, dict] = {}
+    for r in receipt_list or []:
+        for it in r.get("items") or []:
+            p = it["product"]
+            e = bought.setdefault(p.get("ean") or p["name"], {"product": p, "qty": 0.0})
+            e["qty"] += float(it.get("qty") or 0)
+    rows = []
+    for e in bought.values():
+        have = e["product"]
+        if have.get("own_brand") or not keep(have):
+            continue
+        pick = next((c for c in cheaper_like(have, n=20) if c.get("own_brand") and same_thing(have, c)
+                     and c["saves"] >= 0.10 and c["saves_pct"] >= 8 and (have.get("by_weight") or c["price"] <= have["price"])), None)
+        if not pick:
+            continue
+        qty = round(e["qty"], 3)
+        rows.append({"have": {k: have[k] for k in _SWAP_KEYS if k in have}, "pick": {k: pick[k] for k in _SWAP_KEYS if k in pick},
+                     "qty": int(qty) if qty == int(qty) else qty, "saving_each": pick["saves"], "saving_pct": pick["saves_pct"],
+                     "saving": round(pick["saves"] * qty, 2)})
+    rows.sort(key=lambda x: -x["saving"])
+    spent = round(sum(float(r.get("total") or 0) for r in receipt_list or []), 2)
+    scale = (float(month_spend) / spent) if month_spend and spent else None
+    for row in rows:
+        if scale:
+            row["saving_month"] = round(row["saving"] * scale, 2)
+            row["saving_year"] = round(row["saving_month"] * 12, 2)
+    saving = round(sum(r["saving"] for r in rows), 2)
+    dates = sorted(str(r.get("date")) for r in receipt_list or [] if r.get("date"))
+    out: dict[str, Any] = {
+        "sample": True, "store": SKAUPAT_STORE,
+        "note": "Sample receipt lines (the bank's data stops at the merchant); products, prices and pictures are S-kaupat's.",
+        "receipts": len(receipt_list or []), "from": dates[0] if dates else None, "to": dates[-1] if dates else None,
+        "spent": spent, "products": len(bought), "swaps": len(rows), "saving": saving,
+        "saving_pct": round(saving / spent * 100, 1) if spent else 0.0, "rows": rows,
+    }
+    if scale:
+        out["month_spend"] = round(float(month_spend), 2)
+        out["saving_month"] = round(sum(r["saving_month"] for r in rows), 2)
+        out["saving_year"] = round(sum(r["saving_year"] for r in rows), 2)
+    return out
+
+
 # ---------------------------------------------------------------------------------------------------------------------
 # B. Things for sale on the web
 

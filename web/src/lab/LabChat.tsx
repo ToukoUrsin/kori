@@ -308,6 +308,7 @@ export default function LabChat({ onVoice }: { onVoice?: () => void } = {}) {
             {working && <div className="kc-working" role="status"><span className="kc-dots" aria-hidden><i /><i /><i /></span><span className="kc-doing">{doing || copy.thinkingShort}</span></div>}
             {turn.text && <div className="kc-answer">{renderBold(turn.text)}</div>}
             {turn.views.map((view) => <div className={`kc-view ${shown && view.html ? "on" : ""}`} key={view.id}><FrameHost view={view} lang={lang} mock={mock} onAsk={(text) => void runQuestion(text)} onTrace={() => undefined} sources={turn.sources} /></div>)}
+            {!turn.pending && (() => { const n = (turn.done?.flagged ?? turn.views.find((view) => view.check)?.check?.flagged ?? []).length; return n ? <div className="kc-flag">{copy.warning(n)}</div> : null; })()}
             {turn.error && <div className="kc-error">{turn.error} <button type="button" onClick={() => void runQuestion(turn.question)}>{copy.tryAgain}</button></div>}
             {!turn.pending && !turn.views.length && turn.chips.length > 0 && <div className="kc-chips">{turn.chips.map((chip) => <button type="button" key={chip} onClick={() => void runQuestion(chip)}>{chip}</button>)}</div>}
           </article>;

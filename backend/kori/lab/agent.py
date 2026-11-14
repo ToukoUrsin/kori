@@ -98,15 +98,28 @@ market.symbols()   market.history(symbol, years=10)    monthly closes of an inde
 """
 
 SHOP = """\
+shop.swaps(n=4, like=None)                   "can my shopping be cheaper" in one call. Goes through the last n sample receipts and finds, for each
+                                             branded product, S Group's own-brand product a shopper would accept as the same thing (organic stays
+                                             organic, lactose-free stays lactose-free, same meat, same cut, never dearer at the till).
+                                             like="oat drink" keeps one kind of product. Returns sample (True), receipts, spent, products, swaps,
+                                             saving and saving_pct (on those receipts), month_spend (this customer's real usual month of groceries),
+                                             saving_month and saving_year (the saving scaled to that month: "if a usual month looks like these
+                                             receipts"), and rows[{have: {name, brand, price, size, image, url}, pick: {the same keys}, qty,
+                                             saving_each, saving, saving_month, saving_year, saving_pct}], largest saving first.
+                                             For the view use these names exactly: table("swaps", s["rows"]) as it is (the pictures travel in
+                                             have.image and pick.image), and emit saving_month, saving_year, swaps, month_spend and left_over
+                                             (kori.usual_month()["left_over"]). The view adds rows up as the customer switches swaps on and off.
 shop.search(query, store="s-kaupat", n=8)   real grocery products from S-kaupat (one Prisma, dated prices): name, brand, price, unit_price, unit,
                                              size, image, url, store, kind, own_brand
 shop.cheaper(product, n=3)                   product = a product dict or a name. Cheaper products of the same kind (own brands first), each a product
-                                             dict plus saves (euros per pack), saves_pct, instead_of. [] when nothing is cheaper
-                                             For a swap view: one row per product (never the same swap twice) with how often it was bought, and
-                                             only swaps a shopper would accept as the same thing; the claim is what the sample receipts support.
+                                             dict plus saves (euros per pack), saves_pct, instead_of. [] when nothing is cheaper. For one product the
+                                             customer names ("my oat drink"): take the line from shop.swaps(10, like="oat drink")["rows"], offer
+                                             shop.cheaper(row["have"], 3) as the options and show() them with what they buy now.
 shop.receipts(n=4)                           itemised receipts for the customer's last supermarket payments. SAMPLE data: the bank's data stops at the
-                                             merchant; S-mobiili's "Omat ostot" has the lines. Say so in one short clause when you use it.
-                                             Each: date, merchant, total, sample, items[{product: {name, brand, price, unit_price, unit, size, image, url}, qty, line_total}]
+                                             merchant; S-mobiili's "Omat ostot" has the lines. Say so in one short clause whenever you use receipts
+                                             or swaps. Each: date, merchant, total, sample, items[{product: {name, brand, price, unit_price, unit,
+                                             size, image, url, kind}, qty, line_total}]. Find a product by its kind ("oat_drink", "ground_coffee"),
+                                             never by a word in its name ("kaura" is also bread and porridge).
 """
 NO_SHOP = """\
 (Grocery lookups, shop.*, are not switched on in this version. If the customer asks for real grocery products or prices, say that part is

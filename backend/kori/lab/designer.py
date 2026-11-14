@@ -58,21 +58,40 @@ def system_prompt() -> str:
 
 
 # ------------------------------------------------------------------ what the model is shown
+_NOT_SHOWN = {"url", "ean", "unit_price", "unit", "kind", "own_brand", "by_weight", "category", "category_name", "fetched", "live", "run"}
+
+
 def _short(v: Any) -> Any:
     if isinstance(v, float):
         return round(v, 2)
     if isinstance(v, str) and len(v) > 90:
         return v[:88] + "…"
+    if isinstance(v, dict):             # a product inside a row: what it is, and that it has a picture
+        return {k: ("(picture)" if k == "image" else _short(x)) for k, x in v.items() if k not in _NOT_SHOWN}
     return v
+
+
+def _steps(ledger: dict) -> dict[str, int]:
+    """The cells that put something on the ledger, numbered in order (empty when it was one cell)."""
+    runs: list[str] = []
+    for group in (ledger.get("facts") or {}, ledger.get("tables") or {}):
+        for x in group.values():
+            r = x.get("run") if isinstance(x, dict) else None
+            if r and r not in runs:
+                runs.append(r)
+    runs.sort(key=lambda r: (int(r[1:]) if r[1:].isdigit() else 0, r))
+    return {r: i + 1 for i, r in enumerate(runs)} if len(runs) > 1 else {}
 
 
 def digest(ledger: dict) -> dict:
     """The ledger as the model sees it: every single figure, the shape and first rows of every table, products without
     their picture paths. Enough to design with, too little to copy figures from."""
-    facts = {}
+    facts, steps = {}, _steps(ledger)
     for name, f in (ledger.get("facts") or {}).items():
         f = f if isinstance(f, dict) else {"v": f}
         facts[name] = {k: _short(f[k]) for k in ("v", "unit", "label") if f.get(k) not in (None, "")}
+        if steps.get(f.get("run")):
+            facts[name]["step"] = steps[f["run"]]
     tables = {}
     for name, t in (ledger.get("tables") or {}).items():
         rows = t.get("rows") if isinstance(t, dict) else t
@@ -84,6 +103,8 @@ def digest(ledger: dict) -> dict:
             entry["last_row"] = {k: _short(v) for k, v in rows[-1].items()}
         if isinstance(t, dict) and t.get("label"):
             entry["label"] = t["label"]
+        if isinstance(t, dict) and steps.get(t.get("run")):
+            entry["step"] = steps[t["run"]]
         tables[name] = entry
     products = [{k: _short(p[k]) for k in ("id", "name", "brand", "price", "unit_price", "unit", "size", "store") if p.get(k) not in (None, "")}
                 | {"has_image": bool(p.get("image"))} for p in ledger.get("products") or []]
@@ -109,6 +130,9 @@ def user_message(payload: dict) -> str:
     parts.append("The analyst's brief:\n" + (str(payload.get("brief") or "").strip() or "(none: choose the form yourself from the ledger)"))
     parts.append("The ledger (tables are cut to their first rows; the frame holds all rows):\n"
                  + json.dumps(digest(payload.get("data") or {}), ensure_ascii=False, separators=(",", ":")))
+    if _steps(payload.get("data") or {}):
+        parts.append("The analysis took more than one step (`step` on each entry). Where two entries cover the same thing, the one from the "
+                     "later step is the answer and the earlier one is working: leave the earlier one out.")
     parts.append("Write the fragment now, straight away and without planning it first: the customer is watching it appear. "
                  "HTML only, starting with the first tag.")
     return "\n\n".join(parts)

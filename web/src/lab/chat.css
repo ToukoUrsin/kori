@@ -33,7 +33,7 @@
 .kc-view .lab-frame-wrap{margin:0;border:0;border-radius:0;background:transparent}
 .kc-view .lab-frame-skeleton{display:none!important}
 
-.kc-error{color:#8a5a1c;font-size:14px;line-height:1.5}
+.kc-error,.kc-flag{color:#8a5a1c;font-size:14px;line-height:1.5}
 .kc-error button{padding:0;border:0;background:none;color:inherit;font:inherit;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
 .kc-chips{display:flex;flex-wrap:wrap;gap:8px}
 .kc-chips button,.kc-starters button{border:0;background:var(--kc-fill);color:var(--kc-ink);font:inherit;cursor:pointer;text-align:left;transition:background .15s,transform .15s}

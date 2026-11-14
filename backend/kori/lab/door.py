@@ -183,6 +183,7 @@ class Door:
             ("shop", "search"): lambda: world.shop_search(*args, **kwargs),
             ("shop", "cheaper"): lambda: world.cheaper_like(*args, **kwargs),
             ("shop", "receipts"): lambda: world.receipts(_supermarket_payments(m, int((args or [kwargs.get("n", 4)])[0])), seed=m.customer_id),
+            ("shop", "swaps"): lambda: _swaps(m, world, args, kwargs),
             ("web", "search"): lambda: world.web_search(*args, **kwargs),
             ("web", "products"): lambda: world.web_products(*args, **kwargs),
             ("web", "read"): lambda: world.web_read(*args, **kwargs),
@@ -197,6 +198,17 @@ class Door:
         if not f:
             raise PermissionError(f"{ns}.{fn} is not on the list: " + ", ".join(sorted(f"{a}.{b}" for a, b in table)))
         return f()
+
+
+def _swaps(m: Money, world: Any, args: list, kwargs: dict) -> dict:
+    """shop.swaps(n=4, like=None): the last n sample receipts against the shop's own brands, scaled by what a usual
+    month of groceries really costs this customer."""
+    a = dict(zip(("n", "like"), args)) | kwargs
+    n = a.get("n", 4)
+    if isinstance(n, str) and not a.get("like"):       # shop.swaps("oat drink")
+        a["like"], n = n, 10
+    usual = (m.usual.get("categories") or {}).get("Groceries") if isinstance(m.usual, dict) else None
+    return world.swaps(world.receipts(_supermarket_payments(m, int(n or 4)), seed=m.customer_id), month_spend=usual, like=a.get("like"))
 
 
 def _supermarket_payments(m: Money, n: int) -> list[dict]:

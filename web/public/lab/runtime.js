@@ -658,7 +658,7 @@
         b.style.transition = "fill 200ms"; b.style.transformBox = "fill-box"; b.style.transformOrigin = "bottom";
         if (firstDraw && !REDUCED) b.animate([{ transform: "scaleY(0)" }, { transform: "scaleY(1)" }], { duration: 700, delay: 120 + i * (360 / n), fill: "backwards", easing: "cubic-bezier(0.16, 1, 0.3, 1)" });
         bars.push(b);
-        var t = el("text", { x: i * band + band / 2, y: H - 5, class: "k-ax", "text-anchor": "middle" }, svg); t.textContent = i % step === 0 || i === n - 1 && step < 3 ? lab(r) : ""; labs.push(t);
+        var t = el("text", { x: i * band + band / 2, y: H - 5, class: "k-ax", "text-anchor": "middle" }, svg); var endL = step === 2 && i === n - 1, nearEnd = step === 2 && i !== n - 1 && n - 1 - i < step; /* the last bar keeps its label, so its neighbour gives way */ t.textContent = (i % step === 0 && !nearEnd) || endL ? lab(r) : ""; labs.push(t);
         var hitr = el("rect", { x: i * band, y: 0, width: band, height: H, fill: "transparent", class: "k-hit" }, svg);
         hitr.addEventListener("pointerdown", function () { choose(i); }); hitr.addEventListener("pointerenter", function (e) { if (e.buttons) choose(i); });
       });
