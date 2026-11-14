@@ -30,7 +30,7 @@ export const chunks = (l: {words: Word[]}) => {
 	return res;
 };
 export const CaptionBox: React.FC<{text: string; op: number; x: [number, number]}> = ({text, op, x}) => (
-	<div style={{position: 'absolute', left: x[0], width: x[1] - x[0], top: 968, display: 'flex', justifyContent: 'center', opacity: op}}>
+	<div style={{position: 'absolute', left: x[0], width: x[1] - x[0], bottom: 39, display: 'flex', justifyContent: 'center', opacity: op}}>
 		<div style={{fontFamily: SANS, fontSize: 44, fontWeight: 500, lineHeight: 1.2, color: 'oklch(0.972 0.006 95)', padding: '10px 28px', borderRadius: 16, background: 'oklch(0.22 0.02 160 / 0.92)', letterSpacing: '-0.012em', textAlign: 'center'}}>{text}</div>
 	</div>
 );

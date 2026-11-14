@@ -6,6 +6,7 @@ transactions, tells you what is safe to spend before payday, and teaches you why
 Built at Junction 2026 for S-Pankki's challenge "Personal Economic Trainer". *Kori* is Finnish for basket.
 
 - Live app: https://kori-coach.fly.dev (open it on a phone, or narrow the browser window)
+- The film, two minutes, recorded from the live app: https://kori-coach.fly.dev/film
 - Voice: ElevenLabs Agents. Reasoning: Gemini. Every number: our own engine.
 
 ## What it does

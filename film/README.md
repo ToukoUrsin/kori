@@ -16,10 +16,14 @@ Everything in the film is recorded from the live app.
 ## How the film is put together
 
 - `src/Film.tsx` starts with `SLOTS`: the footage of every scene, by recording name and segment times
-  (recording seconds), with punch-ins (`zoom`), mute and a note per part. Scene lengths follow from the footage and
-  the narration. Two parts of the same recording with a gap are a cut, and the film marks it ("5 s wait cut").
-- `src/footage.tsx` plays the parts in a phone with their real sound, the cut chips and the live strip
-  (the calculation picked and "N numbers checked", from the recording's own events).
+  (recording seconds), with camera keys (`zoom`), mute and a note per part. Scene lengths follow from the footage and
+  the narration. Two parts of the same recording with a gap are a cut, and the film marks it ("5 s wait cut");
+  `cut: false` is for a jump that skipped no waiting (another screen).
+- `src/footage.tsx` is the stage: the phone stands in the left half, the words in the right half. The camera
+  (`zoom: [{at, z, y, d}]`) scales the whole phone and centres app pixel `y`, so the full width of the app stays
+  readable; at `z` 1.75 about 540 app pixels are in view. It keeps its place across cuts; `d: 0` is a hard cut.
+  The parts play with their real sound, the cut chips and the live strip (the calculation picked and "N numbers
+  checked", from the recording's own events).
 - Narration: `scripts/make-vo.mjs` (ElevenLabs, cached by text in `public/audio/vo/`). Lines marked `PART_B` are not
   generated until `--part-b`; until then they are silent but keep their time and caption. `--print` lists them.
   Run with `hsec exec --only ELEVENLABS_API_KEY -- node scripts/make-vo.mjs [--part-b]`.
@@ -27,11 +31,16 @@ Everything in the film is recorded from the live app.
   (fails unless its totals equal `docs/backtest.json`).
 - `public/audio/tick.mp3` (the sound on a cut) is made with ffmpeg: two short decaying sine tones.
 
-## Part B: the new footage
+## Making a new cut
 
-1. Record, in the container: `capture/run.sh voice3`, `loop`, `lesson2`, `figures`, `peers`, `host`.
-2. `node scripts/import-caps.mjs voice3 loop lesson2 figures peers host`.
+1. Record, in the container: `capture/run.sh voice3`, `loop`, `lesson2`, `figures`, `peers`, `host`, `teach`.
+2. `node scripts/import-caps.mjs` (all of them, or name the ones that changed).
 3. Point the slots in `src/Film.tsx` at them (the comments there say what each must show), set the segment times
-   from `caps.json` (`said`, `events`, `screen`), and the beats.
-4. `hsec exec --only ELEVENLABS_API_KEY -- node scripts/make-vo.mjs --part-b`.
-5. `scripts/render.sh kori-v2b`; contact sheet and loudness as in `/bulk2/runs/spankki/rounds/r2/film/`.
+   from `caps.json` (`said`, `events`, `screen`), and the beats. The transcriber's word starts can be up to 0.7 s
+   early: set cuts in speech from the silences in `public/cap/<name>-coach.mp3`.
+4. `hsec exec --only ELEVENLABS_API_KEY -- node scripts/make-vo.mjs --part-b` (cached by text: unchanged lines cost
+   nothing).
+5. `scripts/stills.sh <name> <frame> ...` renders single frames and a contact sheet to
+   `/bulk2/runs/spankki/film/stills/<name>/`, in the container.
+6. `scripts/render.sh <name>`. Copy the cut that ships to `/bulk2/runs/spankki/film/out/kori.mp4`:
+   `scripts/deploy.sh` (repo root) puts it on the site at `/film`.

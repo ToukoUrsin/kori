@@ -419,6 +419,7 @@ const D = {
   ],
   "voice.noMic": ["No microphone found. Typing works the same.", "Mikrofonia ei löytynyt. Kirjoittaminen toimii samalla tavalla."],
   "voice.empty": ["I didn't catch that. Hold the button and try again, or type.", "En saanut selvää. Pidä painiketta pohjassa ja yritä uudelleen tai kirjoita."],
+  "voice.down": ["Speech isn't available right now. Typing works the same.", "Puhe ei ole juuri nyt käytettävissä. Kirjoittaminen toimii samalla tavalla."],
   "voice.fallback": ["Live voice isn't available, so hold the button to talk.", "Suora puheyhteys ei ole käytössä, joten puhu pitämällä painiketta pohjassa."],
   "voice.tooShort": ["Hold the button while you speak.", "Pidä painiketta pohjassa, kun puhut."],
   "voice.ended": ["Voice ended. You can keep typing.", "Puhe päättyi. Voit jatkaa kirjoittamalla."],

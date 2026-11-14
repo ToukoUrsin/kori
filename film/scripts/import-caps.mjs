@@ -9,7 +9,7 @@ import {fileURLToPath} from 'node:url';
 
 const film = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const SRC = process.env.KORI_CAPS || '/bulk2/runs/spankki/film';
-const USED = ['voice2', 'chat', 'lesson', 'track', 'fi', 'today', 'voice3', 'loop', 'lesson2', 'figures', 'peers', 'host'];
+const USED = ['voice2', 'voice3', 'loop', 'lesson2', 'figures', 'peers', 'host', 'teach'];
 const want = process.argv.slice(2).length ? process.argv.slice(2) : USED;
 const out = path.join(film, 'public/cap');
 fs.mkdirSync(out, {recursive: true});
@@ -121,7 +121,10 @@ for (const name of want) {
 			const ws = heard.filter((w) => w.e >= bounds[i] && w.e < bounds[i + 1]).map((w) => ({...w, s: Math.max(w.s, Math.min(bounds[i] + 0.2, w.e - 0.05))}));
 			if (!ws.length) continue;
 			if (i === 0) {
-				cap.said.push({who: 'coach', kind: 'greeting', text: ws.map((w) => w.w).join(' '), s: ws[0].s, e: ws.at(-1).e, words: ws});
+				// the opening is not sent to the screen as an event, so its caption is what was heard, with the two names
+				// the transcriber cannot know put right
+				const text = ws.map((w) => w.w).join(' ').replace(/^Hi,? I know,? it'?s Corey\.?/i, "Hi Aino, it's Kori.").replace(/\bCorey\b/g, 'Kori');
+				cap.said.push({who: 'coach', kind: 'greeting', text, s: ws[0].s, e: ws.at(-1).e, words: spread(text, ws)});
 				continue;
 			}
 			const ans = answers.find((a) => a.at >= bounds[i] && a.at < bounds[i + 1]);

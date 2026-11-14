@@ -45,8 +45,8 @@ const LINES = [
 	['teach', 0.3, 'And it teaches. Money goes in three baskets: fixed musts, surprise musts, and everyday.'],
 	['teach', 0.3, 'Short lessons use your own numbers. You say it back in your own words, and the coach grades it.'],
 	['teach', 0.3, 'It compares her with people like her, from Statistics Finland.', PART_B],
-	['host', 0.3, 'Here it sits inside a stand-in bank app, the way it would in S-mobiili.', PART_B],
-	['host', 0.3, 'It asks before it reads anything. In Finnish and English.', PART_B],
+	['host', 0.3, 'Here it sits in a stand-in bank app. It asks before it reads anything.', PART_B],
+	['host', 2.2, 'The bank’s own home screen shows her number. In Finnish and in English.', PART_B],
 	['end', 0.3, 'Kori. Your balance is not your budget.'],
 ];
 const partB = A.includes('--part-b');

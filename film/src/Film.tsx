@@ -8,13 +8,15 @@ import {Host, MathScene, Proof, Teach} from './scenes/Explain';
 import {C, FPS, clamp} from './theme';
 import {CaptionBox, chunks} from './captions';
 
-// ================================================================ the recordings: part B edits only this table
+// ================================================================ the recordings
 // Each slot is the footage of one scene, by recording name (src/data/caps.json, from scripts/import-caps.mjs).
 //   clips  parts of a recording, in its own seconds, played at real speed. Two parts of the same recording with a
-//          gap between them are a cut: the film marks it ("4 s wait cut"). Real answers are never cut inside.
-//   zoom   punch-ins: {at: recording second, z: 2, y (and x): the point to centre, in app pixels (390 × 844)}.
-//   note   what a part is, under the phone where there is no live strip.
-// Until the new recordings exist, the slots point at the old ones (voice2, chat, lesson, track, fi, today).
+//          gap between them are a cut: the film marks it ("5 s wait cut"), unless the part is an excerpt (`cut: false`,
+//          and its note says so). A spoken answer is only ever ended at the end of a sentence.
+//   zoom   camera moves: {at: recording second, z: 1.75, y: the app pixel (0 to 844) to centre, d: seconds (0 = cut)}.
+//          The camera keeps its place over a cut.
+//   note   what a part is, beside the phone where there is no live strip.
+const IN = 1.75;
 export const SLOTS: {
 	voice3: {clips: Clip[]; big: {cap: string; card: string}};
 	loop: {clips: Clip[]; vo: {cap: string; at: number}; beats: {cap: string; at: number}[]};
@@ -24,56 +26,62 @@ export const SLOTS: {
 	peers: {clips: Clip[]};
 	host: {clips: Clip[]; beats: {cap: string; at: number; label: string}[]};
 } = {
-	// 1. Cold open. PART B: voice3, "Can I afford a six hundred and fifty euro phone this month?", the wait cut, the
-	//    whole answer; big = the "afford" card (per_day before → after). Now: voice2's first question.
+	// 1. Cold open: "Can I afford a six hundred and fifty euro phone this month?", the wait cut, the first sentence of
+	//    the answer with the camera on its card, then back out for the name. big = the "afford" card (per_day).
 	voice3: {
 		clips: [
-			{cap: 'voice2', from: 15.15, to: 17.85},
-			{cap: 'voice2', from: 22.35, to: 35.5, zoom: [{at: 22.35, z: 2, x: 100, y: 360}, {at: 34.9, z: 1, y: 422}]},
+			{cap: 'voice3', from: 39.6, to: 43.6},
+			{cap: 'voice3', from: 48.75, to: 54.8, zoom: [{at: 48.75, z: IN, y: 330}, {at: 54.85, z: 1, y: 422, d: 0.9}]},
 		],
-		big: {cap: 'voice2', card: 'safe'},
+		big: {cap: 'voice3', card: 'afford'},
 	},
-	// 3. The habit loop. PART B: voice3 from "How did my last pay cycle go?" (look-back card punched in), "It was
-	//    unusual", the answer that sets the one thing, then the home screen with [data-loop="active"] (or `loop`).
+	// 3. The habit loop, from the same session: Kori speaks first (what it noticed and the one question), "It was
+	//    unusual", the answer that sets the one thing, then the home screen that keeps count (the `loop` recording).
 	//    beats: when each step is seen: noticed, asked, one thing set, tracked. vo: where the narrator starts.
 	loop: {
 		clips: [
-			{cap: 'voice2', from: 37.45, to: 40.15},
-			{cap: 'voice2', from: 45.3, to: 57.7, zoom: [{at: 45.3, z: 2, x: 100, y: 390}]},
-			{cap: 'today', from: 0.2, to: 4.2, mute: true, zoom: [{at: 0.2, z: 1.8, x: 100, y: 230}], note: 'The home screen · real speed'},
+			{cap: 'voice3', from: 10.2, to: 21.6, zoom: [{at: 10.2, z: IN, y: 300, d: 0}]},
+			{cap: 'voice3', from: 25.5, to: 29.95},
+			{cap: 'voice3', from: 65.9, to: 69.2, mute: true, cut: false, note: 'The home screen · real speed'},
+			{cap: 'loop', from: 8.7, to: 11.8, mute: true, zoom: [{at: 8.95, z: IN, y: 400}], note: 'The home screen · real speed'},
 		],
-		vo: {cap: 'today', at: 0.45},
-		beats: [{cap: 'voice2', at: 37.3}, {cap: 'voice2', at: 45.4}, {cap: 'voice2', at: 50.2}, {cap: 'today', at: 0.3}],
+		vo: {cap: 'voice3', at: 65.95},
+		beats: [{cap: 'voice3', at: 10.4}, {cap: 'voice3', at: 15.6}, {cap: 'voice3', at: 25.7}, {cap: 'voice3', at: 66.0}],
 	},
-	// 4. Why the numbers are right: 3 s of "numbers checked" opened (PART B: figures). Now: the chat's checked line.
+	// 4. Why the numbers are right: "numbers checked" tapped, and the sheet that says where each figure came from.
 	figures: {
-		clips: [{cap: 'chat', from: 25.8, to: 28.9, mute: true, zoom: [{at: 25.8, z: 2, x: 100, y: 610}], note: 'Typed answer · real speed'}],
+		clips: [{cap: 'figures', from: 10.3, to: 13.8, mute: true, zoom: [{at: 10.3, z: IN, y: 620, d: 0}], note: 'Tap “numbers checked” · real speed'}],
 	},
-	// 6. It teaches: the baskets, then the typed eating-out what-if (both kept in part B).
+	// 6. It teaches: the three baskets on the Baskets tab.
 	teach: {
-		clips: [
-			{cap: 'today', from: 9.9, to: 13.0, mute: true, zoom: [{at: 9.9, z: 1.8, x: 100, y: 190}], note: 'Three baskets, this month · real speed'},
-			{cap: 'chat', from: 32.6, to: 34.9, mute: true, zoom: [{at: 32.6, z: 1.8, x: 100, y: 330}], note: 'Typed what-if · excerpt, real speed'},
-		],
+		clips: [{cap: 'teach', from: 0.15, to: 6.2, mute: true, zoom: [{at: 0.15, z: 1.32, y: 380, d: 0}, {at: 0.3, z: 1.5, y: 350, d: 5.6}], note: 'Baskets tab · real speed'}],
 	},
-	// PART B: lesson2, the sorting step (one wrong on purpose) and say-it-back: "Not yet", then a pass.
+	// The first lesson: the sorting step (one wrong on purpose) and say-it-back graded "Not yet".
 	lesson2: {
 		clips: [
-			{cap: 'lesson', from: 12.7, to: 14.9, mute: true, zoom: [{at: 12.7, z: 1.7, x: 100, y: 300}], note: 'Lesson · excerpt, real speed'},
-			{cap: 'lesson', from: 21.8, to: 25.9, mute: true, zoom: [{at: 21.8, z: 1.7, x: 100, y: 330}], note: 'Lesson · excerpt, real speed'},
+			{cap: 'lesson2', from: 11.3, to: 13.65, mute: true, zoom: [{at: 11.3, z: IN, y: 570, d: 0}], note: 'Lesson · excerpts, real speed'},
+			{cap: 'lesson2', from: 42.95, to: 45.25, mute: true, cut: false, zoom: [{at: 42.95, z: IN, y: 300, d: 0}], note: 'Lesson · excerpts, real speed'},
 		],
 	},
-	// PART B: peers, the "people like you" card with the Statistics Finland comparison. Now: the spender profile.
+	// The "people like you" card with the Statistics Finland comparison.
 	peers: {
-		clips: [{cap: 'chat', from: 14.7, to: 17.9, mute: true, zoom: [{at: 14.7, z: 1.7, x: 100, y: 420}], note: 'Typed answer · real speed'}],
+		clips: [{cap: 'peers', from: 10.4, to: 14.7, mute: true, zoom: [{at: 10.4, z: IN, y: 560, d: 0}], note: 'Typed answer · real speed'}],
 	},
-	// 7. Inside the bank app. PART B: host, the host home, the consent sheet (2.5 s or more), Allow, Kori inside, the
-	//    host's "Safe to spend" tile, one beat of Finnish. beats (each lights a line on the right when it is seen):
-	//    "The bank's own home screen", "Asks before it reads anything", "Opens inside the app",
-	//    "Safe to spend on the bank's home", "Suomeksi". Now: Kori's Finnish home, which shows none of the host.
+	// 7. Inside the bank app: the host home, the consent sheet, Allow, Kori inside, the host's own "Safe to spend"
+	//    tile, one beat of Finnish. Each beat lights a line on the right when it is seen.
 	host: {
-		clips: [{cap: 'fi', from: 0.3, to: 9.9, mute: true, note: 'Suomeksi · real speed'}],
-		beats: [{cap: 'fi', at: 0.3, label: 'Kori in Finnish'}, {cap: 'fi', at: 1.6, label: 'Opens the coach'}, {cap: 'fi', at: 4.5, label: 'Talks in Finnish too'}],
+		clips: [
+			{cap: 'host', from: 2.1, to: 9.6, mute: true, zoom: [{at: 4.2, z: IN, y: 620}, {at: 7.7, z: IN, y: 330}], note: 'Stand-in bank app · excerpts, real speed'},
+			{cap: 'host', from: 11.3, to: 13.2, mute: true, cut: false, note: 'Stand-in bank app · excerpts, real speed'},
+			{cap: 'host', from: 14.5, to: 16.9, mute: true, cut: false, zoom: [{at: 15.95, z: 1, y: 422, d: 0.85}], note: 'Stand-in bank app · excerpts, real speed'},
+		],
+		beats: [
+			{cap: 'host', at: 2.1, label: 'The bank’s own home screen'},
+			{cap: 'host', at: 4.14, label: 'Asks before it reads anything'},
+			{cap: 'host', at: 7.9, label: 'Opens inside the bank app'},
+			{cap: 'host', at: 11.5, label: 'Her number on the bank’s home'},
+			{cap: 'host', at: 14.67, label: 'Suomeksi'},
+		],
 	},
 };
 // ================================================================
@@ -82,10 +90,10 @@ export const SLOTS: {
 const voEndIn = (scene: string) => Math.max(0, ...lines(scene).map((l) => l.at + l.dur));
 const sec = (s: number) => Math.round(s * FPS);
 const talkVo = {open: clipsFrames(SLOTS.voice3.clips) / FPS, loop: sceneSec(SLOTS.loop.clips, SLOTS.loop.vo.cap, SLOTS.loop.vo.at) ?? 0};
-export const teachClips = [SLOTS.teach.clips[0], SLOTS.teach.clips[1], ...SLOTS.lesson2.clips, ...SLOTS.peers.clips];
+export const teachClips = [...SLOTS.teach.clips, ...SLOTS.lesson2.clips, ...SLOTS.peers.clips];
 
 type SceneDef = {id: string; dur: number; vo: number; C: React.FC<{dur: number}>; capX?: [number, number]};
-const RIGHT: [number, number] = [860, 1824]; // clear of the live strip under the phone
+const RIGHT: [number, number] = [910, 1844]; // the right half: clear of the phone
 export const SCENES: SceneDef[] = [
 	{id: 'open', vo: talkVo.open, dur: Math.max(clipsFrames(SLOTS.voice3.clips), sec(talkVo.open + voEndIn('open') + 0.3)), C: (p) => <Talk {...p} kind="open" clips={SLOTS.voice3.clips} big={SLOTS.voice3.big} voAt={talkVo.open} />, capX: RIGHT},
 	{id: 'balance', vo: 0, dur: sec(voEndIn('balance') + 0.3), C: Balance},

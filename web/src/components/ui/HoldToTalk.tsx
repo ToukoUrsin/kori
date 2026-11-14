@@ -66,7 +66,8 @@ export function HoldToTalk({
       if (text) onText(text);
       else onNote(t("voice.empty"));
     } catch {
-      onNote(t("voice.empty"));
+      // the speech service is down or out of quota: say so, rather than blame what was said
+      onNote(t("voice.down"));
     } finally {
       setBusy(false);
     }

@@ -1,6 +1,6 @@
 import React from 'react';
 import {Img, OffthreadVideo, interpolate, staticFile, useCurrentFrame} from 'remotion';
-import {C, FPS, MONO, SANS, clamp, inOut, out, prog} from './theme';
+import {C, FPS, MONO, SANS, clamp, out, prog} from './theme';
 import type {Cap} from './data';
 
 /** The Kori mark: three bars (the same as in the app). */
@@ -29,22 +29,7 @@ const phoneW = (h: number) => {
 };
 export const phoneWidth = (h: number) => phoneW(h).w;
 
-export type Zoom = {at: number; z: number; x?: number; y: number};
-const ZOOM_S = 0.4;
-const lerp = (a: number, b: number, p: number) => a + (b - a) * p;
-/** Where the camera inside the phone is at recording second `t`: a 0.4 s ease to each keyframe. x, y are app pixels (390 × 844). */
-export const zoomAt = (zs: Zoom[] | undefined, t: number) => {
-	let st = {z: 1, x: 195, y: 422};
-	for (const k of zs ?? []) {
-		if (t < k.at) break;
-		const p = interpolate(t, [k.at, k.at + ZOOM_S], [0, 1], {...clamp, easing: inOut});
-		st = {z: lerp(st.z, k.z, p), x: lerp(st.x, k.x ?? 195, p), y: lerp(st.y, k.y, p)};
-	}
-	return st;
-};
-
-/** A phone showing a recording (or a still). Lives inside a <Sequence>: frame 0 is second `from` of the recording.
- *  `zoom` punches in on a part of the screen (keyframes in the recording's seconds). */
+/** A phone showing a recording (or a still). Lives inside a <Sequence>: frame 0 is second `from` of the recording. */
 export const Phone: React.FC<{
 	h: number;
 	cap?: Cap;
@@ -52,38 +37,32 @@ export const Phone: React.FC<{
 	from?: number;
 	rate?: number;
 	taps?: boolean;
-	zoom?: Zoom[];
 	style?: React.CSSProperties;
-}> = ({h, cap, still, from = 0, rate = 1, taps = true, zoom, style}) => {
+}> = ({h, cap, still, from = 0, rate = 1, taps = true, style}) => {
 	const frame = useCurrentFrame();
 	const {b, w} = phoneW(h);
 	const sw = w - 2 * b, sh = h - 2 * b;
 	const k = sw / 390;
 	const t = from + (frame / FPS) * rate;
 	const r = Math.round(h * 0.062);
-	const zm = zoomAt(zoom, t);
-	const ox = Math.min(0, Math.max(sw - zm.z * sw, sw / 2 - zm.z * zm.x * k));
-	const oy = Math.min(0, Math.max(sh - zm.z * sh, sh / 2 - zm.z * zm.y * k));
 	return (
 		<div style={{position: 'relative', width: w, height: h, borderRadius: r, background: 'oklch(0.18 0.012 160)', boxShadow: '0 2px 4px oklch(0.22 0.02 160 / 0.10), 0 40px 80px -24px oklch(0.22 0.02 160 / 0.32)', ...style}}>
 			<div style={{position: 'absolute', left: b, top: b, width: sw, height: sh, borderRadius: r - b, overflow: 'hidden', background: C.ground}}>
-				<div style={{position: 'absolute', left: 0, top: 0, width: sw, height: sh, transformOrigin: '0 0', transform: `translate(${ox}px, ${oy}px) scale(${zm.z})`}}>
-					{cap ? (
-						<OffthreadVideo src={staticFile(cap.video)} trimBefore={Math.round(from * FPS)} playbackRate={rate} muted style={{width: sw, height: sh, objectFit: 'cover', objectPosition: 'top'}} />
-					) : still ? (
-						<Img src={staticFile(still)} style={{width: sw, height: sh, objectFit: 'cover', objectPosition: 'top'}} />
-					) : null}
-					{cap && taps
-						? cap.events
-								.filter((e) => e.kind === 'tap' && e.box && t >= e.at - 0.05 && t < e.at + 0.5 * rate)
-								.map((e, i) => {
-									const p = (t - e.at) / (0.5 * rate);
-									const cx = (e.box!.x + e.box!.width / 2) * k, cy = (e.box!.y + e.box!.height / 2) * k;
-									const rad = (16 + 22 * Math.min(1, Math.max(0, p))) * k;
-									return <div key={i} style={{position: 'absolute', left: cx - rad, top: cy - rad, width: rad * 2, height: rad * 2, borderRadius: rad, background: 'oklch(0.22 0.02 160 / 0.32)', opacity: 1 - Math.max(0, p)}} />;
-								})
-						: null}
-				</div>
+				{cap ? (
+					<OffthreadVideo src={staticFile(cap.video)} trimBefore={Math.round(from * FPS)} playbackRate={rate} muted style={{width: sw, height: sh, objectFit: 'cover', objectPosition: 'top'}} />
+				) : still ? (
+					<Img src={staticFile(still)} style={{width: sw, height: sh, objectFit: 'cover', objectPosition: 'top'}} />
+				) : null}
+				{cap && taps
+					? cap.events
+							.filter((e) => e.kind === 'tap' && e.box && t >= e.at - 0.05 && t < e.at + 0.5 * rate)
+							.map((e, i) => {
+								const p = (t - e.at) / (0.5 * rate);
+								const cx = (e.box!.x + e.box!.width / 2) * k, cy = (e.box!.y + e.box!.height / 2) * k;
+								const rad = (16 + 22 * Math.min(1, Math.max(0, p))) * k;
+								return <div key={i} style={{position: 'absolute', left: cx - rad, top: cy - rad, width: rad * 2, height: rad * 2, borderRadius: rad, background: 'oklch(0.22 0.02 160 / 0.32)', opacity: 1 - Math.max(0, p)}} />;
+							})
+					: null}
 			</div>
 		</div>
 	);
@@ -143,10 +122,10 @@ export const Cross: React.FC<{size?: number}> = ({size = 28}) => (
 	</svg>
 );
 
-/** A scene: fades in and out over the paper-coloured ground. */
-export const Scene: React.FC<{dur: number; children: React.ReactNode}> = ({dur, children}) => {
+/** A scene: fades in and out over the paper-coloured ground (not where the phone stays on into the next scene). */
+export const Scene: React.FC<{dur: number; fadeIn?: boolean; fadeOut?: boolean; children: React.ReactNode}> = ({dur, fadeIn = true, fadeOut = true, children}) => {
 	const frame = useCurrentFrame();
-	const op = Math.min(interpolate(frame, [0, 9], [0, 1], {...clamp, easing: out}), interpolate(frame, [dur - 7, dur], [1, 0], clamp));
+	const op = Math.min(fadeIn ? interpolate(frame, [0, 9], [0, 1], {...clamp, easing: out}) : 1, fadeOut ? interpolate(frame, [dur - 7, dur], [1, 0], clamp) : 1);
 	return <div style={{position: 'absolute', inset: 0, opacity: op, fontFamily: SANS, color: C.ink}}>{children}</div>;
 };
 export {prog};

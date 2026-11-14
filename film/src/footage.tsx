@@ -1,14 +1,22 @@
 import React from 'react';
 import {Audio, Freeze, Sequence, interpolate, staticFile, useCurrentFrame} from 'remotion';
-import {Phone, Tick, WaitCut, phoneWidth, type Zoom} from './components';
+import {Phone, Tick, WaitCut, phoneWidth} from './components';
 import {caps, screenOf, type Said, type Word} from './data';
-import {C, FPS, MONO, SANS, clamp} from './theme';
+import {C, FPS, MONO, SANS, clamp, inOut} from './theme';
 
 /** A part of a recording, played at real speed. Two parts of the same recording with a gap between them are a cut,
- *  and the cut is marked on screen. `zoom`: punch-ins, in the recording's own seconds. `note`: what this part is,
- *  shown under the phone when there is no live strip ("Lesson · excerpt, real speed"). */
-export type Clip = {cap: string; from: number; to: number; zoom?: Zoom[]; mute?: boolean; note?: string};
-export type Placed = Clip & {start: number; frames: number; cut: number};
+ *  and the cut is marked on screen (`cut: false` for an excerpt that is not a wait; the note then says "excerpt").
+ *  `zoom`: camera moves, in the recording's own seconds. `note`: what this part is, shown beside the phone when
+ *  there is no live strip ("Lesson · excerpt, real speed"). */
+export type Zoom = {at: number; z: number; y: number; d?: number};
+export type Clip = {cap: string; from: number; to: number; zoom?: Zoom[]; mute?: boolean; note?: string; cut?: boolean};
+export type Placed = Omit<Clip, 'cut'> & {start: number; frames: number; cut: number};
+
+// The stage: the phone stands in the left half, the words in the right half. The camera pushes in on the phone as a
+// whole (the full width of the app stays in view, its top or bottom leaves the frame), so app text reads at 28 px.
+export const PH = 940, PY = 28, PCX = 470;
+export const X0 = 930;
+export const phoneX = PCX - Math.round(phoneWidth(PH) / 2);
 
 // every real voice sits level with the narrator (−23.2 LUFS): its gain comes from its own loudness, measured at import
 const NARRATOR_LUFS = -23.2;
@@ -19,7 +27,7 @@ export const place = (clips: Clip[]): Placed[] => {
 	return clips.map((c, i) => {
 		const prev = clips[i - 1];
 		const frames = Math.round((c.to - c.from) * FPS);
-		const p = {...c, start: at, frames, cut: prev && prev.cap === c.cap && c.from - prev.to > 0.25 ? c.from - prev.to : 0};
+		const p = {...c, start: at, frames, cut: c.cut !== false && prev && prev.cap === c.cap && c.from - prev.to > 0.25 ? c.from - prev.to : 0};
 		at += frames;
 		return p;
 	});
@@ -43,11 +51,40 @@ export const spoken = (clips: Clip[]): Said[] =>
 	place(clips).flatMap((p) => {
 		if (p.mute) return [];
 		const shift = p.start / FPS - p.from;
-		const ws = (w: Word[]) => w.filter((x) => x.s >= p.from - 0.05 && x.e <= p.to + 0.05).map((x) => ({...x, s: x.s + shift, e: x.e + shift}));
+		// a word belongs to the part it ends in (the transcriber's word starts can be half a second early)
+		const ws = (w: Word[]) => w.filter((x) => x.e > p.from + 0.1 && x.e <= p.to + 0.05).map((x) => ({...x, s: Math.max(x.s, p.from) + shift, e: x.e + shift}));
 		return caps[p.cap].said
 			.filter((u) => u.e > p.from + 0.05 && u.s < p.to - 0.05)
-			.map((u) => ({...u, s: Math.max(u.s, p.from) + shift, e: Math.min(u.e, p.to) + shift, words: ws(u.words)}));
+			.map((u) => ({...u, s: Math.max(u.s, p.from) + shift, e: Math.min(u.e, p.to) + shift, words: ws(u.words)}))
+			.filter((u) => u.words.length);
 	});
+
+const lerp = (a: number, b: number, p: number) => a + (b - a) * p;
+/** Where the camera is at scene frame `f`: every clip's moves on one track, so a cut does not reset it.
+ *  z: how much larger than the whole phone; y: the app pixel (0 to 844) at the middle of the frame. */
+export const camAt = (clips: Clip[], f: number) => {
+	const keys = place(clips)
+		.flatMap((p) => (p.zoom ?? []).map((k) => ({...k, at: p.start / FPS + (k.at - p.from)})))
+		.sort((a, b) => a.at - b.at);
+	const t = f / FPS;
+	let st = {z: 1, y: 422};
+	for (const k of keys) {
+		if (t < k.at) break;
+		const d = k.d ?? 0.7;
+		const p = d <= 0 ? 1 : interpolate(t, [k.at, k.at + d], [0, 1], {...clamp, easing: inOut});
+		st = {z: lerp(st.z, k.z, p), y: lerp(st.y, k.y, p)};
+	}
+	return st;
+};
+/** The phone's height and top-left corner on the 1920 × 1080 frame for a camera position. */
+export const stageAt = (cam: {z: number; y: number}) => {
+	const h = Math.round(PH * cam.z);
+	const b = Math.round(h * 0.013);
+	const k = (h - 2 * b) / 844;
+	const lo = 1080 - PY - h;
+	const top = h <= 1080 - 2 * PY ? PY : Math.min(PY, Math.max(lo, 540 - (b + cam.y * k)));
+	return {h, left: PCX - Math.round(phoneWidth(h) / 2), top: Math.round(top)};
+};
 
 /** The calculation the coach picked and how many numbers were checked, as the recording logged them. */
 const liveAt = (capName: string, t: number) => {
@@ -86,41 +123,41 @@ const Strip: React.FC<{clips: Clip[]; w: number}> = ({clips, w}) => {
 	);
 };
 
-/** The recordings of a scene in a phone: parts at real speed, cuts marked, the real sound, a live strip below. */
-export const Footage: React.FC<{clips: Clip[]; h: number; x: number; y: number; strip?: boolean; audio?: boolean}> = ({clips, h, x, y, strip = true, audio = true}) => {
+/** The recordings of a scene in a phone: parts at real speed, cuts marked, the real sound, a live strip beside it. */
+export const Footage: React.FC<{clips: Clip[]; strip?: boolean; stripOp?: number; audio?: boolean}> = ({clips, strip = true, stripOp = 1, audio = true}) => {
+	const frame = useCurrentFrame();
 	const ps = place(clips);
 	const end = ps.length ? ps[ps.length - 1].start + ps[ps.length - 1].frames : 0;
 	const last = ps[ps.length - 1];
-	const pw = phoneWidth(h);
-	const SW = 640;
+	const st = stageAt(camAt(clips, frame));
 	return (
 		<>
-			<div style={{position: 'absolute', left: x, top: y}}>
+			<div style={{position: 'absolute', left: st.left, top: st.top}}>
 				{ps.map((p, i) => (
 					<Sequence key={i} from={p.start} durationInFrames={p.frames} layout="none" name={`${p.cap} ${p.from.toFixed(1)}–${p.to.toFixed(1)}`}>
-						<Phone h={h} cap={caps[p.cap]} from={p.from} zoom={p.zoom} />
+						<Phone h={st.h} cap={caps[p.cap]} from={p.from} />
 					</Sequence>
 				))}
 				{last ? (
 					<Sequence from={end} layout="none" name="hold">
 						<Freeze frame={0}>
-							<Phone h={h} cap={caps[last.cap]} from={last.to - 1 / FPS} zoom={last.zoom} taps={false} />
+							<Phone h={st.h} cap={caps[last.cap]} from={last.to - 1 / FPS} taps={false} />
 						</Freeze>
 					</Sequence>
 				) : null}
-				{ps.map((p, i) =>
-					p.cut ? (
-						<Sequence key={`cut${i}`} from={p.start} durationInFrames={60} layout="none">
-							<div style={{position: 'absolute', left: 0, width: pw, top: Math.round(h * 0.075), display: 'flex', justifyContent: 'center'}}>
-								<WaitCut seconds={p.cut} />
-							</div>
-						</Sequence>
-					) : null,
-				)}
 			</div>
+			{ps.map((p, i) =>
+				p.cut ? (
+					<Sequence key={`cut${i}`} from={p.start} durationInFrames={60} layout="none">
+						<div style={{position: 'absolute', left: PCX - 300, width: 600, top: 96, display: 'flex', justifyContent: 'center'}}>
+							<WaitCut seconds={p.cut} />
+						</div>
+					</Sequence>
+				) : null,
+			)}
 			{strip ? (
-				<div style={{position: 'absolute', left: x + 4, top: y + h + 8}}>
-					<Strip clips={clips} w={SW} />
+				<div style={{position: 'absolute', left: X0, top: 838, opacity: stripOp}}>
+					<Strip clips={clips} w={880} />
 				</div>
 			) : null}
 			{audio

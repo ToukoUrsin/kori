@@ -9,7 +9,7 @@ Your balance is not your budget. Kori is a voice coach in your bank app: it says
 
 **Demo:** https://kori-coach.fly.dev (inside a stand-in bank app: https://kori-coach.fly.dev/host)
 **Source:** https://github.com/ToukoUrsin/kori
-**Video:** (link)
+**Video:** https://kori-coach.fly.dev/film
 
 **Description** (max 5000, markdown):
 
@@ -23,7 +23,8 @@ Kori is a coach you talk to. Ask out loud "can I afford a 650 euro phone this mo
 
 Every payday Kori looks back at the cycle that just ended and says what did it: a habit, or one big purchase. Then it asks the one question only you can answer, and offers exactly one thing to try.
 
-- Aino went €888 over, and groceries did most of it. "Was that unusual, or the new normal?" Her answer sets the limit: groceries under €520 until payday.
+- Kori speaks first. Start a voice session and it opens with what it noticed and the one question.
+- Aino went €888 over, and groceries did most of it. "Was that unusual, or the new normal?" She says "it was unusual", and that sets the limit: groceries under €520 until payday.
 - Eetu went over because of one trip. No lecture about habits: a daily pace now, or €150 a month set aside so the next trip is paid for before it comes.
 - The home screen keeps count from your real transactions. You can change it or drop it any time, and there is only ever one.
 
@@ -63,6 +64,6 @@ Tap "numbers checked" under any answer to see where each figure came from.
 - The engine runs next to the data. Only the question and the few numbers needed for the answer go to the model.
 - Works with a partial view. One demo customer's salary moves to another bank: Kori says what it can't see, refuses to guess, and with a (simulated) PSD2 link it sees the whole month.
 - Says it's an AI. No investment or credit advice. Says "pension" to pensioners.
-- 97 automated tests, and fallbacks when voice isn't available.
+- 101 automated tests, and fallbacks when voice isn't available.
 
 Open the link on your phone, pick one of six customers, and ask it anything about their money.

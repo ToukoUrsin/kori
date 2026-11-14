@@ -770,4 +770,8 @@ if config.WEB_DIST.exists():
         f = config.WEB_DIST / path
         if path and f.is_file() and config.WEB_DIST in f.resolve().parents:
             return FileResponse(f)
+        # a plain page beside the app, e.g. /film -> film.html
+        page = config.WEB_DIST / f"{path}.html"
+        if path and "/" not in path and page.is_file():
+            return FileResponse(page, headers={"Cache-Control": "no-cache"})
         return FileResponse(config.WEB_DIST / "index.html", headers={"Cache-Control": "no-cache"})

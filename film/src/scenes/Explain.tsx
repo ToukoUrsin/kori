@@ -1,21 +1,22 @@
 import React from 'react';
 import {Sequence, interpolate, useCurrentFrame} from 'remotion';
 import {Chip, Cross, Eyebrow, H1, Provenance, Scene, Tick} from '../components';
-import {btMonths, caps, cardOf, cue, home, lineAt} from '../data';
+import {btMonths, cue, home, lineAt} from '../data';
 import {Footage, sceneSec, type Clip} from '../footage';
 import {C, FPS, MONO, clamp, eur, inOut, out, prog, rise} from '../theme';
-import {PH, PX, PY, X0} from './Open';
+import {X0} from './Open';
 
-// a beat of a scene: in at `a`, out at `b` (seconds), crossfaded
-const beat = (frame: number, a: number, b = 1e9, d = 0.35) => Math.min(prog(frame, a - 0.1, d), 1 - prog(frame, b - 0.1, d, inOut));
+// a beat of a scene: in at `a`, out at `b` (seconds). The old one is gone before the next one comes in,
+// so two headlines are never on top of each other
+const beat = (frame: number, a: number, b = 1e9, d = 0.35) => Math.min(prog(frame, a + 0.06, d), 1 - prog(frame, b - 0.16, 0.2, inOut));
 
 // ---------------------------------------------------------------- 4. why the numbers are right
 // the app's 19 calculations (backend/kori/ai/tools.py); 8 are shown
 const TOOLS = ['safe_to_spend', 'can_i_afford', 'what_if', 'baskets', 'spending', 'balance_forecast', 'compare_with_peers', 'track_record'];
 const TOOL_COUNT = 19;
-// the engine's numbers and the answer as the voice2 recording got them (card "safe", coach text)
-const SAFE = cardOf(caps.voice2, 'safe')!;
-const ANSWER = 'You can safely spend about 319 euros this week. That is about 46 euros a day for your everyday basket.';
+// the engine's numbers (the app's own home data) and the typed answer as the `figures` recording shows it
+const SAFE = home.safe;
+const ANSWER = 'It is safe for you to spend €319 this week. That works out to €46 a day until payday…';
 // a wrong number, from the app's own test (backend/tests/test_agent.py, test_wrong_twice_is_withheld)
 const WRONG = {draft: '1,700', retry: '1,300'};
 
@@ -51,7 +52,7 @@ export const MathScene: React.FC<{dur: number; figures: Clip[]}> = ({dur, figure
 			{/* B: plain code runs it; the app's own figure sheet, punched in */}
 			<div style={{opacity: B}}>
 				<Sequence from={Math.round(t2 * FPS)} layout="none">
-					<Footage clips={figures} h={PH} x={PX} y={PY} audio={false} />
+					<Footage clips={figures} audio={false} />
 				</Sequence>
 				<div style={{position: 'absolute', left: X0, right: 96, top: 170}}>
 					<Eyebrow>Then plain code, no model</Eyebrow>
@@ -226,13 +227,13 @@ export const Teach: React.FC<{dur: number; clips: Clip[]}> = ({dur, clips}) => {
 	const t2 = lineAt('teach', 1) - 0.2, t3 = lineAt('teach', 2) - 0.2;
 	const at = [cue('teach', 0, 'fixed'), cue('teach', 0, 'surprise'), cue('teach', 0, 'everyday')];
 	const steps = [
-		{t: lineAt('teach', 1), label: 'A short lesson on her own numbers'},
-		{t: cue('teach', 1, 'say'), label: 'She says it back in her own words'},
+		{t: lineAt('teach', 1), label: 'She sorts her own payments'},
+		{t: cue('teach', 1, 'say'), label: 'Says it back in her own words'},
 		{t: cue('teach', 1, 'grades'), label: 'Graded honestly: “Not yet” is allowed'},
 	];
 	return (
 		<Scene dur={dur}>
-			<Footage clips={clips} h={PH} x={PX} y={PY} />
+			<Footage clips={clips} />
 			<div style={{position: 'absolute', left: X0, right: 96, top: 84, opacity: beat(frame, 0, t2)}}>
 				<Eyebrow>It teaches</Eyebrow>
 				<H1 size={80} style={{marginTop: 16}}>Three baskets.</H1>
@@ -263,7 +264,7 @@ export const Teach: React.FC<{dur: number; clips: Clip[]}> = ({dur, clips}) => {
 						return (
 							<div key={i} style={{display: 'flex', alignItems: 'center', gap: 20, opacity: interpolate(p, [0, 1], [0.3, 1])}}>
 								<Tick size={46} p={p} />
-								<div style={{fontSize: 46, fontWeight: 600, letterSpacing: '-0.02em'}}>{st.label}</div>
+								<div style={{fontSize: 42, fontWeight: 600, letterSpacing: '-0.02em'}}>{st.label}</div>
 							</div>
 						);
 					})}
@@ -287,20 +288,22 @@ export const Host: React.FC<{dur: number; clips: Clip[]; beats: {cap: string; at
 	const frame = useCurrentFrame();
 	const t = frame / FPS;
 	const at = beats.map((b) => sceneSec(clips, b.cap, b.at) ?? 1e9);
+	// the phone stays on into the last card: only the words leave
+	const away = interpolate(frame, [dur - 7, dur], [1, 0], clamp);
 	return (
-		<Scene dur={dur}>
-			<Footage clips={clips} h={PH} x={PX} y={PY} />
-			<div style={{position: 'absolute', left: X0, right: 96, top: 84}}>
+		<Scene dur={dur} fadeOut={false}>
+			<Footage clips={clips} stripOp={away} />
+			<div style={{position: 'absolute', left: X0, right: 96, top: 84, opacity: away}}>
 				<Provenance live style={rise(frame, 0.05, 0.5, 12)}>Recorded live · real speed</Provenance>
-				<H1 size={84} style={{marginTop: 24, ...rise(frame, 0.15, 0.6)}}>Made to sit inside S-mobiili.</H1>
-				<div style={{display: 'flex', flexDirection: 'column', gap: 26, marginTop: 64}}>
+				<H1 size={84} style={{marginTop: 24, ...rise(frame, 0.15, 0.6)}}>Made to sit<br />inside S-mobiili.</H1>
+				<div style={{display: 'flex', flexDirection: 'column', gap: 24, marginTop: 52}}>
 					{beats.map((b, i) => {
 						const on = interpolate(t, [at[i] - 0.1, at[i] + 0.3], [0, 1], clamp);
 						const now = on > 0 && (i === beats.length - 1 || t < at[i + 1] - 0.1);
 						return (
 							<div key={i} style={{display: 'flex', alignItems: 'center', gap: 22, opacity: interpolate(on, [0, 1], [0.3, 1])}}>
 								<Tick size={46} p={on} />
-								<div style={{fontSize: now ? 52 : 46, fontWeight: 600, letterSpacing: '-0.025em', color: now ? C.ink : C.ink2}}>{b.label}</div>
+								<div style={{fontSize: 46, fontWeight: 600, letterSpacing: '-0.025em', color: now ? C.ink : C.ink2}}>{b.label}</div>
 							</div>
 						);
 					})}
