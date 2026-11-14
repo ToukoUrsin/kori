@@ -17,6 +17,8 @@ Built at Junction 2026 for S-Pankki's challenge "Personal Economic Trainer". *Ko
 | "What kind of spender am I?" | Sorts two years of spending into a profile and compares you with at least 30 people like you, and with Statistics Finland's household survey. |
 | "How much could I save if I cut dining out by 20%?" | Replays your typical month with the change and shows the month, the year and what it does to safe-to-spend. |
 | "Was this number right before?" | Replays your own past months: would the number have held, and if not, what broke it. |
+| "Can I afford a 650 euro phone this month?" | Says yes or no and what it does to your pace until payday, and shows the two ways to make it fit. No credit advice. |
+| "How did my last pay cycle go?" | Looks back at the cycle that just ended, says what did it (a habit or one big purchase), asks the one question only you can answer, and offers exactly one thing to try. The home screen then keeps count. |
 
 Everything hangs on S-Pankki's three baskets:
 
@@ -25,8 +27,9 @@ Everything hangs on S-Pankki's three baskets:
 3. **Everyday**: what slips through your fingers (coffees, lunches, taxis, small online buys).
 
 Each basket gets a different kind of attention: decide fixed costs once, reserve for surprises every month, steer
-everyday spending every day. The app has eight one-minute lessons built from the user's own numbers. Each ends with
-one question to tap and one to answer in your own words, which Gemini grades against the concept.
+everyday spending every day. The app has up to eight one-minute lessons, picked for the user and built from their own numbers. The first starts
+with sorting six of their own payments into the baskets. Each ends with one question to answer in your own words,
+which Gemini grades honestly against the concept: "not yet" comes with a hint and another try.
 
 ## Why the numbers can be trusted
 
@@ -35,7 +38,7 @@ calculates.
 
 1. **The engine computes.** A deterministic Python engine over DuckDB and Parquet works out pay cycle, baskets,
    forecast bills, surprise reserve, safe to spend, what-ifs and peer comparisons.
-2. **Gemini chooses and explains.** It picks which of 13 tools to call, with which arguments, and puts the result
+2. **Gemini chooses and explains.** It picks which of 19 tools to call, with which arguments, and puts the result
    into two or three plain sentences in English or Finnish.
 3. **A number check reads every answer before the user does.** Each figure in the reply must be one the engine
    produced in this turn (ordinary rounding allowed). If one is not, the model gets one chance to rewrite. If it
@@ -72,10 +75,10 @@ before?" and see the months it held, the months it did not, and the reason for e
   same tool loop and the same number check as the text chat: the voice can never say a number the engine did not
   produce.
 - While the coach speaks, cards (charts, lists, what-if results) arrive on the phone over a separate event stream.
-- First sound comes about 0.3 s after the user stops talking. We measured that ElevenLabs holds back a first chunk
-  shorter than about ten words, so Kori's first chunk is a full "let me go through your numbers" sentence, and the
-  answer follows it.
-- Text-to-speech with word timings narrates the "Money minute", a one-minute spoken summary with the words
+- The coach acknowledges the question right after the user stops talking, and the answer follows in about four
+  seconds. We measured that ElevenLabs holds back a first chunk shorter than about ten words, so Kori's first chunk is
+  a full "let me go through your numbers" sentence.
+- Text-to-speech with word timings narrates the "Money minute", a short spoken summary of where you stand today, with the words
   highlighted as they are said. Speech is cached, so a sentence is never paid for twice.
 - If no live line is free, the app falls back to hold-to-talk (ElevenLabs speech-to-text in, speech out), and then
   to plain text.
@@ -93,8 +96,11 @@ before?" and see the months it held, the months it did not, and the reason for e
   It can be embedded as a web view behind S-mobiili's existing login.
 - **Data stays where it is.** The engine runs next to the data. Only the question, the tool results needed for the
   answer, and the answer go to the model. No transaction leaves for training.
-- **PSD2 view.** One demo customer has their salary in another bank. Kori says so, shows what it cannot see, and
-  explains how connecting the other account would change the number.
+- **Inside a bank app.** `/host` runs Kori in a web view inside a stand-in bank app: consent first, a typed and
+  versioned message bridge, and the safe-to-spend number handed back to the host's own home screen. The contract is
+  in `docs/INTEGRATION.md`.
+- **PSD2 view.** One demo customer has their salary in another bank. Kori says so, shows what it cannot see and
+  refuses to guess. With the (simulated) link to the other bank switched on, it sees the whole month.
 - **Rules.** Kori discloses that it is an AI, gives no investment or credit advice, and says "pension" instead of
   "pay" to customers past pension age.
 - **Benchmarks.** Statistics Finland open data (CC BY 4.0) for population comparisons; peer groups never smaller
@@ -109,7 +115,7 @@ phone (React, Vite, Tailwind)
 FastAPI  <----- custom LLM ----- ElevenLabs agent (speech-to-text, turn-taking, speech)
    |
    +-- ai/agent.py      Gemini tool loop, number check, one rewrite
-   +-- ai/tools.py      13 tools -> engine calls -> cards
+   +-- ai/tools.py      19 tools -> engine calls -> cards
    +-- ai/grounding.py  every figure must come from the engine
    +-- engine/          core (pay cycle, baskets, safe to spend), whatif, peers, persona, lessons, trackrecord
    +-- data.py          DuckDB over Parquet: 3.6M transactions, 5,100 customers
