@@ -123,11 +123,11 @@ def minute_script(m: Money) -> list[dict]:
                    f"{spoken_eur(s['amount'], 'fi')} turvallista käyttää ennen palkkapäivää, joka on {spoken_day(pay, 'fi')}.")},
         {"key": "pace", "focus": "forecast",
          "text": L(f"That is {spoken_eur(s['per_day'], 'en')} a day. Your usual pace is {spoken_eur(s['usual_per_day'], 'en')} a day, "
-                   f"which would leave you with {spoken_eur(f['lowest']['balance'], 'en')} the day before payday."
+                   f"which would leave you with {spoken_eur(f['before_payday'], 'en')} when your pay lands."
                    if not m.partial_view and f["lowest"]["balance"] >= 0 else
                    f"That is {spoken_eur(s['per_day'], 'en')} a day for the next {s['days_to_payday']} days.",
                    f"Se on {spoken_eur(s['per_day'], 'fi')} päivässä. Tavallinen tahtisi on {spoken_eur(s['usual_per_day'], 'fi')} päivässä, "
-                   f"ja sillä sinulle jäisi {spoken_eur(f['lowest']['balance'], 'fi')} palkkapäivän aattona."
+                   f"ja sillä tilillesi jäisi {spoken_eur(f['before_payday'], 'fi')}, kun palkkasi tulee."
                    if not m.partial_view and f["lowest"]["balance"] >= 0 else
                    f"Se on {spoken_eur(s['per_day'], 'fi')} päivässä seuraavien {s['days_to_payday']} päivän ajan.")},
     ]

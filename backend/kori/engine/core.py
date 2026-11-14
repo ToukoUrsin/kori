@@ -421,10 +421,9 @@ class Money:
         budget_left = r2(everyday_budget - everyday_spent)
         free_cash = r2(self.balance - fixed_due - surprise_reserve - savings_left - self.cushion)
 
-        if self.partial_view:
-            # we do not see this person's main income; only the cash limit is meaningful
-            amount, limit = max(0.0, free_cash), "cash"
-        elif budget_left <= free_cash:
+        # The lower limit wins, with a partial view too: what stays on this account each month is then the income,
+        # so the balance of an account the salary only passes through is never read as a budget.
+        if budget_left <= free_cash:
             amount, limit = max(0.0, budget_left), "budget"
         else:
             amount, limit = max(0.0, free_cash), "cash"
@@ -445,7 +444,7 @@ class Money:
             {"key": "saving", "label": {"en": "Planned saving", "fi": "Suunniteltu säästö"}[lang], "amount": savings_left},
             {"key": "cushion", "label": {"en": "Cushion", "fi": "Pohjavara"}[lang], "amount": self.cushion},
             {"key": "safe", "label": {"en": "Safe to spend", "fi": "Turvallista käyttää"}[lang], "amount": r2(min(amount, free_total))},
-            {"key": "buffer", "label": {"en": "Your buffer", "fi": "Puskurisi"}[lang], "amount": r2(max(0.0, free_total - amount))},
+            {"key": "buffer", "label": {"en": "Not needed before payday", "fi": "Ei tarvita ennen palkkapäivää"}[lang], "amount": r2(max(0.0, free_total - amount))},
         ]
         # stress test: pay comes late (end of month instead of the 15th)
         late = None
@@ -481,20 +480,20 @@ class Money:
         pd_, us = eur(per_day, lang, True), eur(usual_day, lang, True)
         if self.partial_view:
             return (L("This account only", "Vain tämä tili"),
-                    L(f"I only see part of your money. On this account {pd_} a day is free until payday.",
-                      f"Näen vain osan rahoistasi. Tällä tilillä on vapaana {pd_} päivässä palkkapäivään asti."))
+                    L("Your salary moves to another bank, so this is not your whole month.",
+                      "Palkkasi siirtyy toiseen pankkiin, joten tämä ei ole koko kuukautesi."))
         if status == "comfortable":
             return (L("On track", "Hyvässä tahdissa"),
-                    L(f"{pd_} a day until payday. Your usual pace is {us} a day, so your usual days fit.",
-                      f"{pd_} päivässä palkkapäivään asti. Tavallinen tahtisi on {us} päivässä, joten tavalliset päiväsi mahtuvat siihen."))
+                    L(f"Your usual pace is {us} a day, so your usual days fit.",
+                      f"Tavallinen tahtisi on {us} päivässä, joten tavalliset päiväsi mahtuvat tähän."))
         if status == "tight":
             return (L("Tight", "Tiukkaa"),
-                    L(f"{pd_} a day until payday. Your usual pace is {us} a day, so it takes some care.",
-                      f"{pd_} päivässä palkkapäivään asti. Tavallinen tahtisi on {us} päivässä, joten se vaatii tarkkuutta."))
+                    L(f"Your usual pace is {us} a day, so it takes some care.",
+                      f"Tavallinen tahtisi on {us} päivässä, joten nyt kannattaa olla tarkkana."))
         if status == "very_tight":
             return (L("Very tight", "Hyvin tiukkaa"),
-                    L(f"{pd_} a day until payday, far under your usual {us} a day. The bills due before payday are already set aside.",
-                      f"{pd_} päivässä palkkapäivään asti, selvästi alle tavallisen tahtisi ({us} päivässä). Ennen palkkapäivää erääntyvät laskut on jo varattu."))
+                    L(f"Far under your usual {us} a day. The bills due before payday are already set aside.",
+                      f"Selvästi alle tavallisen tahtisi, joka on {us} päivässä. Ennen palkkapäivää erääntyvät laskut on jo varattu."))
         if free_cash < 0:
             return (L("Short", "Vajaa"),
                     L(f"The account is {eur(-free_cash, lang)} short of the bills and reserves due before payday.",
@@ -505,40 +504,87 @@ class Money:
 
     # ------------------------------------------------------------ forecast
     def forecast(self, pace: str = "usual") -> dict:
-        """Projected balance day by day until payday.
+        """Projected balance day by day until pay lands.
 
-        pace: "usual" = this person's own weekday pattern from the last 90 days,
+        pace: "usual" = this person's usual daily pace, shaped by their own weekday pattern from the last 90 days,
               "safe"  = spending exactly the safe-to-spend amount per day.
+
+        Each point is the balance at the start of that day, so the last one is what is on the account when pay
+        lands: today's balance, minus the bills on the way, minus the everyday spending of every day until then
+        (today included, as in "a day" of safe to spend), minus the surprise reserve and any saving still planned.
+        `adds_up` is that sum, to the cent, and at the safe pace it leaves exactly the cushion and the buffer.
         """
         upcoming = {}
         for it in self.upcoming_fixed(self.next_payday):
             upcoming.setdefault(it["date"], []).append(it)
-        per_wd = self.everyday_daily["per_weekday"]
-        surprise_day = self.usual[SURPRISE] / DAYS_PER_MONTH
-        safe_day = self.safe["per_day"]
+        s = self.safe
+        days = self.days_to_payday
+        spend_days = [self.today + timedelta(days=i) for i in range(days)]
+        if pace == "safe":
+            everyday_total = s["amount"]
+            share = {d: 1.0 / days for d in spend_days}
+        else:
+            everyday_total = r2(s["usual_per_day"] * days)
+            per_wd = self.everyday_daily["per_weekday"]
+            w = {d: max(0.0, per_wd.get(d.weekday(), s["usual_per_day"])) for d in spend_days}
+            tot = sum(w.values())
+            share = {d: (w[d] / tot if tot > 0 else 1.0 / days) for d in spend_days}
+        reserve = s["cash"]["surprise_reserve"]
+        saving = s["cash"]["saving_left"]
+        fixed_due = s["cash"]["fixed_due"]
         bal = self.balance
         series = [{"date": self.today.isoformat(), "balance": r2(bal), "events": []}]
         low, low_date = bal, self.today
-        d = self.today
-        while d < self.next_payday:
-            d += timedelta(days=1)
+        for i, spent_on in enumerate(spend_days):
+            d = spent_on + timedelta(days=1)
+            bal -= everyday_total * share[spent_on] + reserve / days
             events = []
-            if d == self.next_payday:
-                bal += self.salary_typical
-                events.append({"type": "payday", "amount": self.salary_typical})
-            else:
-                bal -= safe_day if pace == "safe" else per_wd.get(d.weekday(), self.everyday_daily["mean"])
-                bal -= surprise_day
+            if i == 0 and saving > 0:
+                bal -= saving
+                events.append({"type": "saving", "amount": saving})
             for it in upcoming.get(d.isoformat(), []):
                 bal -= it["amount"]
                 events.append({"type": "bill", "category": it["category"], "label": it["label"], "amount": it["amount"]})
-            if d < self.next_payday and bal < low:
-                low, low_date = bal, d
-            series.append({"date": d.isoformat(), "balance": r2(bal), "events": events})
-        before_pay = series[-2]["balance"] if len(series) >= 2 else r2(bal)
+            if bal < low:
+                # the start of a day is the end of the one before: that is the day people know it by
+                low, low_date = bal, spent_on if d == self.next_payday else d
+            point = {"date": d.isoformat(), "balance": r2(bal), "events": events}
+            if d == self.next_payday:
+                events.append({"type": "payday", "amount": self.salary_typical})
+                point["balance_after_pay"] = r2(bal + self.salary_typical)
+            series.append(point)
+        left = r2(self.balance - fixed_due - everyday_total - reserve - saving)
+        series[-1]["balance"] = left
+        if series[-1].get("balance_after_pay") is not None:
+            series[-1]["balance_after_pay"] = r2(left + self.salary_typical)
+        if low_date == spend_days[-1] or left < low:
+            low = left
+        buffer = r2(max(0.0, s["cash"]["free"] - s["amount"]))
+        adds_up = {"balance_today": self.balance, "bills_before_payday": fixed_due, "everyday_spending": everyday_total,
+                   "per_day": s["per_day"] if pace == "safe" else s["usual_per_day"], "days": days,
+                   "surprise_reserve": reserve, "planned_saving": saving, "left_when_pay_lands": left,
+                   "left_if_no_surprise_comes": r2(left + reserve)}
+        from .insights import eur          # local import: insights imports this module
+        lang = self.prefs.lang
+        E = lambda v: eur(v, lang, True)
+        L = lambda en, fi: en if lang == "en" else fi
+        if pace == "safe":
+            adds_up |= {"cushion": self.cushion, "buffer": buffer}
+            made_of = (L(f"your cushion of {E(self.cushion)} plus {E(buffer)} that this pay cycle does not need",
+                         f"pohjavarasi {E(self.cushion)} ja {E(buffer)}, jota tämä palkkajakso ei tarvitse") if buffer > 0.005 and left > 0.005 else
+                       L(f"your cushion of {E(self.cushion)}", f"pohjavarasi {E(self.cushion)}") if left > 0.005 else "")
+            adds_up["in_words"] = L(
+                f"At the safe pace of {E(adds_up['per_day'])} a day, {E(left)} is on the account when pay lands" + (f": {made_of}." if made_of else ".") +
+                (f" That already counts the surprise reserve of {E(reserve)} as used. If no surprise comes, {E(left + reserve)} is left." if reserve > 0.005 else ""),
+                f"Turvallisella tahdilla, {E(adds_up['per_day'])} päivässä, tilillä on {E(left)}, kun palkka tulee" + (f": {made_of}." if made_of else ".") +
+                (f" Siinä yllätysvara {E(reserve)} on jo laskettu käytetyksi. Jos yllätystä ei tule, jäljelle jää {E(left + reserve)}." if reserve > 0.005 else ""))
+        else:
+            adds_up["in_words"] = L(
+                f"At your usual pace of {E(adds_up['per_day'])} a day, {E(left)} is on the account when pay lands, after the same bills and with the surprise reserve of {E(reserve)} counted as used.",
+                f"Tavallisella tahdillasi, {E(adds_up['per_day'])} päivässä, tilillä on {E(left)}, kun palkka tulee. Samat laskut on maksettu ja yllätysvara {E(reserve)} on laskettu käytetyksi.")
         return {"pace": pace, "series": series, "bills": self.bills_on_the_way(),
                 "lowest": {"balance": r2(low), "date": low_date.isoformat()},
-                "before_payday": before_pay, "next_payday": self.next_payday.isoformat(),
+                "before_payday": left, "next_payday": self.next_payday.isoformat(), "adds_up": adds_up,
                 "goes_negative": bool(low < 0), "below_cushion": bool(low < self.cushion)}
 
     def bills_on_the_way(self) -> dict:

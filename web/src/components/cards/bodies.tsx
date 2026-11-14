@@ -23,6 +23,7 @@ import { MonthsMeter, Radar, RangeStrip, TrendBars, TwoLine } from "../charts/Ch
 import { ForecastChart, ForecastLegend } from "../charts/ForecastChart";
 import { SpokenBar } from "../charts/SpokenBar";
 import { BASKET_BG, BASKET_VAR, BigMoney, Button, CatIcon, Collapse, Dot, cx } from "../ui/bits";
+import { ForecastSums } from "./Brief";
 import { Cell, Cells, Ledger, NoticeRow, StatusChip, TxList, type LedgerRow } from "./parts";
 
 /* ------------------------------------------------------------------- safe */
@@ -148,6 +149,7 @@ export function ForecastBody({ d }: { d: ForecastData }) {
           </li>
         </ul>
       )}
+      <ForecastSums d={d} />
     </div>
   );
 }
@@ -703,7 +705,7 @@ export function SaveBody({ d }: { d: SaveData }) {
       <p className="num text-[34px] font-semibold leading-10 tracking-[-0.03em] text-ink">{money(d.now, lang)}</p>
       <div className="mt-3">
         <Cells>
-          <Cell label={t("save.capacity")}>{money(d.monthly_capacity, lang)}</Cell>
+          <Cell label={t("save.capacity")} wrap>{money(d.monthly_capacity, lang)}</Cell>
           <Cell label={t("save.already")}>{money(d.already_saving_monthly, lang)}</Cell>
           <Cell label={t("save.extra")}>{money(d.extra_monthly, lang)}</Cell>
         </Cells>

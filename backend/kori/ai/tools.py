@@ -33,7 +33,7 @@ DECLARATIONS = [
                     "stress test. Use for 'what can I spend', 'can I afford X', 'how am I doing'.",
      "parameters": {"type": "object", "properties": {}}},
     {"name": "can_i_afford",
-     "description": "Check one purchase against safe to spend. Return safe before and after, both daily paces until payday, the usual daily pace, a yes/tight/no verdict, any shortfall, surprise-reserve coverage, and options to wait or spread the cost. Use this for every can-I-afford question.",
+     "description": "Check one purchase against safe to spend. Return safe before and after, both daily paces until payday, the usual daily pace, a yes/tight/no verdict, any shortfall, surprise-reserve coverage, and options to wait or spread the cost. Use this for every can-I-afford question about something NOT bought yet. For a payment that is already made use explain_payment.",
      "parameters": {"type": "object", "required": ["amount"], "properties": {
          "amount": {"type": "number", "description": "One-off amount in euros"},
          "label": {"type": "string", "description": "What the purchase is called"},
@@ -51,7 +51,7 @@ DECLARATIONS = [
      "description": "Free exploration of the user's own transactions. Filter by period, category, kind (from merchant codes, e.g. taxi, "
                     "fast_food, supermarket), basket, merchant name, amount, weekday or hour; group the result; compare with an earlier "
                     "period. Returns totals, counts, groups and the largest or latest transactions. Use this for any 'how much did I "
-                    "spend on…', 'show me…', 'when do I…' question about a category, a merchant, a kind of purchase or a time. Also covers income and saving via flow. For a monthly income question with flow=income, say the single monthly_income field and do not report period_total.",
+                    "spend on…', 'show me…', 'when do I…' question about a category, a merchant, a kind of purchase or a time. Also covers income and saving via flow. For 'what is my income / pay / pension' use flow=income with no grouping: it returns monthly_income, the latest payments and, when the salary moves to another bank, what stays on this account. Say monthly_income; with a partial view say both what lands and what stays.",
      "parameters": {"type": "object", "properties": {
          "period": _period,
          "date_from": {"type": "string", "description": "YYYY-MM-DD, instead of period"},
@@ -60,7 +60,9 @@ DECLARATIONS = [
          "kinds": {"type": "array", "items": {"type": "string", "enum": KIND_LIST},
                    "description": "Finer than category. " + "; ".join(f"{k} = {kind_label(k, 'en')}" for k in KIND_LIST)},
          "baskets": {"type": "array", "items": {"type": "string", "enum": BASKET_LIST}},
-         "merchant": {"type": "string", "description": "Part of a merchant name"},
+         "merchant": {"type": "string", "description": "Part of a merchant name. Merchant names in this demo data are made up, so a real "
+                                                       "chain (Lidl, K-Market, Wolt) will not be found: pass its category or kind as well, "
+                                                       "so the answer can name where that kind of money really went."},
          "min_amount": {"type": "number"}, "max_amount": {"type": "number", "description": "e.g. 15 for small purchases"},
          "weekdays": {"type": "array", "items": {"type": "string", "enum": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]}},
          "hour_from": {"type": "integer"}, "hour_to": {"type": "integer"},
@@ -78,8 +80,10 @@ DECLARATIONS = [
     {"name": "what_if",
      "description": "Simulate changes on the user's own typical month: spend less or more on a category/kind/basket, cap it, add a new "
                     "monthly cost, change income, take a one-off hit (e.g. a broken washing machine) or save a monthly amount. Returns the "
-                    "monthly and yearly effect, money left over, time to reach a goal and whether a one-off is covered. Use for every "
-                    "'what if', 'how much could I save if', 'can I afford' question.",
+                    "monthly and yearly effect, money left over and whether a one-off cost is covered. Use for 'what if' and 'how much "
+                    "could I save if' questions about a lasting monthly change. 'income' here is a change in MONTHLY pay (a raise, a "
+                    "pay cut): for money that arrives once (bonus, refund, gift) use one_off_money. For a goal with an amount and a "
+                    "date use goal_plan.",
      "parameters": {"type": "object", "required": ["changes"], "properties": {
          "changes": {"type": "array", "items": {"type": "object", "required": ["type"], "properties": {
              "type": {"type": "string", "enum": ["cut", "set", "add_cost", "income", "one_off", "save"]},
@@ -91,10 +95,35 @@ DECLARATIONS = [
          "months": {"type": "integer", "description": "Horizon, default 12"},
          "goal_amount": {"type": "number", "description": "If the user has a savings target in euros"},
          "goal_name": {"type": "string"}}}},
+    {"name": "explain_payment",
+     "description": "Explain one payment that has ALREADY happened: the user taps a payment in the bank app, or asks 'what was this', "
+                    "'which basket is this', 'does this change what I can spend'. Returns its basket and why, whether it is already "
+                    "counted in safe to spend, and how that kind of spending is running this pay cycle against the usual month. "
+                    "Never use can_i_afford or what_if for a payment that is already made.",
+     "parameters": {"type": "object", "properties": {
+         "amount": {"type": "number", "description": "Euros, without a sign"},
+         "merchant": {"type": "string", "description": "Part of the merchant name, if the user gave one"},
+         "date": {"type": "string", "description": "YYYY-MM-DD the payment was made"}}}},
+    {"name": "one_off_money",
+     "description": "Money that arrives ONCE: a bonus, a tax refund, a gift, something sold, a friend paying back. Returns safe to spend "
+                    "before and after for this pay cycle only, and the places the money could go. The next pay cycle does not change. "
+                    "Never model one-off money as monthly income.",
+     "parameters": {"type": "object", "required": ["amount"], "properties": {
+         "amount": {"type": "number", "description": "Euros"}, "label": {"type": "string", "description": "What it is, e.g. Bonus"}}}},
+    {"name": "goal_plan",
+     "description": "A savings goal with an amount and usually a date: 'I want 3,000 euros for a trip by summer', 'can I save 1,000 by "
+                    "Christmas', 'how long until I have 5,000'. Returns what it needs each month, what the user's usual month really "
+                    "leaves, whether it fits, and if not: when it would be reached at their own pace and what keeping the date takes. "
+                    "Give months (from today) or by (YYYY-MM); 'by summer' is June. Give neither when the user named no date.",
+     "parameters": {"type": "object", "required": ["amount"], "properties": {
+         "amount": {"type": "number", "description": "Euros"}, "name": {"type": "string", "description": "Short name, e.g. Japan trip"},
+         "months": {"type": "number", "description": "Months from today"},
+         "by": {"type": "string", "description": "Target month, YYYY-MM"}}}},
     {"name": "compare_with_peers",
-     "description": "Anonymous comparison with other customers (same age band, similar income, same area or everyone; groups never under "
-                    "30 people), per category and basket, plus Statistics Finland national averages. Use for 'is that a lot', 'am I normal', "
-                    "'how do I compare'.",
+     "description": "Anonymous comparison with other customers of this bank (same age band, similar income, same area or everyone; "
+                    "groups never under 30 people), per category and basket. Statistics Finland national household averages come as a "
+                    "separate marker. The peers are bank customers like the user, NOT all Finns: say 'customers like you' and name "
+                    "Statistics Finland only for its own figure. Use for 'is that a lot', 'am I normal', 'how do I compare'.",
      "parameters": {"type": "object", "properties": {
          "by": {"type": "string", "enum": ["age", "income", "age_income", "area", "everyone"]},
          "categories": {"type": "array", "items": {"type": "string", "enum": CATS}}}}},
@@ -164,6 +193,9 @@ STATUS = {
     "baskets": ("Sorting your month into baskets", "Lajittelen kuukautesi koreihin"),
     "spending": ("Going through your transactions", "Käyn läpi tapahtumiasi"),
     "what_if": ("Replaying your typical month", "Ajan tavallisen kuukautesi uudelleen"),
+    "explain_payment": ("Finding that payment", "Etsin sen maksun"),
+    "one_off_money": ("Placing it in this pay cycle", "Sijoitan sen tähän palkkajaksoon"),
+    "goal_plan": ("Checking it against your usual month", "Vertaan sitä tavalliseen kuukauteesi"),
     "compare_with_peers": ("Comparing with people like you", "Vertaan kaltaisiisi"),
     "spender_profile": ("Reading your spending patterns", "Luen kulutustapojasi"),
     "safe_to_save": ("Checking what your buffer can spare", "Tarkistan, mitä puskuristasi liikenee"),
@@ -234,6 +266,15 @@ def _slim_query(d: dict) -> dict:
     for t in out.get("transactions", []) or []:
         for k in ("id", "kind", "category", "basket", "balance_after"):
             t.pop(k, None)
+    return out
+
+
+def _brief_result(d: dict) -> dict:
+    """What the model gets from a brief card: the numbers and the headline, with the card's notes as plain lines."""
+    out = {k: v for k, v in d.items() if k != "brief"}
+    notes = (d.get("brief") or {}).get("notes")
+    if notes:
+        out["notes"] = notes
     return out
 
 
@@ -313,17 +354,44 @@ def execute(m: Money, state: dict, name: str, args: dict, allowed: set[float] | 
         slim = lambda f: {k: v for k, v in f.items() if k != "series"} | {
             "bills_on_the_way": [{"date": x["date"], **e} for x in f["series"] for e in x["events"] if e["type"] == "bill"]}
         return ToolOut({"today": d["today"], "balance_today": m.balance, "at_usual_pace": slim(d["usual"]), "at_safe_pace": slim(d["safe"]),
-                        "per_day": d["per_day"], "cushion": d["cushion"], "expected_salary": d["salary"]}, [c])
+                        "per_day": d["per_day"], "cushion": d["cushion"], "expected_salary": d["salary"],
+                        "how_to_say_it": "Each pace has in_words: the balance when pay lands and what it is made of. Use those words; "
+                                         "the surprise reserve is counted as used, it is not part of what is left."}, [c])
     if name == "baskets":
         c = C.baskets_card(m, args.get("month"))
         return ToolOut(c["data"], [c])
+    if name == "explain_payment":
+        c = C.payment_card(m, args)
+        return ToolOut(_brief_result(c["data"]), [c] if c["data"].get("found") else [])
+    if name == "one_off_money":
+        c = C.windfall_card(m, args)
+        return ToolOut(_brief_result(c["data"]), [c])
+    if name == "goal_plan":
+        c = C.goal_card(m, args)
+        return ToolOut(_brief_result(c["data"]), [c])
     if name == "spending":
+        if C.is_income_question(args):
+            c = C.income_card(m, args)
+            return ToolOut(_brief_result(c["data"]), [c])
         c = C.query_card(m, args)
         if args.get("slips"):
             return ToolOut(c["data"], [c])
         # An empty lookup is useful to the model while it chooses a better
         # filter, but an empty card only confuses the person.
         has_answer = bool(c["data"].get("count") or c["data"].get("transactions") or c["data"].get("total"))
+        if not has_answer and args.get("merchant") and (args.get("flow") or "spend") == "spend":
+            # Nothing at that merchant: show where that money did go in the same period, so "no" comes with the real places.
+            where = {k: v for k, v in args.items() if k in C.QUERY_KEYS and k not in ("merchant", "group_by", "compare", "sort")}
+            if not any(where.get(k) for k in ("categories", "kinds", "baskets")):
+                where["baskets"] = [EVERYDAY]
+            alt = C.query_card(m, where | {"group_by": "merchant"})
+            if alt["data"].get("count"):
+                return ToolOut({"nothing_found_for": args["merchant"], "period": alt["subtitle"], "total_there": 0, "payments_there": 0,
+                                "where_the_money_went_instead": [{"merchant": g["label"], "total": g["total"], "count": g["count"]}
+                                                                 for g in (alt["data"].get("groups") or [])[:4]],
+                                "say": "No payments under that name in this period (shop names in this demo data are made up). Name the one or two "
+                                       "places where that kind of money did go; do not offer to cut or compare a zero."},
+                               [alt])
         return ToolOut(_slim_query(copy.deepcopy(c["data"])) | {"shown_as": c["title"] + ", " + (c["subtitle"] or "")}, [c] if has_answer else [])
     if name == "small_purchases":
         c = C.slips_card(m)
@@ -347,7 +415,14 @@ def execute(m: Money, state: dict, name: str, args: dict, allowed: set[float] | 
         d = c["data"]
         slim = [{k: it[k] for k in ("label", "safe", "spent", "within", "held", "went_below_zero", "why") if it.get(k) is not None}
                 for it in d["items"] if it["counted"]]
-        return ToolOut({**{k: v for k, v in d.items() if k != "items"}, "months": slim}, [c])
+        st_ = d["story"]
+        told = {k: st_[k] for k in ("headline", "summary", "versus", "everyone", "checked", "held", "missed", "balance_as_budget_held")}
+        if st_["miss"]:
+            told["the_miss"] = {k: st_["miss"][k] for k in ("label", "payday_label", "window", "cause", "text", "lesson", "since", "payments",
+                                                              "reserve_then", "reserve_now", "short_by")}
+        return ToolOut({**{k: v for k, v in d.items() if k not in ("items", "story")}, "replay": told, "months": slim,
+                        "how_to_say_it": "Lead with replay.headline, then the miss in one sentence if there was one (what came, what was held back), "
+                                         "then replay.versus. Do not list every month."}, [c])
     if name == "coach_notices":
         items = insights.notices(m, 4, state.get("action"))
         return ToolOut({"notices": [{k: v for k, v in x.items() if k in ("tone", "title", "body")} for x in items],
@@ -369,9 +444,13 @@ def execute(m: Money, state: dict, name: str, args: dict, allowed: set[float] | 
             else:
                 data["suggestion"] = _thing(suggestion)
                 data["how_to_offer"] = (
-                    "If there is a question: say in two short sentences how the last cycle went and what did it, then ask the question "
-                    "and say in the same breath what each answer leads to, naming both things, so the user's answer is a choice between "
-                    "two named things. Do not offer the thing separately and do not ask anything else. Their answer then counts as "
+                    "If there is a question: say in two short sentences how the last cycle went and what did it. Then ask the question "
+                    "as its own sentence, the way it is written. Then one more sentence that pairs each answer with its thing, so the "
+                    "user's answer is a choice between two named things: 'If it was unusual, we keep groceries under the lower "
+                    "amount until payday; if it is the new normal, under the higher one', with the real things and amounts. Say each "
+                    "thing the way a person would: 'keep groceries under', 'set aside', 'spend at most ... a day'. Never write "
+                    "'which sets', 'sets a ... cap' or the word 'cap'. Do not offer the thing separately and do not ask anything "
+                    "else. Their answer then counts as "
                     "agreement: call set_action at once (accept_suggestion or pick) without asking again. With no question: offer "
                     "exactly this one thing with its reason in one sentence, ask if they want to try it, and call set_action only "
                     "after a clear yes. About 60 words at most.")
@@ -483,8 +562,55 @@ FOLLOWUPS = {
 }
 
 
-def followups(tools_used: list[str], lang: str) -> list[str]:
-    for t in reversed(tools_used):
+# Chips that fit what the answer actually was, not only which tool ran.
+CONTEXT_FOLLOWUPS = {
+    "income": (["What is safe to spend this week?", "What if my pay is late?", "How much could I safely save?"],
+               ["Paljonko voin käyttää tällä viikolla?", "Entä jos palkka myöhästyy?", "Paljonko voisin säästää?"]),
+    "nothing": (["Where does my everyday money go?", "Show my largest payments this month", "What is safe to spend this week?"],
+                ["Mihin arjen rahani menevät?", "Näytä tämän kuun suurimmat maksuni", "Paljonko voin käyttää tällä viikolla?"]),
+    "payment": (["Show this kind of spending month by month", "Where could I trim this pay cycle?", "What is safe to spend this week?"],
+                ["Näytä tämän lajin menot kuukausittain", "Mistä voisin karsia tällä palkkajaksolla?", "Paljonko voin käyttää tällä viikolla?"]),
+    "windfall": (["How big should my surprise reserve be?", "How much could I safely save?", "What is safe to spend this week?"],
+                 ["Kuinka iso yllätysvarani pitäisi olla?", "Paljonko voisin säästää?", "Paljonko voin käyttää tällä viikolla?"]),
+    "goal_fits": (["Make it my goal", "What is safe to spend this week?", "What does pay yourself first mean?"],
+                  ["Tee siitä tavoitteeni", "Paljonko voin käyttää tällä viikolla?", "Mitä tarkoittaa maksa ensin itsellesi?"]),
+    "goal_short": (["Where could I trim this month?", "Give me one thing to try", "Make it my goal anyway"],
+                   ["Mistä voisin karsia tässä kuussa?", "Anna yksi asia kokeiltavaksi", "Tee siitä silti tavoitteeni"]),
+    "short_month": (["Where could I trim this month?", "Give me one thing to try", "What is safe to spend this week?"],
+                    ["Mistä voisin karsia tässä kuussa?", "Anna yksi asia kokeiltavaksi", "Paljonko voin käyttää tällä viikolla?"]),
+    "plain": (["What is safe to spend this week?", "How did my last pay cycle go?", "Teach me the three baskets"],
+              ["Paljonko voin käyttää tällä viikolla?", "Miten viime palkkajaksoni meni?", "Opeta minulle kolme koria"]),
+}
+
+
+def _context(tool: str, result: dict | None) -> str | None:
+    r = result if isinstance(result, dict) else {}
+    if tool == "explain_payment":
+        return "payment" if r.get("found") else "nothing"
+    if tool == "one_off_money":
+        return "windfall"
+    if tool == "goal_plan":
+        return "goal_fits" if r.get("verdict") == "fits" else "goal_short"
+    if tool == "spending":
+        if "monthly_income" in r:
+            return "income"
+        if "nothing_found_for" in r or not (r.get("count") or r.get("total") or r.get("transactions")):
+            return "nothing"
+    if tool == "what_if" and r.get("gap"):
+        return "short_month"
+    return None
+
+
+def followups(tools_used: list[str], lang: str, results: list | None = None) -> list[str]:
+    i = 0 if lang == "en" else 1
+    if not tools_used:
+        return CONTEXT_FOLLOWUPS["plain"][i]
+    results = list(results or [])
+    for n in range(len(tools_used) - 1, -1, -1):
+        t = tools_used[n]
+        ctx = _context(t, results[n] if n < len(results) else None)
+        if ctx:
+            return CONTEXT_FOLLOWUPS[ctx][i]
         if t in FOLLOWUPS:
-            return FOLLOWUPS[t][0 if lang == "en" else 1]
-    return FOLLOWUPS["coach_notices"][0 if lang == "en" else 1]
+            return FOLLOWUPS[t][i]
+    return FOLLOWUPS["coach_notices"][i]

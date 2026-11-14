@@ -89,7 +89,7 @@ function Player({ id, onClose, onList }: { id: string; onClose: () => void; onLi
         </IconButton>
       </div>
       <div
-        className="flex gap-1 px-3 pb-1"
+        className={cx("flex gap-1 px-3 pb-1", step?.kind === "sort" && "sr-only")}
         role="progressbar"
         aria-valuemin={0}
         aria-valuemax={total}

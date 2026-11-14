@@ -19,9 +19,11 @@ DATA_END = date(2026, 9, 30)
 DEMO_TODAY = date.fromisoformat(os.environ.get("KORI_TODAY", "2026-09-21"))
 
 GEMINI_MODEL = os.environ.get("KORI_GEMINI_MODEL", "gemini-4-hydrogen")
-# the small fast model: picks the calculation (about one second), and steps in when the main model is slow
-GEMINI_MODEL_FAST = os.environ.get("KORI_GEMINI_MODEL_FAST", "gemini-3.5-flash-lite")
+# The first step of a turn (choosing the calculation) and the stand-in when a call is slow: the same frontier model.
+GEMINI_MODEL_FAST = os.environ.get("KORI_GEMINI_MODEL_FAST", "gemini-4-hydrogen")
 GEMINI_MODEL_FALLBACK = GEMINI_MODEL_FAST
+# Work nobody is waiting for (anything prepared ahead of a question) runs on the larger model.
+GEMINI_MODEL_BACKGROUND = os.environ.get("KORI_GEMINI_MODEL_BACKGROUND", "gemini-4-carbon")
 
 
 def gemini_key() -> str | None:

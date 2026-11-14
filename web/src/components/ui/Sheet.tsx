@@ -14,7 +14,11 @@ function syncInert() {
   const top = stack[stack.length - 1];
   for (const el of Array.from(frame.children) as HTMLElement[]) {
     const sheet = el.dataset.sheet;
-    el.inert = sheet ? sheet !== top : stack.length > 0;
+    const off = sheet ? sheet !== top : stack.length > 0;
+    el.inert = off;
+    // also out of the accessibility tree, so a screen reader or a test never finds a control it cannot use
+    if (off) el.setAttribute("aria-hidden", "true");
+    else el.removeAttribute("aria-hidden");
   }
 }
 

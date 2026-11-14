@@ -19,6 +19,7 @@ import type {
   WhatIfData,
 } from "../../lib/types";
 import { CheckinBody, type CheckinCardData } from "../loop/CheckIn";
+import { BriefBody, type BriefData } from "./Brief";
 import { OneThing, type ActionCardData } from "../loop/OneThing";
 import { cx } from "../ui/bits";
 import {
@@ -79,6 +80,8 @@ function Body({ card, open }: { card: Card; open: boolean }) {
       return <TrackBody d={card.data as TrackData} />;
     case "lesson":
       return <LessonBody d={card.data as LessonCardData} />;
+    case "brief":
+      return <BriefBody d={card.data as BriefData} />;
     default:
       return <p className="text-[13px] text-ink-3">{t("card.unknown")}</p>;
   }

@@ -19,7 +19,7 @@ export function ForecastChart({ data, variant = "full" }: { data: ForecastData; 
   const S = data.safe.series;
   const n = U.length;
   const hasPayday = n > 1 && U[n - 1].events.some((e) => e.type === "payday");
-  const end = hasPayday ? n - 1 : n; // the line stops the evening before pay lands
+  const end = n; // the last point is the balance pay lands on, so both lines run to the payday mark
   const uv = U.slice(0, end).map((p) => p.balance);
   const sv = S.slice(0, end).map((p) => p.balance);
   const lo = Math.min(0, ...uv, ...sv);

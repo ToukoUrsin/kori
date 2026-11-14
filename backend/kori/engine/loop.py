@@ -182,10 +182,10 @@ def check_in(m: Money) -> dict:
     drv, wo = row["driver"], row["without_one_off"]
 
     if partial:
-        headline = L(f"On this account, everyday spending was {E(row['everyday_spent'])} last {w.cycle}. Your salary moves to another "
-                     f"bank, so I cannot say whether the cycle held.",
-                     f"Tältä tililtä arkeen meni viime {w.cycle_on} {E(row['everyday_spent'])}. Palkkasi siirtyy toiseen pankkiin, "
-                     f"joten en voi sanoa, pitikö jakso.")
+        headline = L(f"On this account, everyday spending was {E(row['everyday_spent'])} last {w.cycle}. Without the account "
+                     f"your salary goes to, I cannot say whether the cycle held.",
+                     f"Tältä tililtä arkeen meni viime {w.cycle_on} {E(row['everyday_spent'])}. Ilman tiliä, jolle palkkasi "
+                     f"menee, en voi sanoa, pitikö jakso.")
     elif row["within"]:
         headline = L(f"Last {w.cycle} held: {E(row['everyday_spent'])} went to everyday, {E(row['difference'])} less than {w.from_pay} "
                      f"left room for.",
@@ -385,10 +385,8 @@ def suggest(m: Money) -> dict:
         return {**none, "why": ci["headline"]}
     if ci["partial_view"]:
         return {**none, "next": "link_other_bank",
-                "why": L("Your salary moves to another bank, so I see your spending but not your whole month. Any limit I set would be a "
-                         "guess. Linking the other account comes first.",
-                         "Palkkasi siirtyy toiseen pankkiin, joten näen menosi mutta en koko kuukauttasi. Mikä tahansa raja olisi arvaus. "
-                         "Toisen tilin liittäminen tulee ensin.")}
+                "why": L("Your salary moves to another bank, so any limit I set would be a guess. Link the other account first.",
+                         "Palkkasi siirtyy toiseen pankkiin, joten mikä tahansa raja olisi arvaus. Yhdistä ensin toinen tili.")}
     s = m.safe
     status = s["status"]
     drivers = row.get("drivers") or []

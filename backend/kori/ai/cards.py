@@ -6,7 +6,7 @@ made it (`source`), so it can be pinned to "My view" and recomputed later on fre
 """
 from __future__ import annotations
 
-from ..engine import insights, lessons, peers, persona
+from ..engine import answers, insights, lessons, peers, persona
 from ..engine.afford import afford
 from ..engine.calc import calculate
 from ..engine.core import Money
@@ -16,6 +16,11 @@ from ..engine.whatif import what_if
 from ..engine import loop
 from ..state import new_id
 from ..taxonomy import BASKETS, CATEGORIES, cat_label, kind_label
+from ..wording import is_pensioner
+
+
+def persona_is_pensioner(m: Money) -> bool:
+    return is_pensioner(m.customer.age)
 
 QUERY_KEYS = ("period", "date_from", "date_to", "categories", "kinds", "baskets", "merchant", "min_amount", "max_amount",
               "weekdays", "hour_from", "hour_to", "flow", "group_by", "compare", "sort")
@@ -146,6 +151,52 @@ def whatif_card(m: Money, args: dict) -> dict:
     return card("whatif", title, res, {"tool": "what_if", "args": a})
 
 
+def payment_card(m: Money, args: dict) -> dict:
+    L = lambda en, fi: en if m.prefs.lang == "en" else fi
+    a = _clean({k: args.get(k) for k in ("amount", "merchant", "date")})
+    data = answers.payment(m, a.get("amount"), a.get("merchant"), a.get("date"))
+    return card("brief", L("A payment you already made", "Maksu, jonka olet jo tehnyt"), data, {"tool": "explain_payment", "args": a})
+
+
+def windfall_card(m: Money, args: dict) -> dict:
+    L = lambda en, fi: en if m.prefs.lang == "en" else fi
+    a = _clean({k: args.get(k) for k in ("amount", "label")})
+    data = answers.windfall(m, a.get("amount"), a.get("label"))
+    return card("brief", L(f"{data['label']}: {eur(data['amount'], 'en')}, once", f"{data['label']}: {eur(data['amount'], 'fi')}, kerran"), data,
+                {"tool": "one_off_money", "args": a})
+
+
+def goal_card(m: Money, args: dict) -> dict:
+    a = _clean({k: args.get(k) for k in ("amount", "name", "months", "by")})
+    data = answers.goal(m, a.get("amount"), a.get("name"), a.get("months"), a.get("by"))
+    return card("brief", f"{data['goal']['name']}: {eur(data['goal']['amount'], m.prefs.lang)}", data, {"tool": "goal_plan", "args": a})
+
+
+def income_card(m: Money, args: dict) -> dict:
+    """A question about the pay itself. The period asked about is kept as one extra line, never as the headline."""
+    lang = m.prefs.lang
+    L = lambda en, fi: en if lang == "en" else fi
+    a = _clean({k: args.get(k) for k in ("period", "date_from", "date_to")}) | {"flow": "income"}
+    total = label = count = None
+    if len(a) > 1:
+        rng = resolve_period(m, a.get("period"), a.get("date_from"), a.get("date_to"))
+        got = m.salaries[(m.salaries["date"] >= rng["from"]) & (m.salaries["date"] <= rng["to"])]
+        total, label, count = float(got["amount"].sum()), rng["label"], int(len(got))
+    data = answers.income(m, total, label, count)
+    pension = persona_is_pensioner(m)
+    return card("brief", L("Your pension" if pension else "Your pay", "Eläkkeesi" if pension else "Palkkasi"), data, {"tool": "spending", "args": a})
+
+
+def is_income_question(args: dict) -> bool:
+    """`spending` with flow=income and nothing that asks for a list or a grouping: the person is asking what they earn."""
+    if (args or {}).get("flow") != "income":
+        return False
+    if any(args.get(k) not in (None, "", [], {}) for k in ("group_by", "merchant", "min_amount", "max_amount", "weekdays", "hour_from", "hour_to",
+                                                         "compare", "kinds", "baskets")):
+        return False
+    return set(args.get("categories") or ["Salary"]) <= {"Salary"}
+
+
 def peers_card(m: Money, args: dict) -> dict:
     L = lambda en, fi: en if m.prefs.lang == "en" else fi
     a = _clean({k: args.get(k) for k in ("by", "categories")})
@@ -165,9 +216,9 @@ def save_card(m: Money) -> dict:
 
 
 def track_card(m: Money) -> dict:
-    from ..engine.trackrecord import track_record
+    from ..engine.trackrecord import story, track_record
     L = lambda en, fi: en if m.prefs.lang == "en" else fi
-    t = track_record(m)
+    t = {**track_record(m), "story": story(m)}
     sub = L(f"Safe number would have held in {t['months_number_would_have_held']} months; you stayed within it in {t['months_stayed_within_number']} months",
              f"Turvallinen luku olisi pitänyt {t['months_number_would_have_held']} kuukautena; pysyit siinä {t['months_stayed_within_number']} kuukautena")
     return card("track", L("Was this number right before?", "Onko tämä luku pitänyt ennen?"), t, {"tool": "track_record", "args": {}}, sub)
@@ -216,7 +267,14 @@ def from_source(m: Money, tool: str, args: dict) -> dict | None:
     """Rebuild a card from the tool call that made it (pins, lesson slides, REST)."""
     args = args or {}
     if tool == "spending":
-        return query_card(m, args)
+        return income_card(m, args) if is_income_question(args) else query_card(m, args)
+    if tool == "explain_payment":
+        c = payment_card(m, args)
+        return c if c["data"].get("found") else None
+    if tool == "one_off_money":
+        return windfall_card(m, args)
+    if tool == "goal_plan":
+        return goal_card(m, args)
     if tool == "small_purchases":
         return slips_card(m)
     if tool == "can_i_afford":

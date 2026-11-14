@@ -16,7 +16,7 @@ from pydantic import BaseModel
 from . import config, state as S, voice
 from .ai import agent, cards as C, tools as T
 from .data import get_customer
-from .engine import insights, lessons, persona
+from .engine import insights, lessons, persona, trackrecord
 from .engine.core import Money
 from .engine import loop
 from .engine.query import month_label, query, tx_row
@@ -107,6 +107,8 @@ def home(customer: str, lang: str = "en", x_kori_device: str | None = Header(Non
         "persona": _persona(m), "pay_word": loop._W(m).payday, "today": m.today.isoformat(),
         "greeting": L(f"Hi {S.name_of(customer)}", f"Hei {S.name_of(customer)}"),
         "safe": {**m.safe, "cushion": m.cushion}, "forecast": fc["data"], "baskets": m.baskets(),
+        # one sentence under the number, and the replay of past paydays when it is already computed (else /api/replay)
+        "hero": {"sentence": insights.hero_line(m)}, "replay": trackrecord.story(m) if trackrecord.ready(m) else None,
         "notices": insights.notices(m, 5, st.get("action")), "save": m.safe_to_save,
         "profile": {"archetype": prof["archetype"], "fitness": prof["fitness"], "shape": prof["shape"]},
         "suggestions": SUGGEST[m.prefs.lang], "goal": _goal(m),
@@ -116,6 +118,13 @@ def home(customer: str, lang: str = "en", x_kori_device: str | None = Header(Non
         "pins": len(st.get("pins", [])),
         "loop": _loop_home(m, st),
     })
+
+
+@app.get("/api/replay")
+def replay(customer: str, lang: str = "en", x_kori_device: str | None = Header(None)):
+    """Would the number have held? Every past month replayed from what was visible on that day."""
+    m, _, _ = _money(customer, lang, x_kori_device)
+    return W(m, trackrecord.story(m))
 
 
 def _loop_home(m: Money, st: dict) -> dict:
@@ -757,6 +766,30 @@ async def stt(file: UploadFile = File(...), lang: str = Form("en")):
     except Exception as e:   # noqa: BLE001
         log.warning("stt failed: %s", e)
         raise HTTPException(503, "speech is not available right now") from None
+
+
+# ---------------------------------------------------------------- warm start
+@app.on_event("startup")
+def _warm() -> None:
+    """Load the data and the demo customers' numbers before the first visitor asks, so the first screen opens at once."""
+    import threading
+
+    def run() -> None:
+        t0 = time.time()
+        for p in S.PERSONAS:                # the first screen of every demo customer, in both languages
+            for lang in ("en", "fi"):
+                try:
+                    home(p["id"], lang, "warm")
+                except Exception:   # noqa: BLE001 - a cold first request is the only cost
+                    log.exception("warm-up failed for %s", p["id"])
+        for p in S.PERSONAS:                # then each one's replay of past paydays, the first customer first
+            try:
+                trackrecord.story(Money(p["id"]))
+            except Exception:   # noqa: BLE001
+                log.exception("replay warm-up failed for %s", p["id"])
+        log.info("warm-up done in %.1fs", time.time() - t0)
+
+    threading.Thread(target=run, daemon=True, name="kori-warm").start()
 
 
 # ---------------------------------------------------------------- static app

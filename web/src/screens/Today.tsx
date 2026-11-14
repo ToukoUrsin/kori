@@ -1,4 +1,4 @@
-import { BookOpen, ChevronRight, Info, Pin, Play, Square } from "lucide-react";
+import { ArrowUpRight, BookOpen, ChevronDown, ChevronRight, Info, Pin, Play, Square } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { BasketBar, vsUsualText } from "../components/cards/bodies";
 import { CardView } from "../components/cards/CardView";
@@ -43,14 +43,27 @@ function Header({ d }: { d?: Home }) {
 }
 
 function Hero({ d }: { d: Home }) {
-  const { lang, t, minuteFocus } = useApp();
+  const { lang, t, minuteFocus, openCoach } = useApp();
   const s = d.safe;
   const empty = s.status === "empty";
   const date = day(s.next_payday, lang);
   const payWord = lang === "fi" ? `${d.pay_word || "palkkapäivä"}än` : d.pay_word || "payday";
+  const partialAsk = d.notices.find((n) => n.id === "partial_view")?.ask;
   return (
     <section data-focus-key="safe" data-on={minuteFocus === "safe" ? "true" : undefined} className="focus-ring -mx-2.5 rounded-card px-2.5 py-2">
-      <p className="text-[14px] leading-5 text-ink-2">{t("today.safeLabel", { word: payWord })}</p>
+      <div className="flex items-start justify-between gap-3">
+        <p className="min-w-0 text-[14px] leading-5 text-ink-2">{s.partial_view ? t("today.safePartialLabel") : t("today.safeLabel", { word: payWord })}</p>
+        {s.partial_view && (
+          <button
+            type="button"
+            onClick={() => (partialAsk ? openCoach({ ask: partialAsk }) : openCoach())}
+            className="relative -mr-1 inline-flex h-7 shrink-0 items-center gap-0.5 rounded-md px-1 text-[12px] font-semibold leading-4 text-brand after:absolute after:-inset-y-2 after:inset-x-0 hover:text-brand-strong"
+          >
+            {t("loop.link")}
+            <ArrowUpRight size={14} strokeWidth={2} aria-hidden />
+          </button>
+        )}
+      </div>
       <p className="mt-0.5">
         <BigMoney value={s.amount} lang={lang} countUp className="text-[56px] font-semibold leading-[62px] tracking-[-0.04em] text-ink" />
       </p>
@@ -64,7 +77,11 @@ function Hero({ d }: { d: Home }) {
       </p>
       {/* chip and line flow as one paragraph, so a long line wraps under the chip instead of hanging beside it */}
       <p className="mt-3 text-[14px] leading-[26px] text-ink-2">
-        <StatusChip status={s.status} className="mr-2 align-[1px]" />
+        {s.partial_view ? (
+          <span className="mr-2 inline-flex h-6 items-center rounded-full bg-sunk px-2.5 text-[12px] font-semibold text-ink-2 align-[1px]">{s.status_label || t("today.partialStatus")}</span>
+        ) : (
+          <StatusChip status={s.status} className="mr-2 align-[1px]" />
+        )}
         {s.status_line || t(`status.${s.status}.line`)}
       </p>
       {empty && (
@@ -105,15 +122,23 @@ export function Today() {
   const { home, lang, t, pins, setOverlay, setTab, openCoach, openLesson, minuteOn, setMinuteOn, minuteFocus } = useApp();
   const d = home.data;
   const [allNotices, setAllNotices] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
 
   const partial = d?.notices.find((n) => n.id === "partial_view");
   const notices = useMemo(() => (d ? d.notices.filter((n) => n.id !== "partial_view") : []), [d]);
+  const partialFallback = d?.persona.partial_view && !partial ? { id: "partial_view", tone: "info" as const, title: t("today.partialTitle"), body: t("today.partialBody"), ask: "" } : undefined;
+  const primaryNotice = partial || partialFallback || notices[0];
+  const remainingNotices = notices.slice(primaryNotice?.id === "partial_view" ? 0 : 1);
   const VISIBLE = 3;
 
   // the money minute points at one part of this screen at a time
   useEffect(() => {
     if (!minuteFocus || minuteFocus === "ask") return;
-    if (minuteFocus.startsWith("notice:") && notices.findIndex((n) => `notice:${n.id}` === minuteFocus) >= VISIBLE) setAllNotices(true);
+    if (minuteFocus.startsWith("notice:")) {
+      const noticeIndex = notices.findIndex((n) => `notice:${n.id}` === minuteFocus);
+      if (noticeIndex >= 1) setMoreOpen(true);
+      if (noticeIndex >= VISIBLE) setAllNotices(true);
+    }
     const id = requestAnimationFrame(() => {
       document.querySelector(`[data-focus-key="${CSS.escape(minuteFocus)}"]`)?.scrollIntoView({ block: "center", behavior: "smooth" });
     });
@@ -145,25 +170,42 @@ export function Today() {
       <Header d={d} />
       <div className="px-5 pb-8">
         <Hero d={d} />
-        {d.loop && <OneThing variant="today" />}
 
-        {(d.persona.partial_view || partial) && (
+        {primaryNotice && primaryNotice.id === "partial_view" && (
           <button
             type="button"
             data-focus-key="notice:partial_view"
             data-on={minuteFocus === "notice:partial_view" ? "true" : undefined}
-            onClick={() => partial && openCoach({ ask: partial.ask })}
+            onClick={() => openCoach({ ask: primaryNotice.ask })}
             className="focus-ring mt-3 flex w-full items-start gap-3 rounded-card bg-info-soft px-4 py-3 text-left"
           >
             <Info size={17} strokeWidth={2} className="mt-0.5 shrink-0 text-info" aria-hidden />
             <span className="min-w-0 flex-1">
-              <span className="block text-[14px] font-semibold leading-5 text-info-ink">{partial?.title || t("today.partialTitle")}</span>
-              <span className="mt-0.5 block text-[13px] leading-[18px] text-info-ink">{partial?.body || t("today.partialBody")}</span>
+              <span className="block text-[14px] font-semibold leading-5 text-info-ink">{primaryNotice.title || t("today.partialTitle")}</span>
+              <span className="mt-0.5 block text-[13px] leading-[18px] text-info-ink">{primaryNotice.body || t("today.partialBody")}</span>
             </span>
           </button>
         )}
+        {primaryNotice && primaryNotice.id !== "partial_view" && (
+          <div data-focus-key={`notice:${primaryNotice.id}`} data-on={minuteFocus === `notice:${primaryNotice.id}` ? "true" : undefined} className="focus-ring mt-3 rounded-card border border-line bg-surface">
+            <NoticeRow n={primaryNotice} onAsk={(ask) => openCoach({ ask })} focused={minuteFocus === `notice:${primaryNotice.id}`} />
+          </div>
+        )}
 
-        <section className="relative mt-4 rounded-card border border-line bg-surface px-4 py-3.5 transition-colors duration-150 hover:border-line-strong">
+        {d.loop && <OneThing variant="today" />}
+
+        <button
+          type="button"
+          aria-expanded={moreOpen}
+          onClick={() => setMoreOpen((v) => !v)}
+          className="mt-3 flex min-h-11 w-full items-center justify-between gap-3 rounded-[10px] bg-sunk px-4 py-2.5 text-left text-[14px] font-semibold leading-5 text-ink transition-colors duration-150 hover:bg-line"
+        >
+          <span>{moreOpen ? t("today.less") : t("today.more")}</span>
+          <ChevronDown size={17} strokeWidth={2} className={moreOpen ? "rotate-180 text-ink-2 transition-transform" : "text-ink-2 transition-transform"} aria-hidden />
+        </button>
+
+        <Collapse open={moreOpen}>
+        <section className="relative mt-5 rounded-card border border-line bg-surface px-4 py-3.5 transition-colors duration-150 hover:border-line-strong">
           <h2 className="mb-3 flex items-start gap-2">
             <button
               type="button"
@@ -192,22 +234,22 @@ export function Today() {
           </span>
         </button>
 
-        {notices.length > 0 && (
+        {remainingNotices.length > 0 && (
           <section className="mt-8">
             <SectionHead title={t("today.notices")} />
             <div className="rounded-card border border-line bg-surface">
               <ul className="divide-y divide-line">
-                {notices.slice(0, VISIBLE).map((n) => (
+                {remainingNotices.slice(0, VISIBLE).map((n) => (
                   <li key={n.id} data-focus-key={`notice:${n.id}`}>
                     <NoticeRow n={n} onAsk={(ask) => openCoach({ ask })} focused={minuteFocus === `notice:${n.id}`} />
                   </li>
                 ))}
               </ul>
-              {notices.length > VISIBLE && (
+              {remainingNotices.length > VISIBLE && (
                 <>
                   <Collapse open={allNotices}>
                     <ul className="divide-y divide-line border-t border-line">
-                      {notices.slice(VISIBLE).map((n) => (
+                      {remainingNotices.slice(VISIBLE).map((n) => (
                         <li key={n.id} data-focus-key={`notice:${n.id}`}>
                           <NoticeRow n={n} onAsk={(ask) => openCoach({ ask })} focused={minuteFocus === `notice:${n.id}`} />
                         </li>
@@ -220,7 +262,7 @@ export function Today() {
                     aria-expanded={allNotices}
                     className="flex h-11 w-full items-center justify-center rounded-b-card border-t border-line text-[13px] font-medium text-ink-2 transition-colors duration-150 hover:text-ink"
                   >
-                    {allNotices ? t("common.showLess") : t("common.showMore", { n: notices.length - VISIBLE })}
+                    {allNotices ? t("common.showLess") : t("common.showMore", { n: remainingNotices.length - VISIBLE })}
                   </button>
                 </>
               )}
@@ -319,6 +361,7 @@ export function Today() {
         </section>
 
         <p className="mt-8 text-center text-[12px] leading-[17px] text-ink-3">{t("common.demoDay", { date: longDate(d.today, lang) })}</p>
+        </Collapse>
       </div>
     </>
   );

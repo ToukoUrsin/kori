@@ -137,6 +137,11 @@ def kind_label(kind: str, lang: str = "en") -> str:
         cat = next((c for c in CATEGORIES if kind == "other_" + c.lower().replace(" & ", "_").replace(" ", "_")), None)
         if cat:
             return ("Other " + CATEGORIES[cat]["en"].lower()) if lang == "en" else ("Muu: " + CATEGORIES[cat]["fi"].lower())
+        # money in, saving and transfers have no merchant code: they are named by their category
+        for table in (INCOME_CATEGORIES, SAVING_CATEGORIES, TRANSFER_CATEGORIES):
+            for c, words in table.items():
+                if kind == "other_" + c.lower().replace(" & ", "_").replace(" ", "_"):
+                    return words[lang]
     return kind
 
 

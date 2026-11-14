@@ -175,26 +175,27 @@ def tone_violations(text: str, status: str, lang: str) -> list[str]:
     return _BAD_TONE["fi" if lang == "fi" else "en"].findall(text or "")
 
 
-FAST_FIRST = True                # let the small model choose the calculation
-HEDGE = (0.0, 4.5, 9.0)          # seconds after which the 1st, 2nd and 3rd attempt of a model call start
-HEDGE_FAST = (0.0, 2.5, 6.0)     # the same for the quick first step
+FAST_FIRST = True                # the first step of a turn only chooses the calculation, so it is hedged sooner
+HEDGE = (0.0, 3.5, 7.0)          # seconds after which the 1st, 2nd and 3rd attempt of a model call start
+HEDGE_FAST = (0.0, 2.0, 4.5)     # the same for the quick first step
 
 
 async def _generate(contents: list, cfg: types.GenerateContentConfig, fast: bool = False):
     """One model call that does not hang on a slow one.
 
-    The main model usually answers in two or three seconds and now and then takes ten. So if it is still silent
-    after a few seconds the small fast model starts beside it, and later one more attempt on the other key. The
-    first good answer wins and the rest are dropped. A failed attempt starts the next one at once.
+    The model usually answers in two or three seconds and now and then takes ten or twenty. So if it is still silent
+    after a few seconds a second attempt starts beside it on the other key, and later a third. The first good answer
+    wins and the rest are dropped. A failed attempt starts the next one at once.
 
-    fast=True is the first step of a turn, choosing which calculation to run: the small model does that in about
-    a second, and the main model is the one that steps in if it is slow.
+    fast=True is the first step of a turn, choosing which calculation to run: a short reply, so the second attempt
+    starts sooner.
     """
-    main, quick, other = config.GEMINI_MODEL, config.GEMINI_MODEL_FAST, config.gemini_fallback_key() or config.gemini_key()
+    main, quick = config.GEMINI_MODEL, config.GEMINI_MODEL_FAST
+    key, other = config.gemini_key(), config.gemini_fallback_key() or config.gemini_key()
     if fast:
-        attempts, delays = [(config.gemini_key(), quick), (config.gemini_key(), main), (other, main)], HEDGE_FAST
+        attempts, delays = [(key, quick), (other, quick), (key, main)], HEDGE_FAST
     else:
-        attempts, delays = [(config.gemini_key(), main), (config.gemini_key(), quick), (other, main)], HEDGE
+        attempts, delays = [(key, main), (other, main), (key, quick)], HEDGE
 
     async def one(i: int):
         key, model = attempts[i]
@@ -368,7 +369,7 @@ async def run_turn(sess: Session, text: str, mode: str, emit: Emit) -> dict:
             f["source"] = pension_text(f["source"])
     done = {"grounded": not flagged, "flagged": flagged, "withheld": withheld, "error": failed,
             "checked": len(figs) or len(grounding.numbers_in_text(final, sess.lang)),
-            "followups": T.followups(used, sess.lang), "tools": used, "ms": int((time.time() - t0) * 1000),
+            "followups": T.followups(used, sess.lang, results), "tools": used, "ms": int((time.time() - t0) * 1000),
             "consistency": consistency,
             "figures": figs}
     await emit("done", done)

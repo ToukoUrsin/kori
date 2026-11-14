@@ -14,10 +14,10 @@ from functools import lru_cache
 import pandas as pd
 
 from .. import config, data
-from ..taxonomy import CATEGORIES, EVERYDAY, FIXED, SURPRISE
+from ..taxonomy import CATEGORIES, EVERYDAY, FIXED, SURPRISE, cat_label, kind_label
 from .core import Money, Prefs, add_months, month_key, r2
-from .insights import eur
-from .query import fmt_day, month_label
+from .insights import eur, num
+from .query import MONTHS_LONG, fmt_day, month_label
 
 _BASKET = {c: v["basket"] for c, v in CATEGORIES.items()}
 
@@ -63,6 +63,13 @@ def replay(m: Money, later: pd.DataFrame) -> dict | None:
     }
 
 
+_DONE: set[tuple] = set()      # replays already computed: the home screen shows one only when it costs nothing
+
+
+def ready(m: Money, months: int | None = None) -> bool:
+    return (m.customer_id, m.today, months or MONTHS_BACK) in _DONE
+
+
 @lru_cache(maxsize=512)
 def _rows(customer_id: str, today: date, months: int) -> tuple:
     raw = data._raw(customer_id)
@@ -82,6 +89,7 @@ def _rows(customer_id: str, today: date, months: int) -> tuple:
             continue
         if r and date.fromisoformat(r["pay_actual"]) <= today:
             out.append({"month": mk, **r})
+    _DONE.add((customer_id, today, months))
     return tuple(out)
 
 
@@ -110,7 +118,10 @@ def _why(r: dict, lang: str) -> dict | None:
                                         f"Laskuja tuli {E(r['fixed_real'])}; odotin {E(r['fixed_pred'])}.")}
 
 
-def track_record(m: Money, months: int = 11) -> dict:
+MONTHS_BACK = 22          # as far back as two years of data can be replayed with three months of history behind each day
+
+
+def track_record(m: Money, months: int = MONTHS_BACK) -> dict:
     """This person's own history of the number: the same day of the month, each of the last months."""
     lang = m.prefs.lang
     rows = [dict(r) for r in _rows(m.customer_id, m.today, months)]
@@ -159,3 +170,118 @@ def track_record(m: Money, months: int = 11) -> dict:
                    "fi": "Jokaisen menneen kuukauden kohdalla seisoin samassa päivässä, käytin vain silloin näkyvissä ollutta "
                          "tietoa ja toistin todelliset laskusi, todelliset yllätyksesi ja todellisen palkkapäiväsi."}[lang],
     }
+
+
+def story(m: Money, months: int = MONTHS_BACK) -> dict:
+    """The replay as one screen: every past month as a cell, the miss explained with its own payments, and what
+    changed after it. All of it is this person's real history; nothing here is simulated."""
+    lang = m.prefs.lang
+    E = lambda v: eur(v, lang)
+    L = lambda en, fi: en if lang == "en" else fi
+    rows = {r["month"]: r for r in _rows(m.customer_id, m.today, months)}
+    tr = track_record(m, months)
+    raw = data._raw(m.customer_id)
+    cells = []
+    for it in tr["items"]:
+        r = rows[it["month"]]
+        state = "skipped" if not it["counted"] else "held" if it["held"] else "missed"
+        low = it["lowest_if_followed"]
+        if state == "held":
+            line = L(f"On {fmt_day(date.fromisoformat(it['as_of']), lang)} the number was {E(it['safe'])}. Spending exactly that, the account would have stayed {E(low)} above zero until pay came.",
+                     f"{fmt_day(date.fromisoformat(it['as_of']), lang)} luku oli {E(it['safe'])}. Juuri sen käyttämällä tili olisi pysynyt {E(low)} plussalla palkkapäivään asti.")
+        elif state == "missed":
+            line = L(f"On {fmt_day(date.fromisoformat(it['as_of']), lang)} the number was {E(it['safe'])}. Spending exactly that, the account would have gone {E(-low)} below zero before pay came.",
+                     f"{fmt_day(date.fromisoformat(it['as_of']), lang)} luku oli {E(it['safe'])}. Juuri sen käyttämällä tili olisi käynyt {E(-low)} miinuksella ennen palkkapäivää.")
+        else:
+            line = L(f"On {fmt_day(date.fromisoformat(it['as_of']), lang)} nothing was safe to spend, so there was no number to test.",
+                     f"{fmt_day(date.fromisoformat(it['as_of']), lang)} mitään ei ollut turvallista käyttää, joten testattavaa lukua ei ollut.")
+        pay = date.fromisoformat(r["pay_actual"])
+        cells.append({"month": it["month"], "label": it["label"], "long_label": month_label(it["month"], lang), "state": state,
+                      "until": r["pay_actual"], "window": L(f"{fmt_day(date.fromisoformat(it['as_of']), lang)} to {fmt_day(pay, lang)}",
+                                                            f"{fmt_day(date.fromisoformat(it['as_of']), lang)}–{fmt_day(pay, lang)}"),
+                      "payday_label": L(f"{MONTHS_LONG['en'][pay.month - 1]} {pay.year}", f"{MONTHS_LONG['fi'][pay.month - 1]}n {pay.year}"),
+                      "as_of": it["as_of"], "safe": it["safe"], "balance": r["balance"], "per_day": it["per_day"],
+                      "lowest_if_followed": low, "spent": it["spent"], "within": it["within"],
+                      "balance_as_budget_held": bool(r["naive_held"]), "pay_late_days": max(0, r["pay_diff"]),
+                      "reserve": r["surprise_pred"], "surprises": r["surprise_real"],
+                      "cause": it["cause"], "why": it["why"], "line": line})
+    counted = [c for c in cells if c["state"] != "skipped"]
+    n, held = len(counted), sum(c["state"] == "held" for c in counted)
+    naive = sum(c["balance_as_budget_held"] for c in counted)
+    misses = [c for c in counted if c["state"] == "missed"]
+
+    def payments(c: dict) -> list[dict]:
+        """The surprise musts that landed between that day and the pay that followed."""
+        r = rows[c["month"]]
+        win = raw[(raw["date"] > date.fromisoformat(c["as_of"])) & (raw["date"] < date.fromisoformat(r["pay_actual"]))]
+        win = win[win["category"].map(_BASKET) == SURPRISE].sort_values("spend", ascending=False)
+        return [{"date": x.date.isoformat(), "day": fmt_day(x.date, lang), "merchant": x.merchant if isinstance(x.merchant, str) else None,
+                 "kind": x.kind, "label": kind_label(x.kind, lang), "category_label": cat_label(x.category, lang),
+                 "amount": r2(x.spend)} for x in win.head(4).itertuples()]
+
+    miss = None
+    if misses:
+        # the miss a surprise caused tells the story best; otherwise the latest one
+        c = next((x for x in reversed(misses) if x["cause"] == "surprise"), misses[-1])
+        after = [x for x in counted if x["month"] > c["month"]]
+        held_since = sum(x["state"] == "held" for x in after)
+        pays = payments(c) if c["cause"] == "surprise" else []
+        big = pays[0] if pays else None
+        reserve_now = m.safe["cash"]["surprise_reserve"]
+        if c["cause"] == "surprise" and big:
+            what = (L(f"A {E(big['amount'])} {big['label'].lower()} payment came on {big['day']}", f"{big['day']} tuli {E(big['amount'])} maksu ({big['label'].lower()})")
+                    if len(pays) == 1 or big["amount"] >= 0.7 * c["surprises"] else
+                    L(f"Surprise musts came to {E(c['surprises'])}", f"Yllättäviä pakollisia menoja tuli {E(c['surprises'])}"))
+            text = L(f"{what}, and I was holding back {E(c['reserve'])} for surprises. Following the number would have left the account {E(-c['lowest_if_followed'])} below zero.",
+                     f"{what}, ja olin varannut yllätyksiin {E(c['reserve'])}. Luvun mukaan eläen tili olisi käynyt {E(-c['lowest_if_followed'])} miinuksella.")
+            lesson = L(f"This is why surprise musts are their own basket. Today I hold back {E(reserve_now)} for them before I call anything safe.",
+                       f"Tämän takia yllättävät pakolliset ovat oma korinsa. Tänään varaan niihin {E(reserve_now)} ennen kuin sanon mitään turvalliseksi.")
+        elif c["cause"] == "late_pay":
+            text = L(f"Pay came {c['pay_late_days']} days later than usual, so the number had to last longer than planned. The account would have gone {E(-c['lowest_if_followed'])} below zero.",
+                     f"Palkka tuli {c['pay_late_days']} päivää tavallista myöhemmin, joten luvun piti riittää suunniteltua pidempään. Tili olisi käynyt {E(-c['lowest_if_followed'])} miinuksella.")
+            lesson = L("This is the number's weak spot: a pay that lands at the end of the month. Ask me what a late pay would do this month.",
+                       "Tämä on luvun heikko kohta: palkka, joka tulee vasta kuun lopussa. Kysy, mitä myöhässä tuleva palkka tekisi tässä kuussa.")
+        else:
+            text = c["why"] or ""
+            lesson = L("Bills that month were larger than the ones I had seen before.", "Sen kuun laskut olivat suurempia kuin aiemmin näkemäni.")
+        since = (L(f"Since then it has held {held_since} of {len(after)} times.", f"Sen jälkeen se on pitänyt {held_since} kerralla {len(after)}:stä.")
+                 if after else "")
+        miss = {"month": c["month"], "label": c["long_label"], "payday_label": c["payday_label"], "window": c["window"], "cause": c["cause"], "text": text, "lesson": lesson, "since": since,
+                "payments": pays, "reserve_then": c["reserve"], "reserve_now": reserve_now, "surprises_then": c["surprises"],
+                "safe_then": c["safe"], "short_by": r2(-c["lowest_if_followed"]),
+                "held_since": held_since, "checked_since": len(after)}
+
+    causes = tr["missed_because"]
+    if n == 0:
+        headline = L("There is not enough history yet to replay this number.", "Historiaa ei ole vielä tarpeeksi tämän luvun toistamiseen.")
+        short = ""
+    else:
+        headline = L(f"This number would have held {held} of the last {n} times.", f"Tämä luku olisi pitänyt {held} kerralla viimeisistä {n}:stä.")
+        short = L(f"Held {held} of {n} past paydays", f"Piti {held}/{n} palkkapäivään asti")
+    if n and not misses:
+        summary = L("Every time, spending exactly the safe number would have kept the account above zero until pay came.",
+                    "Joka kerta juuri turvallisen luvun käyttäminen olisi pitänyt tilin plussalla palkkapäivään asti.")
+    elif len(misses) == 1:
+        summary = L(f"The one miss was before the {miss['payday_label']} payday.", f"Ainoa huti oli ennen {miss['payday_label']} palkkapäivää.")
+    elif misses:
+        bits = []
+        if causes.get("late_pay"):
+            bits.append(L(f"{causes['late_pay']} when pay came late", f"{causes['late_pay']} kun palkka tuli myöhässä"))
+        if causes.get("surprise"):
+            bits.append(L(f"{causes['surprise']} when a surprise was bigger than the reserve", f"{causes['surprise']} kun yllätys oli varausta suurempi"))
+        if causes.get("bills"):
+            bits.append(L(f"{causes['bills']} when bills were larger than before", f"{causes['bills']} kun laskut olivat aiempaa suurempia"))
+        summary = L(f"It missed {len(misses)} times: " + ", ".join(bits) + ".", f"Se petti {len(misses)} kertaa: " + ", ".join(bits) + ".")
+    else:
+        summary = ""
+    versus = (L(f"Treating the balance as the budget would have held {naive} of {n}.", f"Saldo budjettina olisi pitänyt {naive} kerralla {n}:stä.")
+              if n else "")
+    pop = tr["population"]
+    everyone = (L(f"Across {pop['customers']:,} customers and {pop['cases']:,} replays the number held {pop['held_pct']}% of the time. Balance as budget: {pop['balance_as_budget_pct']}%.",
+                  f"{eur(pop['customers'], 'fi')[:-2]} asiakkaan ja {eur(pop['cases'], 'fi')[:-2]} toiston joukossa luku piti {num(pop['held_pct'], 'fi')} % ajasta. Saldo budjettina: {num(pop['balance_as_budget_pct'], 'fi')} %.")
+                if pop else "")
+    return {"checked": n, "held": held, "missed": n - held, "balance_as_budget_held": naive,
+            "headline": headline, "short": short, "summary": summary, "versus": versus, "everyone": everyone,
+            "cells": cells, "miss": miss, "day_of_month": tr["day_of_month"], "stayed_within": tr["stayed_within"],
+            "population": pop, "partial_view": m.partial_view, "method": tr["method"],
+            "from": cells[0]["long_label"] if cells else None, "to": cells[-1]["long_label"] if cells else None}

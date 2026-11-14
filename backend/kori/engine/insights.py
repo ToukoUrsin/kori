@@ -49,11 +49,15 @@ def slips(m: Money, days: int = 90, under: float = SMALL) -> dict:
     by_place = d[d["merchant"].notna()].groupby("merchant")["spend"].agg(["sum", "count"]).sort_values(["count", "sum"], ascending=False)
     E = lambda v, cents=False: eur(v, lang, cents)
     L = lambda en, fi: en if lang == "en" else fi
+    kinds = [{"kind": k, "label": kind_label(k, lang), "total": r2(s), "count": int(c)} for k, (s, c) in by_kind.head(3).iterrows()]
+    rest_n = int(len(d)) - sum(k["count"] for k in kinds)
+    if rest_n > 0:          # the rows add up to the total above them
+        kinds.append({"kind": "other", "label": L("Everything else", "Kaikki muu"), "total": r2(total - sum(k["total"] for k in kinds)), "count": rest_n})
     return {"days": days, "under": under, "count": int(len(d)), "total": total,
             "per_year": r2(total * 365 / days), "per_month": r2(total * DAYS_PER_MONTH / days),
             "average": r2(total / len(d)) if len(d) else 0.0,
             "share_of_everyday": round(float(total / every), 3) if every > 0 else 0.0,
-            "top_kinds": [{"kind": k, "label": kind_label(k, lang), "total": r2(s), "count": int(c)} for k, (s, c) in by_kind.head(3).iterrows()],
+            "top_kinds": kinds,
             "top_places": [{"merchant": k, "total": r2(s), "count": int(c)} for k, (s, c) in by_place.head(3).iterrows()],
             "window_label": L(f"Purchases under {E(under)}, the last {days} days", f"Alle {E(under)} ostokset, viimeiset {days} päivää"),
             "headline": (L(f"{len(d)} purchases under {E(under)} in the last {days} days came to {E(total)}. At this rate that is {E(total * 365 / days)} a year.",
@@ -83,6 +87,30 @@ def num(v: float, lang: str, digits: int = 1) -> str:
     return s.replace(".", ",") if lang == "fi" else s
 
 
+def hero_line(m) -> str:
+    """The one sentence under the number on the home screen: what the balance says against what comes first."""
+    from .query import fmt_day
+    s, lang = m.safe, m.prefs.lang
+    E = lambda v: eur(v, lang)
+    L = lambda en, fi: en if lang == "en" else fi
+    bal, due, res = s["balance"], s["cash"]["fixed_due"], s["cash"]["surprise_reserve"]
+    until = fmt_day(date.fromisoformat(s["next_payday"]), lang)
+    if m.partial_view:
+        return L(f"This account shows {E(bal)}, but most of your salary moves to another bank, so I count only what stays here.",
+                 f"Tällä tilillä on {E(bal)}, mutta suurin osa palkastasi siirtyy toiseen pankkiin, joten lasken vain sen, mikä jää tänne.")
+    if s["amount"] <= 0.005:
+        return tidy(L(f"Your account shows {E(bal)}, and all of it is spoken for until payday on {until}.",
+                      f"Tililläsi on {E(bal)}, ja se kaikki on jo varattu palkkapäivään {until} asti."))
+    if due > 0.5 and res > 0.5:
+        return L(f"Your account shows {E(bal)}, but {E(due)} of bills and a {E(res)} surprise reserve come first.",
+                 f"Tililläsi on {E(bal)}, mutta siitä menee ensin {E(due)} laskuihin ja {E(res)} yllätysvaraan.")
+    if due > 0.5:
+        return L(f"Your account shows {E(bal)}, but {E(due)} of bills come first.", f"Tililläsi on {E(bal)}, mutta siitä menee ensin {E(due)} laskuihin.")
+    if res > 0.5:
+        return L(f"Your account shows {E(bal)}, but I hold back {E(res)} of it for surprises.", f"Tililläsi on {E(bal)}, mutta varaan siitä {E(res)} yllätyksiin.")
+    return tidy(L(f"Your account shows {E(bal)}, and it has to last until payday on {until}.", f"Tililläsi on {E(bal)}, ja sen pitää riittää palkkapäivään {until} asti."))
+
+
 def tidy(text: str) -> str:
     """Finnish dates end in a full stop; avoid '15.10..' at the end of a sentence."""
     return text.replace("..", ".").replace(".,", ".,").replace(". .", ".")
@@ -105,7 +133,7 @@ def notices(m: Money, limit: int = 6, action: dict | None = None) -> list[dict]:
         add("partial_view", "info", 95,
             L("I only see part of your money", "Näen vain osan rahoistasi"),
             L(f"About {E(m.sweep_typical)} of your salary moves to another bank the day after payday. My numbers cover what stays here. Linking the other account would give you the full picture.",
-              f"Noin {E(m.sweep_typical)} palkastasi siirtyy toiseen pankkiin palkkapäivän jälkeen. Lukuni kattavat sen, mikä jää tänne. Toisen tilin liittäminen näyttäisi koko kuvan."),
+              f"Noin {E(m.sweep_typical)} palkastasi siirtyy toiseen pankkiin heti palkkapäivän jälkeen. Lukuni koskevat sitä, mikä jää tänne. Kun yhdistät toisen tilin, näen koko kuvan."),
             L("What can you see about my money?", "Mitä näet rahoistani?"), metric=m.sweep_typical)
     elif m.linked_view:
         add("linked_view", "info", 95,
@@ -126,8 +154,8 @@ def notices(m: Money, limit: int = 6, action: dict | None = None) -> list[dict]:
     if not m.partial_view and s["budget"]["left"] < 0 and s["cash"]["free"] > 0:
         add("over_budget", "warn", 92,
             L("This pay cycle's everyday money is used up", "Tämän palkkajakson arkiraha on käytetty"),
-            L(f"You're {E(-s['budget']['left'])} past what your income leaves for everyday. There is still {E(s['cash']['free'])} free on the account, but spending it shrinks your buffer instead of using this month's income.",
-              f"Olet {E(-s['budget']['left'])} yli sen, mitä tuloistasi jää arkeen. Tilillä on vielä {E(s['cash']['free'])} vapaana, mutta sen käyttäminen pienentää puskuriasi eikä tule tämän kuun tuloista."),
+            L(f"You're {E(-s['budget']['left'])} past what your income leaves for everyday. There is still {E(s['cash']['free'])} free on the account, but this pay cycle was not going to touch it: spending it uses what you had before, not this month's income.",
+              f"Olet {E(-s['budget']['left'])} yli sen, mitä tuloistasi jää arkeen. Tilillä on vielä {E(s['cash']['free'])} vapaana, mutta tällä palkkajaksolla siihen ei ollut tarkoitus koskea: se on aiemmin kertynyttä rahaa, ei tämän kuun tuloja."),
             L("Where did my everyday money go this pay cycle?", "Mihin arkirahani meni tällä palkkajaksolla?"), metric=s["budget"]["left"])
 
     # 1. runway to payday
@@ -147,8 +175,8 @@ def notices(m: Money, limit: int = 6, action: dict | None = None) -> list[dict]:
                 card="forecast", metric=low)
         elif low < max(m.cushion * 2.5, 0.08 * m.salary_typical):
             add("runway", "warn", 90,
-                L(f"At your usual pace you'd be down to {E(low)} the day before payday",
-                  f"Tavallisella tahdillasi sinulla olisi {E(low)} palkkapäivän aattona"),
+                L(f"At your usual pace you'd be down to {E(low)} when your pay lands",
+                  f"Tavallisella tahdillasi tililläsi olisi {E(low)}, kun palkkasi tulee"),
                 L(f"Payday is {fmt_day(pay, lang)}.{rent_txt} Your safe pace is {E(s['per_day'], True)} a day; your usual is {E(s['usual_per_day'], True)}.",
                   f"Palkkapäivä on {fmt_day(pay, lang)}.{rent_txt} Turvallinen tahtisi on {E(s['per_day'], True)} päivässä; tavallinen tahtisi on {E(s['usual_per_day'], True)}."),
                 L("What is safe for me to spend this week?", "Paljonko voin turvallisesti käyttää tällä viikolla?"),
@@ -166,8 +194,8 @@ def notices(m: Money, limit: int = 6, action: dict | None = None) -> list[dict]:
     if lp and not lp["covered"] and lp["rate"] >= 0.1:
         n = len(m.salaries)
         late_n = round(lp["rate"] * n)
-        add("late_pay", "info", 70,
-            L(f"Your pay came late in {late_n} of the last {n} months", f"Palkkasi tuli myöhässä {late_n} kertaa viimeisten {n} kuukauden aikana"),
+        add("late_pay", "info", 35,
+            L(f"Your pay landed at the end of the month in {late_n} of the last {n} months", f"Palkkasi tuli vasta kuun lopussa {late_n} kertaa viimeisten {n} kuukauden aikana"),
             L(f"If it lands on {fmt_day(date.fromisoformat(lp['date']), lang)} instead of the 15th, you'd need about {E(lp['extra_needed'])} more to cover those {lp['extra_days']} days.",
               f"Jos se tulee {fmt_day(date.fromisoformat(lp['date']), lang)} eikä 15. päivä, tarvitsisit noin {E(lp['extra_needed'])} lisää niiden {lp['extra_days']} päivän ajaksi."),
             L("What happens if my pay is late this month?", "Mitä tapahtuu, jos palkkani myöhästyy tässä kuussa?"), metric=lp["extra_needed"])

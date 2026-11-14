@@ -4,6 +4,7 @@ import type {
   Change,
   ChatEvent,
   Home,
+  ReplayStory,
   Lang,
   Lesson,
   LessonSummary,
@@ -120,6 +121,7 @@ export interface PlanPut {
 export const api = {
   personas: (lang: Lang) => get<Persona[]>("/api/personas", { lang }),
   home: (customer: string, lang: Lang, signal?: AbortSignal) => get<Home>("/api/home", { customer, lang }, signal),
+  replay: (customer: string, lang: Lang, signal?: AbortSignal) => get<ReplayStory>("/api/replay", { customer, lang }, signal),
   baskets: (customer: string, lang: Lang, month?: string) => get<BasketsResponse>("/api/baskets", { customer, lang, month }),
   transactions: (p: { customer: string; lang: Lang; month?: string; category?: string; basket?: string; limit?: number }) =>
     get<Tx[]>("/api/transactions", p),

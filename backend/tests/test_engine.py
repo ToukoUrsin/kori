@@ -125,7 +125,10 @@ def test_every_demo_persona_works_in_both_languages(p, lang):
 
 def test_partial_view_persona_is_flagged():
     m = Money("CUST02957")
-    assert m.partial_view and m.safe["limit"] == "cash"
+    assert m.partial_view
+    # The balance of an account the salary only passes through is never the budget: the lower limit wins here too.
+    s = m.safe
+    assert s["limit"] == "budget" and s["amount"] == round(max(0.0, s["budget"]["left"]), 2) < s["cash"]["free"]
     assert insights.notices(m)[0]["id"] == "partial_view"
 
 

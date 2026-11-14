@@ -117,10 +117,10 @@ export function NoticeRow({ n, onAsk, focused }: { n: Notice; onAsk: (ask: strin
 }
 
 /** label over value, used in rows of two or three */
-export function Cell({ label, children }: { label: string; children: ReactNode }) {
+export function Cell({ label, children, wrap = false }: { label: string; children: ReactNode; wrap?: boolean }) {
   return (
     <div className="min-w-0 flex-1 px-3 first:pl-0 last:pr-0">
-      <p className="truncate text-[12px] leading-4 text-ink-3">{label}</p>
+      <p className={cx(wrap ? "text-[12px] leading-4" : "truncate text-[12px] leading-4", "text-ink-3")}>{label}</p>
       <p className="num mt-0.5 truncate text-[15px] font-semibold leading-5 text-ink">{children}</p>
     </div>
   );

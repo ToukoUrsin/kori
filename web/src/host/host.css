@@ -175,6 +175,7 @@
 .host-link-boundary svg { flex: 0 0 18px; margin-top: 1px; color: var(--color-ink-3); }
 .host-link-boundary p { margin: 0; }
 
+.host-banner.is-passive { pointer-events: none; }
 .host-banner { position: absolute; z-index: 40; right: 16px; bottom: calc(74px + var(--safe-b)); left: 16px; border-radius: 12px; padding: 10px 14px; background: var(--color-ink); color: var(--color-surface); font-size: 13px; line-height: 18px; text-align: center; box-shadow: var(--shadow-pop); }
 
 @keyframes host-fade { from { opacity: 0; } }

@@ -17,6 +17,7 @@ _lock = threading.Lock()
 
 # Demo customers. Ids are real rows of the hackathon dataset; first names are made up for the demo.
 PERSONAS = [
+    {"id": "CUST01885", "name": "Elli", "blurb": {"en": "25, a full account that is not all hers to spend", "fi": "25, täysi tili, josta kaikki ei ole käytettävissä"}},
     {"id": "CUST00092", "name": "Aino", "blurb": {"en": "Runs close to zero before payday", "fi": "Saldo käy lähellä nollaa ennen palkkapäivää"}},
     {"id": "CUST00248", "name": "Eetu", "blurb": {"en": "First job, tight months", "fi": "Ensimmäinen työpaikka, tiukat kuukaudet"}},
     {"id": "CUST01051", "name": "Mikko", "blurb": {"en": "Family-size bills", "fi": "Perheen kokoiset laskut"}},

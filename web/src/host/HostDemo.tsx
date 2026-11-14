@@ -23,7 +23,7 @@ import "./host.css";
 type HostTab = "home" | "coach";
 type Sheet = "consent" | "permissions" | "link" | null;
 
-const DEFAULT_CUSTOMER = "CUST00092";
+const DEFAULT_CUSTOMER = "CUST01885";
 
 function text(lang: Lang, en: string, fi: string): string {
   return lang === "fi" ? fi : en;
@@ -92,11 +92,23 @@ interface HeaderProps {
   onContract: () => void;
 }
 
+/** The six demo customers, shown before the list arrives from the server so the picker is never short. */
+const DEMO_CUSTOMERS = [
+  { id: "CUST01885", name: "Elli" },
+  { id: "CUST00092", name: "Aino" },
+  { id: "CUST00248", name: "Eetu" },
+  { id: "CUST01051", name: "Mikko" },
+  { id: "CUST00332", name: "Sanna" },
+  { id: "CUST02957", name: "Jari" },
+  { id: "CUST00706", name: "Helena" },
+];
+const PARTIAL_CUSTOMER = "CUST02957";
+
 /** Who is signed in, the language, and on a phone the way to the contract panel. */
 function HostHeader({ lang, customer, persona, personas, onLang, onCustomer, onContract }: HeaderProps) {
   const [open, setOpen] = useState(false);
   const name = persona?.name || "Demo";
-  const choices = personas.length ? personas : [{ id: "CUST00092", name: "Aino" }, { id: "CUST02957", name: "Jari" }];
+  const choices = personas.length ? personas : DEMO_CUSTOMERS;
   return (
     <header className="host-header">
       <button type="button" className="host-persona" onClick={() => setOpen((value) => !value)} aria-expanded={open}>
@@ -359,7 +371,7 @@ function ScopeRow({ title, note, state, on }: { title: string; note: string; sta
 }
 
 /** What Kori may read, and the way to take it back. */
-function PermissionsSheet({ lang, consent, canLink, onLink, onWithdraw, onClose }: { lang: Lang; consent: HostConsent; canLink: boolean; onLink: () => void; onWithdraw: () => void; onClose: () => void }) {
+function PermissionsSheet({ lang, consent, canLink, onLink, onTryLink, onWithdraw, onClose }: { lang: Lang; consent: HostConsent; canLink: boolean; onLink: () => void; onTryLink: () => void; onWithdraw: () => void; onClose: () => void }) {
   return (
     <SheetFrame lang={lang} icon={<ShieldCheck size={20} aria-hidden />} onClose={onClose}>
       <h2>{text(lang, "Data and permissions", "Tiedot ja luvat")}</h2>
@@ -378,12 +390,23 @@ function PermissionsSheet({ lang, consent, canLink, onLink, onWithdraw, onClose 
           on={consent.other_bank}
         />
       </div>
-      {canLink && (
-        <button type="button" className="host-link-row" onClick={onLink}>
+      {canLink ? (
+        !consent.other_bank && (
+          <button type="button" className="host-link-row" onClick={onLink}>
+            <Link2 size={18} className="host-row-icon" aria-hidden />
+            <span>
+              <strong>{text(lang, "Link an account at another bank", "Yhdistä tili toisesta pankista")}</strong>
+              <small>{text(lang, "Most of this salary moves there. Simulated here.", "Suurin osa tästä palkasta siirtyy sinne. Simuloitu tässä.")}</small>
+            </span>
+            <ChevronRight size={18} className="host-row-chevron" aria-hidden />
+          </button>
+        )
+      ) : (
+        <button type="button" className="host-link-row" onClick={onTryLink}>
           <Link2 size={18} className="host-row-icon" aria-hidden />
           <span>
-            <strong>{text(lang, "Link an account at another bank", "Yhdistä tili toisesta pankista")}</strong>
-            <small>{text(lang, "Jari’s salary moves there. Simulated here.", "Jarin palkka siirtyy sinne. Simuloitu tässä.")}</small>
+            <strong>{text(lang, "See the other-bank link with Jari", "Katso toisen pankin linkki Jarin tilillä")}</strong>
+            <small>{text(lang, "This customer’s salary stays here. Jari’s moves to another bank.", "Tämän asiakkaan palkka pysyy täällä. Jarin palkka siirtyy toiseen pankkiin.")}</small>
           </span>
           <ChevronRight size={18} className="host-row-chevron" aria-hidden />
         </button>
@@ -434,6 +457,8 @@ export function HostDemo() {
   const frameRef = useRef<HTMLIFrameElement>(null);
   const pendingRef = useRef<HostToKori[]>([]);
   const logId = useRef(0);
+  /** kori:open has gone out to the frame that is loaded now: it is sent once per load, not once per render */
+  const openedRef = useRef(false);
 
   const persona = useMemo(() => personas.find((item) => item.id === customer) || home?.persona, [customer, home?.persona, personas]);
   const frameSrc = `/?embed=1&customer=${encodeURIComponent(customer)}&lang=${lang}`;
@@ -460,13 +485,12 @@ export function HostDemo() {
     setLoading(true);
     setError(false);
     setConsentApiAvailable(null);
-    Promise.all([api.home(customer, lang), api.transactions({ customer, lang, limit: 6 }), api.personas(lang)])
-      .then(([nextHome, nextTransactions, nextPersonas]) => {
+    Promise.all([api.home(customer, lang), api.transactions({ customer, lang, limit: 6 })])
+      .then(([nextHome, nextTransactions]) => {
         if (cancelled) return;
         setHome(nextHome);
         setShownCustomer(customer);
         setTransactions(nextTransactions);
-        setPersonas(nextPersonas);
       })
       .catch(() => {
         if (!cancelled) setError(true);
@@ -493,10 +517,28 @@ export function HostDemo() {
     };
   }, [customer, lang]);
 
+  // the list of demo customers does not depend on who is signed in: one request per language
   useEffect(() => {
+    let cancelled = false;
+    api.personas(lang)
+      .then((next) => {
+        if (!cancelled && next.length) setPersonas(next);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [lang]);
+
+  const resetFrame = () => {
     setIframeLoadedState(false);
     setBridgeReady(false);
     pendingRef.current = [];
+    openedRef.current = false;
+  };
+
+  useEffect(() => {
+    resetFrame();
   }, [customer, lang]);
 
   // the number on the tile is this customer's: a change of language keeps it, a change of customer does not
@@ -524,12 +566,15 @@ export function HostDemo() {
   }, [consent, customer, lang]);
 
   useEffect(() => {
-    if (bridgeReady && consent.transactions && tab === "coach") {
+    if (!(bridgeReady && consent.transactions && tab === "coach")) return;
+    if (pendingQuestion) {
+      // a question opens the coach by itself
+      openedRef.current = true;
+      send({ type: "kori:ask", v: BRIDGE_VERSION, question: pendingQuestion });
+      setPendingQuestion(null);
+    } else if (!openedRef.current) {
+      openedRef.current = true;
       send({ type: "kori:open", v: BRIDGE_VERSION, screen: "coach" });
-      if (pendingQuestion) {
-        send({ type: "kori:ask", v: BRIDGE_VERSION, question: pendingQuestion });
-        setPendingQuestion(null);
-      }
     }
   }, [bridgeReady, consent, pendingQuestion, tab]);
 
@@ -539,12 +584,7 @@ export function HostDemo() {
       return;
     }
     setTab(next);
-    if (next === "home") {
-      setIframeLoadedState(false);
-      setBridgeReady(false);
-      pendingRef.current = [];
-    }
-    if (next === "coach") send({ type: "kori:open", v: BRIDGE_VERSION, screen: "coach" });
+    if (next === "home") resetFrame();
   };
 
   const allowTransactions = async () => {
@@ -571,6 +611,7 @@ export function HostDemo() {
     setConsent(next);
     writeLocalConsent(customer, next);
     setTab("home");
+    resetFrame();
     setSheet(null);
     setSafe(null);   // the number on the host's tile came from Kori: without access it goes too
     if (consentApiAvailable !== false) void putConsent(customer, lang, false).catch(() => undefined);
@@ -598,8 +639,8 @@ export function HostDemo() {
     const merchant = tx.merchant || tx.kind_label || tx.category_label || text(lang, "this payment", "tätä maksua");
     const question = text(
       lang,
-      `What basket is my payment of ${money(Math.abs(tx.amount), lang, { cents: true })} to ${merchant} on ${day(tx.date, lang)}, and what does it mean for my safe to spend?`,
-      `Mihin koriin ${money(Math.abs(tx.amount), lang, { cents: true })} maksu ${merchant}lle ${day(tx.date, lang)} kuuluu, ja mitä se tarkoittaa turvalliselle käyttövaralleni?`,
+      `Tell me about this payment: ${merchant}, ${money(Math.abs(tx.amount), lang, { cents: true })} on ${day(tx.date, lang)}. I have already paid it.`,
+      `Kerro tästä maksusta: ${merchant}, ${money(Math.abs(tx.amount), lang, { cents: true })}, ${day(tx.date, lang)}. Olen jo maksanut sen.`,
     );
     setPendingQuestion(question);
     chooseTab("coach");
@@ -628,7 +669,7 @@ export function HostDemo() {
             ) : (
               <main className="host-coach">
                 {consent.transactions ? (
-                  <iframe key={frameSrc} ref={frameRef} title={text(lang, "Kori coach", "Korin valmentaja")} src={frameSrc} onLoad={iframeLoaded} />
+                  <iframe key={frameSrc} ref={frameRef} title={text(lang, "Kori coach", "Korin valmentaja")} src={frameSrc} allow="microphone; autoplay" onLoad={iframeLoaded} />
                 ) : (
                   <div className="host-coach-empty">
                     <LockKeyhole size={22} aria-hidden />
@@ -645,10 +686,26 @@ export function HostDemo() {
 
             {sheet === "consent" && <ConsentSheet lang={lang} onAllow={() => void allowTransactions()} onClose={() => setSheet(null)} />}
             {sheet === "permissions" && (
-              <PermissionsSheet lang={lang} consent={consent} canLink={!!persona?.partial_view} onLink={() => setSheet("link")} onWithdraw={withdraw} onClose={() => setSheet(null)} />
+              <PermissionsSheet
+                lang={lang}
+                consent={consent}
+                canLink={!!persona?.partial_view || consent.other_bank}
+                onLink={() => setSheet("link")}
+                onTryLink={() => {
+                  setTab("home");
+                  resetFrame();
+                  setCustomer(PARTIAL_CUSTOMER);
+                }}
+                onWithdraw={withdraw}
+                onClose={() => setSheet(null)}
+              />
             )}
             {sheet === "link" && <LinkSheet lang={lang} onLink={() => void linkOtherBank()} onClose={() => setSheet(null)} />}
-            {loading && shownCustomer !== customer && <div className="host-banner">{text(lang, "Loading the selected demo customer…", "Ladataan valittua demoasiakasta…")}</div>}
+            {loading && shownCustomer !== customer && (
+              <div className="host-banner is-passive" role="status">
+                {text(lang, "Loading the selected demo customer…", "Ladataan valittua demoasiakasta…")}
+              </div>
+            )}
             {error && <div className="host-banner">{text(lang, "The demo data did not load. Try again.", "Demodata ei latautunut. Yritä uudelleen.")}</div>}
           </div>
         </section>

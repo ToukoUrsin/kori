@@ -50,7 +50,8 @@ export const SLOTS: {
 	},
 	// 4. Why the numbers are right: "numbers checked" tapped, and the sheet that says where each figure came from.
 	figures: {
-		clips: [{cap: 'figures', from: 10.3, to: 13.8, mute: true, zoom: [{at: 10.3, z: IN, y: 620, d: 0}], note: 'Tap “numbers checked” · real speed'}],
+		// The text chat answer makes the proof legible at 1080p: the card, the source numbers and the check all land together.
+		clips: [{cap: 'chat', from: 23.5, to: 27.0, mute: true, zoom: [{at: 23.5, z: IN, y: 500, d: 0}], note: 'Chat answer · real speed'}],
 	},
 	// 6. It teaches: the three baskets on the Baskets tab.
 	teach: {

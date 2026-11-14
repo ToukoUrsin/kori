@@ -79,6 +79,7 @@ export interface ForecastEvent {
 export interface ForecastPoint {
   date: string;
   balance: number;
+  balance_after_pay?: number;
   events: ForecastEvent[];
 }
 export interface ForecastPace {
@@ -86,6 +87,20 @@ export interface ForecastPace {
   series: ForecastPoint[];
   lowest: { balance: number; date: string };
   before_payday: number;
+  /** the pace's own arithmetic from today's balance to the balance pay lands on */
+  adds_up?: {
+    balance_today: number;
+    bills_before_payday: number;
+    everyday_spending: number;
+    per_day: number;
+    days: number;
+    surprise_reserve: number;
+    planned_saving: number;
+    left_when_pay_lands: number;
+    left_if_no_surprise_comes: number;
+    cushion?: number;
+    buffer?: number;
+  };
   next_payday: string;
   goes_negative: boolean;
   below_cushion: boolean;
@@ -203,6 +218,73 @@ export interface Home {
   };
   pins: number;
   loop?: LoopData;
+  /** The one sentence under the number: what the balance says against what comes first. Written by the engine. */
+  hero?: { sentence: string };
+  /** Past paydays replayed. null while the server is still computing it: fetch api.replay then. */
+  replay?: ReplayStory | null;
+}
+
+/** One past month: the number as it stood on that day, replayed against what really happened until pay came. */
+export interface ReplayCell {
+  month: string;
+  label: string; // "Jun 2026"
+  long_label: string;
+  state: "held" | "missed" | "skipped"; // skipped: nothing was safe to spend that day, so there was no number to test
+  as_of: string;
+  until: string;
+  window: string; // "21 May to 15 Jun"
+  payday_label: string;
+  safe: number;
+  balance: number;
+  per_day: number;
+  lowest_if_followed: number; // above zero: held with this much to spare; below: short by this much
+  spent: number;
+  within: boolean; // did the person actually stay within the number
+  balance_as_budget_held: boolean;
+  pay_late_days: number;
+  reserve: number;
+  surprises: number;
+  cause: "surprise" | "late_pay" | "bills" | null;
+  why: string | null;
+  line: string; // one engine-written sentence for this cell
+}
+export interface ReplayMiss {
+  month: string;
+  label: string;
+  payday_label: string;
+  window: string;
+  cause: "surprise" | "late_pay" | "bills";
+  text: string; // what came and what was held back
+  lesson: string; // why the surprise basket exists, with today's reserve
+  since: string; // "Since then it has held 3 of 3 times."
+  payments: { date: string; day: string; merchant: string | null; kind: string; label: string; category_label: string; amount: number }[];
+  reserve_then: number;
+  reserve_now: number;
+  surprises_then: number;
+  safe_then: number;
+  short_by: number;
+  held_since: number;
+  checked_since: number;
+}
+export interface ReplayStory {
+  checked: number;
+  held: number;
+  missed: number;
+  balance_as_budget_held: number;
+  headline: string; // "This number would have held 17 of the last 18 times."
+  short: string; // "Held 17 of 18 past paydays"
+  summary: string; // "The one miss was before the June 2026 payday."
+  versus: string; // "Treating the balance as the budget would have held 0 of 18."
+  everyone: string; // the same check across all customers, one sentence
+  cells: ReplayCell[];
+  miss: ReplayMiss | null;
+  day_of_month: number;
+  stayed_within: number;
+  population: TrackData["population"];
+  partial_view: boolean;
+  method: string;
+  from: string | null;
+  to: string | null;
 }
 
 export interface LoopHistoryRow {
@@ -490,6 +572,7 @@ export interface TrackData {
   pay_late_months: number;
   items: TrackItem[];
   method?: string;
+  story?: ReplayStory;
   months_number_would_have_held?: number;
   months_stayed_within_number?: number;
   count_labels?: { en: { held: string; stayed_within: string }; fi: { held: string; stayed_within: string } };

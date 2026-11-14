@@ -123,26 +123,26 @@ def afford(m: Money, amount: float, label: str | None = None, basket: str | None
 
     until = fmt_day(pay, lang)
     if m.partial_view:
-        headline = (L(f"On this account, yes: {E(safe_after)} stays free until {until}. I only see part of your money, so I cannot say what it does to your whole month.",
-                      f"Tällä tilillä kyllä: {E(safe_after)} jää vapaaksi {until} asti. Näen vain osan rahoistasi, joten en voi sanoa, mitä se tekee koko kuukaudellesi.")
+        headline = (L(f"From what stays on this account, yes: {E(safe_after)} is still safe to spend here until {until}. I only see part of your money, so I cannot say what it does to your whole month.",
+                      f"Siitä, mikä jää tälle tilille, kyllä: täällä on sen jälkeen {E(safe_after)} turvallista käyttää {until} asti. Näen vain osan rahoistasi, joten en voi sanoa, mitä se tekee koko kuukaudellesi.")
                     if verdict != "no" else
-                    L(f"Not from this account: it is {E(short_by)} more than what is free here until {until}. I only see part of your money.",
-                      f"Ei tältä tililtä: se on {E(short_by)} enemmän kuin täällä on vapaana {until} asti. Näen vain osan rahoistasi."))
+                    L(f"Not from what stays on this account: it is {E(short_by)} more than is safe to spend here until {until}. I only see part of your money.",
+                      f"Ei siitä, mikä jää tälle tilille: se on {E(short_by)} enemmän kuin täällä on turvallista käyttää {until} asti. Näen vain osan rahoistasi."))
     elif reserve and reserve["covers_it"]:
         headline = L(f"Yes. Your surprise reserve of {E(reserve['available'])} covers it, and safe to spend stays at {E(safe_after)}.",
                      f"Kyllä. Yllätysvarasi, {E(reserve['available'])}, kattaa sen, ja turvallinen käyttövara pysyy ennallaan: {E(safe_after)}.")
     elif reserve and from_safe <= 0.005:
-        headline = L(f"Yes. Your surprise reserve covers {E(reserve['used'])} and your buffer the other {E(reserve['from_buffer'])}. Safe to spend stays at {E(safe_after)}.",
-                     f"Kyllä. Yllätysvarasi kattaa {E(reserve['used'])} ja puskurisi loput {E(reserve['from_buffer'])}. Turvallinen käyttövara pysyy ennallaan: {E(safe_after)}.")
+        headline = L(f"Yes. Your surprise reserve covers {E(reserve['used'])} and the other {E(reserve['from_buffer'])} comes from money this pay cycle does not need. Safe to spend stays at {E(safe_after)}.",
+                     f"Kyllä. Yllätysvarasi kattaa {E(reserve['used'])} ja loput {E(reserve['from_buffer'])} tulee rahasta, jota tämä palkkajakso ei tarvitse. Turvallinen käyttövara pysyy ennallaan: {E(safe_after)}.")
     elif reserve and verdict == "no":
-        headline = L(f"Not fully. Your surprise reserve covers {E(reserve['used'])} and your buffer {E(reserve['from_buffer'])}. Safe to spend covers part of the rest, and {E(short_by)} is still missing before payday on {until}.",
-                     f"Ei kokonaan. Yllätysvarasi kattaa {E(reserve['used'])} ja puskurisi {E(reserve['from_buffer'])}. Turvallinen käyttövara kattaa osan lopusta, ja {E(short_by)} jää puuttumaan ennen palkkapäivää {until}.")
+        headline = L(f"Not fully. Your surprise reserve covers {E(reserve['used'])} and money this pay cycle does not need covers {E(reserve['from_buffer'])}. Safe to spend covers part of the rest, and {E(short_by)} is still missing before payday on {until}.",
+                     f"Ei kokonaan. Yllätysvarasi kattaa {E(reserve['used'])} ja raha, jota tämä palkkajakso ei tarvitse, {E(reserve['from_buffer'])}. Turvallinen käyttövara kattaa osan lopusta, ja {E(short_by)} jää puuttumaan ennen palkkapäivää {until}.")
     elif reserve:
         headline = L(f"Yes, but only {E(reserve['used'])} comes from your surprise reserve. The rest lowers your pace: now {E(per_day_before)} a day, after it {E(per_day_after)} a day until {until}.",
                      f"Kyllä, mutta yllätysvarastasi tulee vain {E(reserve['used'])}. Loppu pienentää päivätahtiasi: nyt {E(per_day_before)} päivässä, sen jälkeen {E(per_day_after)} päivässä {until} asti.")
     elif verdict == "no":
-        headline = (L(f"Not from this pay cycle's everyday money: it is {E(short_by)} more than your safe to spend. The account can take it, but the money comes out of your buffer.",
-                      f"Ei tämän palkkajakson arkirahasta: se on {E(short_by)} enemmän kuin turvallinen käyttövarasi. Tili kestää sen, mutta raha tulee puskuristasi.")
+        headline = (L(f"Not from this pay cycle's everyday money: it is {E(short_by)} more than your safe to spend. The account can take it, but the money comes from what this pay cycle was not going to touch.",
+                      f"Ei tämän palkkajakson arkirahasta: se on {E(short_by)} enemmän kuin turvallinen käyttövarasi. Tili kestää sen, mutta raha tulee siitä, mihin tällä palkkajaksolla ei ollut tarkoitus koskea.")
                     if account["can_take_it"] else
                     L(f"Not before payday on {until}: it is {E(short_by)} more than your safe to spend.",
                       f"Ei ennen palkkapäivää {until}: se on {E(short_by)} enemmän kuin turvallinen käyttövarasi."))

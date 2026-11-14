@@ -7,7 +7,7 @@ import { invalidate, prefetch, useQuery, type Query } from "./useQuery";
 
 export type Tab = "today" | "baskets" | "plan" | "learn";
 const TABS: Tab[] = ["today", "baskets", "plan", "learn"];
-const DEFAULT_CUSTOMER = "CUST00092";
+const DEFAULT_CUSTOMER = "CUST01885";
 
 export type Overlay = { kind: "card"; card: Card } | { kind: "persona" } | null;
 
@@ -122,12 +122,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const id = setTimeout(() => setToast((cur) => (cur && cur.id === toast.id ? null : cur)), toast.action ? 6000 : 3200);
     return () => clearTimeout(id);
   }, [toast]);
-  useEffect(() => {
-    if (!init.firstVisit) return;
-    const id = setTimeout(() => setOverlay({ kind: "persona" }), 250);
-    return () => clearTimeout(id);
-  }, [init.firstVisit]);
-
   useEffect(() => {
     document.documentElement.lang = lang;
     write("kori.lang", lang);

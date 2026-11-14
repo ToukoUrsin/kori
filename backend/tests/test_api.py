@@ -22,7 +22,7 @@ def test_health(cx):
 def test_personas(cx):
     ps = cx.get("/api/personas").json()
     ps = ps["personas"] if isinstance(ps, dict) else ps
-    assert len(ps) == 6 and ps[0]["id"] == HERO
+    assert len(ps) == 7 and ps[0]["id"] == "CUST01885" and ps[1]["id"] == HERO      # the 25-year-old opens the demo
     assert any(p["partial_view"] for p in ps)
 
 

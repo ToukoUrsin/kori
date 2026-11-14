@@ -288,7 +288,8 @@ def what_if(m: Money, changes: list[dict], months: int = 12, goal_amount: float 
                        "count": round(yearly / m.usual[SURPRISE], 1)})
         out["yearly_equals"] = eq
     saved_monthly = max(0.0, monthly_freed) + extra_saving
-    if saved_monthly > 0:
+    # Compounding is shown only when the month really has that money: never beside "your month is short".
+    if saved_monthly > 0 and (partial or new_left >= -0.005):
         # plain arithmetic, no market promise: what the pile is with 0% and with an example 4% yearly return
         def fv(p, years, rate):
             n = years * 12
