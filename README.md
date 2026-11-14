@@ -3,11 +3,16 @@
 **Your balance is not your budget.** Kori is a personal economic trainer you talk to. It reads your own bank
 transactions, tells you what is safe to spend before payday, and teaches you why, one minute at a time.
 
+**Ask it anything.** For a question nobody built a screen for, Kori writes code, runs it on your own transactions and
+builds the screen for that one answer, with real products and prices from the S Group's own shops. No number is
+guessed: every figure on screen traces to code that ran on your data.
+
 Built at Junction 2026 for S-Pankki's challenge "Personal Economic Trainer". *Kori* is Finnish for basket.
 
 - Live app: https://kori-coach.fly.dev (open it on a phone, or narrow the browser window)
+- The chat that builds its own screens: https://kori-coach.fly.dev/lab?customer=CUST01885 (add `&dev=1` to see the code it wrote)
 - The film, two minutes, recorded from the live app: https://kori-coach.fly.dev/film
-- Voice: ElevenLabs Agents. Reasoning: Gemini. Every number: our own engine.
+- Voice: ElevenLabs Agents. Reasoning and code: Gemini. The built screens: Claude. Every number: our own engine or code that ran on your data.
 
 ## What it does
 
@@ -32,6 +37,36 @@ everyday spending every day. The app has up to eight one-minute lessons, picked 
 with sorting six of their own payments into the baskets. Each ends with one question to answer in your own words,
 which Gemini grades honestly against the concept: "not yet" comes with a hint and another try.
 
+## Ask anything: the chat that builds its own screen
+
+Open `/lab`, or tap "Ask Kori anything" on the home screen. It looks like any chat. Underneath, a free agent works
+with a sandbox of its own (the contract is in `docs/LAB.md`):
+
+1. **Gemini writes code** (`gemini-4-hydrogen`) and runs it in a locked sandbox that holds this one customer's
+   transactions and has no network. It can call the engine above, search S-kaupat and Finnish web shops, read
+   S-Pankki's fund facts, and hand a heavy model (4,000 simulated futures, a loan schedule) to `gemini-4-carbon`.
+2. **Every figure goes on a ledger**, put there by the code that computed it.
+3. **Claude builds the screen** (`claude-fable-5-2`) for this one answer from the ledger: a chart, a picker, product
+   tiles, switches. It streams into a locked frame that cannot reach the network or the app.
+4. **A check reads the screen.** Figures are filled in from the ledger. A figure the designer typed that is not on
+   the ledger is flagged under the view.
+
+| You ask | Kori builds |
+|---|---|
+| "Can my grocery shopping be cheaper?" | Each brand you buy next to the S Group own-brand product that is the same thing, with real pictures and Prisma prices, a switch on every row, and what a usual month then leaves. For the demo customer: €69 a month, €828 a year. |
+| "Is there a cheaper oat drink than the one I buy?" | Your carton (€2.05) and three real cheaper ones to pick from (the cheapest €1.15). |
+| "I need a new laptop. What can I afford?" | A price picker against your payday, then laptops on sale today at Prisma.fi and Verkkokauppa.com. |
+| "What if I save €150 a month for ten years?" | 4,000 outcomes with one of S-Pankki's own funds and its real fee, as a range you can drag. An illustration, not investment advice. |
+| "When do I spend the most on eating out?" | Your week by day and hour, built for this question. |
+
+The world is **real or absent** (`docs/WORLD.md`): 621 products read from S-kaupat (one Prisma, dated 14.11.2026),
+live web-shop results, 15 fund and saving facts read from s-pankki.fi, each with its link and date. Nothing is invented
+to fill a gap. One thing is sample data and says so: receipt lines. A bank sees the store total, not the lines, so the
+demo builds sample receipts from the real catalogue that add up to each real supermarket payment.
+
+Measured on the live site: groceries, the oat drink and the laptop answer in 12 to 18 seconds, the ten-year model in
+about 40.
+
 ## Why the numbers can be trusted
 
 A language model that does arithmetic on someone's money will sometimes be wrong. So in Kori the model never
@@ -39,7 +74,7 @@ calculates.
 
 1. **The engine computes.** A deterministic Python engine over DuckDB and Parquet works out pay cycle, baskets,
    forecast bills, surprise reserve, safe to spend, what-ifs and peer comparisons.
-2. **Gemini chooses and explains.** It picks which of 19 tools to call, with which arguments, and puts the result
+2. **Gemini chooses and explains.** It picks which of 22 tools to call, with which arguments, and puts the result
    into two or three plain sentences in English or Finnish.
 3. **A number check reads every answer before the user does.** Each figure in the reply must be one the engine
    produced in this turn (ordinary rounding allowed). If one is not, the model gets one chance to rewrite. If it
@@ -50,7 +85,8 @@ calculates.
 
 We stood on 22 past dates for every customer, computed safe-to-spend from only what was visible on that date, and
 replayed what really happened until the next pay arrived (`backend/scripts/backtest.py`, 106,553 cases, 4,850
-customers, results in `docs/backtest.json`).
+customers, results in `docs/backtest.json`). On 89,619 of them there was something safe to spend, and the first two
+rows are measured on those.
 
 | | |
 |---|---|
@@ -89,7 +125,9 @@ before?" and see the months it held, the months it did not, and the reason for e
 - picks tools and arguments from natural language in English and Finnish,
 - writes the spoken and written explanations,
 - grades free-text lesson answers ("say it back in your own words") against a rubric,
-- rewrites an answer when the number check rejects it.
+- rewrites an answer when the number check rejects it,
+- in the chat at `/lab`: writes and runs Python on the customer's transactions, searches the web with Google Search
+  grounding, and (`gemini-4-carbon`) builds the heavier models.
 
 ## How it would fit S-mobiili
 
@@ -116,10 +154,12 @@ phone (React, Vite, Tailwind)
 FastAPI  <----- custom LLM ----- ElevenLabs agent (speech-to-text, turn-taking, speech)
    |
    +-- ai/agent.py      Gemini tool loop, number check, one rewrite
-   +-- ai/tools.py      19 tools -> engine calls -> cards
+   +-- ai/tools.py      22 tools -> engine calls -> cards
    +-- ai/grounding.py  every figure must come from the engine
    +-- engine/          core (pay cycle, baskets, safe to spend), whatif, peers, persona, lessons, trackrecord
    +-- data.py          DuckDB over Parquet: 3.6M transactions, 5,100 customers
+   +-- lab/             the chat that builds its own screens: agent.py (Gemini writes code), kernel.py (sandbox),
+                        door.py (the only way out), world.py (shops, web, funds), designer.py (Claude), check.py
 ```
 
 ## Run it
@@ -129,12 +169,13 @@ scripts/fetch_data.sh                      # downloads S-Pankki's synthetic data
 cd backend
 export GEMINI_API_KEY=...                  # required for chat
 export ELEVENLABS_API_KEY=...              # optional: voice
+export KORI_ANTHROPIC_API_KEY=...          # optional: Claude builds the chat's screens (Gemini stands in without it)
 PYTHONPATH=. uv run uvicorn kori.app:app --port 8811
 
 cd ../web && pnpm install && pnpm dev      # http://localhost:8812
 ```
 
-Tests (engine arithmetic, number check, API, all six demo customers in both languages):
+Tests (194: engine arithmetic, number check, API, the sandbox, the shop and swap rules, the demo customers in both languages):
 
 ```bash
 cd backend && PYTHONPATH=. uv run pytest -q
