@@ -862,5 +862,5 @@
     fill: fillRow, reduced: REDUCED, _fail: fail,
   });
 
-  post({ kori: "ready" });
+  post({ kori: "ready", pulse: 1 });          // pulse: this frame answers "ping" with "pong"
 })();
