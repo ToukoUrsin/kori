@@ -1,7 +1,7 @@
 // Part B, teach: the "people like you" comparison (Statistics Finland's household survey), held on the card.
 export default {
 	lang: 'en',
-	path: '/',
+	path: '/?customer=CUST00092',
 	async run({page, tap, type, wait, mark, shot}) {
 		await wait(1200);
 		await tap(page.getByRole('button', {name: 'Talk to the coach'}), {label: 'open coach'});

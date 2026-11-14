@@ -42,8 +42,14 @@ function shortPayload(message: HostToKori | Record<string, unknown>): string {
   return "—";
 }
 
+/**
+ * Reading the account is the host's own decision, kept on the host: the server only knows whether the other bank is
+ * linked. (The server lists the account's transactions as granted for every customer, which is true of its data and
+ * says nothing about whether this person let Kori in.)
+ */
 function scopeFromResponse(response: ConsentResponse | null, fallback: HostConsent): HostConsent {
-  return consentFromResponse(response) || fallback;
+  const server = consentFromResponse(response);
+  return server ? { transactions: fallback.transactions, other_bank: fallback.transactions && server.other_bank } : fallback;
 }
 
 function initials(name: string): string {
@@ -561,6 +567,8 @@ export function HostDemo() {
     writeLocalConsent(customer, next);
     setTab("home");
     setSheet(null);
+    setSafe(null);   // the number on the host's tile came from Kori: without access it goes too
+    if (consentApiAvailable !== false) void putConsent(customer, lang, false).catch(() => undefined);
   };
 
   const linkOtherBank = async () => {

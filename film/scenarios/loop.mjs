@@ -2,7 +2,7 @@
 // the check-in preview, and dropping it again with Undo. Each step is marked for the film's beats.
 export default {
 	lang: 'en',
-	path: '/',
+	path: '/?customer=CUST00092',
 	async run({page, tap, wait, mark, shot}) {
 		await wait(1500);
 		const suggested = page.locator('[data-loop="suggested"]');
