@@ -36,6 +36,58 @@ def statfin() -> dict | None:
         return None
 
 
+@lru_cache(maxsize=4)
+def usual_table(today=None) -> pd.DataFrame:
+    """A usual month for every customer, measured exactly as `Money.usual` measures it for one:
+    the middle (median) of the last 6 full months for fixed musts and everyday, the average of the last 12 for
+    surprise musts, the average of the last 6 for each category, and the middle one of the last 6 pay amounts.
+    So "you" and "people like you" are always compared on the same definition."""
+    from datetime import date
+    from ..data import _lock, con
+    from ..taxonomy import EVERYDAY, FIXED, SURPRISE
+    from .core import add_months, month_bounds, month_key
+    today = today or config.DEMO_TODAY
+    this = month_key(today)
+    m6 = [add_months(this, -i) for i in range(6, 0, -1)]
+    m12 = [add_months(this, -i) for i in range(12, 0, -1)]
+    start = month_bounds(m12[0])[0]
+    end = date(today.year, today.month, 1)
+    with _lock:
+        agg = con().execute(
+            "select customer_id, strftime(tx_date, '%Y-%m') as ym, category, sum(amount) as amt from tx "
+            "where tx_date >= ? and tx_date < ? group by 1, 2, 3", [start, end]).df()
+        sal = con().execute(
+            "select customer_id, median(amount) as salary from (select customer_id, amount, row_number() over "
+            "(partition by customer_id order by ts desc) as rn from tx where category = 'Salary' and tx_date <= ?) "
+            "where rn <= 6 group by 1", [today]).df().set_index("customer_id")["salary"]
+    ids = pd.Index(sorted(agg["customer_id"].unique()), name="customer_id")
+    wide = agg.pivot_table(index=["customer_id", "ym"], columns="category", values="amt", aggfunc="sum").fillna(0.0)
+    full = pd.MultiIndex.from_product([ids, m12], names=["customer_id", "ym"])
+    wide = wide.reindex(full).fillna(0.0)
+    spend = lambda c: -wide[c] if c in wide.columns else pd.Series(0.0, index=wide.index)
+    basket = lambda b: sum((spend(c) for c, v in CATEGORIES.items() if v["basket"] == b), pd.Series(0.0, index=wide.index))
+    last6 = wide.index.get_level_values("ym").isin(m6)
+    out = pd.DataFrame(index=ids)
+    for c in CATEGORIES:
+        out[f"cat_{c}"] = spend(c)[last6].groupby(level=0).mean()
+    out["fixed"] = basket(FIXED)[last6].groupby(level=0).median()
+    out["everyday"] = basket(EVERYDAY)[last6].groupby(level=0).median()
+    out["surprise"] = basket(SURPRISE).groupby(level=0).mean()
+    inv = spend("Invest Deposit")[last6]
+    habit = (inv > 0).groupby(level=0).sum() >= 4
+    out["invested"] = inv.groupby(level=0).median().where(habit, 0.0)
+    out["salary"] = sal.reindex(ids).fillna(0.0)
+    out["swept"] = spend("Salary Sweep")[last6].groupby(level=0).median()
+    out["income"] = out["salary"] - out["swept"]
+    out["spend"] = out["fixed"] + out["surprise"] + out["everyday"]
+    return out.round(2)
+
+
+def usual_window(lang: str = "en") -> str:
+    return {"en": "A usual month: the middle of your last 6 full months (surprise musts: the average of the last 12)",
+            "fi": "Tavallinen kuukausi: viimeisten 6 täyden kuukauden keskimmäinen (yllättävät pakolliset: 12 kuukauden keskiarvo)"}[lang]
+
+
 def row(customer_id: str) -> pd.Series:
     return table().loc[customer_id]
 
@@ -93,16 +145,23 @@ def national(age: int, category: str) -> dict | None:
 
 
 def compare(m: Money, by: str = "age", categories: list[str] | None = None) -> dict:
-    """You vs people like you, per category and basket (monthly averages over the last 12 full months)."""
+    """You vs people like you, using the same usual-month window as the personal engine."""
     lang = m.prefs.lang
     g, key, label = group_of(m.customer_id, by)
     me = row(m.customer_id)
+    # Compare the customer and peers on the same window used by Money.usual.
+    # The peer cohort selection still comes from the stable peer table, while
+    # each amount comes from the deterministic six-month usual-month table.
+    usual = usual_table()
+    group_usual = usual.reindex(g.index).dropna(how="all")
+    me_usual = usual.loc[m.customer_id]
     cats = categories or list(CATEGORIES)
     items = []
 
     def one(col: str, name: str, lab: str, icon: str | None = None, cat: str | None = None):
-        vals = g[col].to_numpy(dtype=float)
-        you = float(me[col])
+        source = group_usual[col] if col in group_usual else g[col]
+        vals = source.dropna().to_numpy(dtype=float)
+        you = float(me_usual[col] if col in me_usual.index else me[col])
         med = float(np.median(vals))
         item = {"key": name, "label": lab, "you": r2(you), "median": r2(med),
                 "p25": r2(np.percentile(vals, 25)), "p75": r2(np.percentile(vals, 75)),
@@ -121,10 +180,10 @@ def compare(m: Money, by: str = "age", categories: list[str] | None = None) -> d
             items.append(one(f"cat_{c}", c, cat_label(c, lang), CATEGORIES[c]["icon"], c))
     baskets = [one(b, b, BASKETS[b][lang]) for b in BASKETS]
     extra = {"saving": one("invested", "invested", {"en": "Moved to savings", "fi": "Säästöön siirretty"}[lang]),
-             "income": one("salary", "salary", {"en": "Salary", "fi": "Palkka"}[lang])}
+             "income": one("income", "income", {"en": "Monthly income", "fi": "Kuukausitulot"}[lang])}
     items.sort(key=lambda x: -(x["diff"]))
     return {"group": {"by": key, "label": label, "size": int(len(g)), "min_group_size": MIN_GROUP},
-            "window": "monthly averages over the last 12 full months",
+            "window": usual_window(lang),
             "categories": items, "baskets": baskets, **extra,
             "note": {"en": "Peers are other customers in this dataset; nobody is identifiable and groups are never smaller than 30 people.",
                      "fi": "Vertailuryhmä on muita asiakkaita; ketään ei voi tunnistaa eikä ryhmä ole koskaan alle 30 henkeä."}[lang]}

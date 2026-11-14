@@ -133,14 +133,27 @@ def track_record(m: Money, months: int = 11) -> dict:
     for it in items:
         if it["cause"]:
             causes[it["cause"]] = causes.get(it["cause"], 0) + 1
+    pop = population()
+    population_view = None
+    if pop:
+        promise = pop.get("promise", {})
+        population_view = {"customers": pop.get("customers"), "cases": pop.get("cases"),
+                           "held_pct": pop.get("safe_held_pct", promise.get("safe_held_pct")),
+                           "balance_as_budget_pct": pop.get("balance_as_budget_held_pct", promise.get("balance_as_budget_held_pct")),
+                           "labels": {"en": {"held_pct": "safe-to-spend held", "balance_as_budget_pct": "balance as budget held"},
+                                      "fi": {"held_pct": "turvallinen käyttövara piti", "balance_as_budget_pct": "saldo budjettina piti"}}}
     return {
         "day_of_month": m.today.day, "months_checked": len(usable), "held": held, "missed": len(usable) - held,
+        "months_number_would_have_held": held,
         "missed_because": causes,
         "stayed_within": len(within), "went_over": len(over),
+        "months_stayed_within_number": len(within),
+        "count_labels": {"en": {"held": "months the safe number would have held", "stayed_within": "months you actually stayed within it"},
+                         "fi": {"held": "kuukaudet, jolloin turvallinen luku olisi pitänyt", "stayed_within": "kuukaudet, jolloin pysyit luvussa"}},
         "below_zero_when_within": sum(r["real_negative"] for r in within),
         "below_zero_when_over": sum(r["real_negative"] for r in over),
         "pay_late_months": sum(r["pay_diff"] > 0 for r in usable),
-        "items": items, "partial_view": m.partial_view, "everyone": population(),
+        "items": items, "partial_view": m.partial_view, "everyone": pop, "population": population_view,
         "method": {"en": "For each past month I stood on the same day, used only what I could see then, and replayed your "
                          "real bills, your real surprises and your real payday.",
                    "fi": "Jokaisen menneen kuukauden kohdalla seisoin samassa päivässä, käytin vain silloin näkyvissä ollutta "

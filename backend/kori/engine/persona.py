@@ -10,6 +10,7 @@ import pandas as pd
 
 from .core import Money, r2
 from . import peers
+from ..taxonomy import CATEGORIES, EVERYDAY
 
 # trait -> (column, higher percentile means "more of this trait")
 TRAITS = {
@@ -114,7 +115,11 @@ def profile(m: Money) -> dict:
     top = [(k, s) for k, s in ranked if s >= 75][:3]
     primary = top[0][0] if top else "allrounder"
     name, tagline = COPY[primary][lang]
-    traits = [{"key": k, "name": COPY[k][lang][0], "percentile": int(round(s)), "evidence": _evidence(k, me, lang)}
+    evidence_me = me.copy()
+    evidence_me["everyday"] = m.usual[EVERYDAY]
+    for c in CATEGORIES:
+        evidence_me["cat_" + c] = m.usual["categories"][c]
+    traits = [{"key": k, "name": COPY[k][lang][0], "percentile": int(round(s)), "evidence": _evidence(k, evidence_me, lang)}
               for k, s in top]
     shape = []
     for key, col, high, lab in SHAPE:
@@ -128,11 +133,10 @@ def profile(m: Money) -> dict:
         "archetype": {"key": primary, "name": name, "tagline": tagline},
         "traits": traits, "shape": shape, "fitness": fitness,
         "strongest": strongest, "weakest": weakest,
-        "facts": {"everyday_monthly": r2(me["everyday"]), "fixed_share_of_income": round(float(me["fixed_share"]), 2) if pd.notna(me["fixed_share"]) else None,
+        "facts": {"everyday_monthly": r2(m.usual[EVERYDAY]), "fixed_share_of_income": round(float(me["fixed_share"]), 2) if pd.notna(me["fixed_share"]) else None,
                   "buffer_months": round(float(me["buffer_months"]), 1) if pd.notna(me["buffer_months"]) else None,
                   "payday_week_share": round(float(me["payday_week_share"]), 2) if pd.notna(me["payday_week_share"]) else None,
                   "weekend_share": round(float(me["weekend_share"]), 2) if pd.notna(me["weekend_share"]) else None,
                   "purchases_per_month": round(float(me["tx_pm"]), 1)},
-        "compared_with": {"en": f"all {len(peers.table()):,} customers, last 12 full months",
-                          "fi": f"kaikki {len(peers.table())} asiakasta, viimeiset 12 täyttä kuukautta"}[lang],
+        "compared_with": peers.usual_window(lang),
     }

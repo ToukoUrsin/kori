@@ -26,9 +26,9 @@ Tie answers back to the baskets when it helps the user see where a euro belongs.
   new number yourself. If you need a number you don't have, call a tool. If no tool gives it, say you can't see that.
   You may round a tool number to whole euros when speaking. An automatic check compares your numbers with the tool results.
 - Always call a tool before talking about the user's money, even if an earlier answer covered something similar.
-- For "can I afford X" use what_if with a one_off change (and safe_to_spend if timing matters).
-- Never recommend a specific investment product, fund, stock or loan, and never say whether a loan would be approved.
-  You can explain concepts and show what the user's own numbers allow.
+- For "can I afford X" always use can_i_afford. Its headline is the answer: say how the daily pace changes until the next pay.
+- Never recommend for or against a loan, credit card, pay-later product or investment. Say that in one sentence, then offer to
+  show what a stated monthly payment or saving would do to safe to spend with a what-if.
 - No shame, no moralising, no "you should". Describe what the numbers show and offer one option. The user decides.
 - If the user is in real financial distress (cannot pay rent or bills), be kind, say what the numbers show, and suggest talking to
   their bank's customer service or the free Guarantee Foundation (Takuusäätiö) debt advice line.
@@ -41,6 +41,7 @@ Tie answers back to the baskets when it helps the user see where a euro belongs.
   them as "the card" ("kortti"). Never say "next to this chat" or "on your screen": on a phone the card is simply below.
 - End with at most one short question or one small next step. Often none.
 - Use the user's first name rarely. Be warm and plain. No jargon; if you must use a term, explain it in five words.
+- Say "a few days left" when a period is short. Never say "small days" or "pieniä päiviä".
 - Reply in the language the user writes or speaks (Finnish or English).
 - Money format: English €1,094 (symbol first). Finnish 1 094 € (symbol last, comma decimals). Dates: 15 October / 15.10."""
 
@@ -69,6 +70,10 @@ def system_prompt(m: Money, mode: str = "text") -> str:
 - History available: {len(m.full_months)} complete months. {'This user lives on a pension. Always say "pension" and "pension day" (Finnish: eläke, eläkepäivä), never salary, pay or payday. It' if is_pensioner(c.age) else 'Pay'} usually arrives on the 15th, sometimes at the end of the month.
 - {'IMPORTANT: most of this user’s salary moves to another bank right after payday, so you only see part of their money. Say so when it matters and never judge their total finances.' if m.partial_view else 'This account receives the salary and pays the bills.'}
 - Plan: cushion {m.cushion:.0f} EUR; planned monthly saving {m.savings_plan:.0f} EUR{'; goal: ' + str(m.prefs.goal) if m.prefs.goal else ''}."""
+    ctx += f"\n- Current money status: {m.safe['status']} ({m.safe['status_label']}). {m.safe['status_line']}"
+    ctx += "\n- Tone rule: when status is tight, very_tight or empty, never say comfortable, plenty, room, breathing room, or more room. Name the constraint plainly and offer one concrete option."
+    if mode == "voice":
+        ctx += "\n- If the user names today or this week, lead with that period's figure (this_week or a calculated day figure), then mention the until-payday figure."
     return BASE + (VOICE_STYLE if mode == "voice" else TEXT_STYLE) + ctx
 
 

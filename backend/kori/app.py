@@ -48,7 +48,9 @@ def _persona(m: Money) -> dict:
     p = S.PERSONA_BY_ID.get(m.customer_id)
     name = p["name"] if p else m.customer_id
     return {"id": m.customer_id, "name": name, "age": m.customer.age, "area": m.customer.area,
-            "blurb": p["blurb"][lang] if p else "", "partial_view": m.partial_view}
+            "blurb": p["blurb"][lang] if p else "", "partial_view": m.partial_view,
+            "pay_word": (("eläkepäivä" if lang == "fi" else "pension day") if m.customer.age >= 68 else
+                         ("palkkapäivä" if lang == "fi" else "payday"))}
 
 
 @app.exception_handler(ValueError)
@@ -68,7 +70,8 @@ def personas(lang: str = "en"):
     out = []
     for p in S.PERSONAS:
         m = Money(p["id"], prefs=S.Prefs(lang=_lang(lang)))
-        out.append({**_persona(m), "safe": m.safe["amount"], "status": m.safe["status"]})
+        out.append({**_persona(m), "safe": m.safe["amount"], "status": m.safe["status"],
+                    "lessons_total": len(lessons.build(m))})
     return out
 
 
@@ -100,13 +103,16 @@ def home(customer: str, lang: str = "en", x_kori_device: str | None = Header(Non
     prof = persona.profile(m)
     fc = C.forecast_card(m)
     return W(m, {
-        "persona": _persona(m), "today": m.today.isoformat(),
+        "persona": _persona(m), "pay_word": ("eläkepäivä" if m.customer.age >= 68 and m.prefs.lang == "fi" else
+                                               "pension day" if m.customer.age >= 68 else
+                                               "palkkapäivä" if m.prefs.lang == "fi" else "payday"), "today": m.today.isoformat(),
         "greeting": L(f"Hi {S.name_of(customer)}", f"Hei {S.name_of(customer)}"),
         "safe": {**m.safe, "cushion": m.cushion}, "forecast": fc["data"], "baskets": m.baskets(),
         "notices": insights.notices(m, 5), "save": m.safe_to_save,
         "profile": {"archetype": prof["archetype"], "fitness": prof["fitness"], "shape": prof["shape"]},
         "suggestions": SUGGEST[m.prefs.lang], "goal": _goal(m),
-        "lessons": {"done": sum(1 for x in ls if done.get(x["id"], {}).get("done")), "total": len(ls),
+        "lessons_total": len(ls),
+        "lessons": {"done": sum(1 for x in ls if done.get(x["id"], {}).get("done")), "total": len(ls), "lessons_total": len(ls),
                     "next": {"id": nxt["id"], "title": nxt["title"], "minutes": nxt["minutes"], "concept": nxt["concept"]} if nxt else None},
         "pins": len(st.get("pins", [])),
     })
@@ -201,6 +207,7 @@ class PlanReq(BaseModel):
 def plan_put(req: PlanReq, x_kori_device: str | None = Header(None)):
     m, st, device = _money(req.customer, req.lang, x_kori_device)
     p = st["prefs"]
+    before_safe = m.safe
     if req.cushion is not None:
         p["cushion"] = max(0.0, req.cushion)
     if req.savings_goal_monthly is not None:
@@ -212,7 +219,14 @@ def plan_put(req: PlanReq, x_kori_device: str | None = Header(None)):
     if req.basket_overrides is not None:
         p["basket_overrides"] = {k: v for k, v in req.basket_overrides.items() if k in CATEGORIES and v in BASKETS}
     S.save(device, req.customer, st)
-    return plan(req.customer, req.lang, x_kori_device)
+    result = plan(req.customer, req.lang, x_kori_device)
+    after_safe = result["safe"]
+    if req.cushion is not None and req.cushion > before_safe["cash"]["cushion"] and after_safe["amount"] == before_safe["amount"]:
+        result["reason"] = {"en": "Safe to spend did not move because this pay cycle's income limit is already lower than the cash available.",
+                             "fi": "Turvallinen käyttövara ei muuttunut, koska tämän palkkajakson tuloraja on jo tilillä vapaana olevaa rahaa pienempi."}[m.prefs.lang]
+    else:
+        result["reason"] = None
+    return result
 
 
 # ------------------------------------------------------------------ lessons
@@ -251,9 +265,9 @@ async def lesson_teachback(lesson_id: str, req: TeachReq, x_kori_device: str | N
     if not le:
         raise HTTPException(404, "lesson not available")
     g = await agent.grade_teachback(m.prefs.lang, le, req.answer.strip())
-    if g["passed"]:
-        st.setdefault("lessons", {})[lesson_id] = {"done": True, "ts": time.time(), "answer": req.answer.strip()[:400]}
-        S.save(device, req.customer, st)
+    st.setdefault("lessons", {})[lesson_id] = {"done": bool(g["passed"]), "ts": time.time(),
+                                                "answer": req.answer.strip()[:400], "teachback": g}
+    S.save(device, req.customer, st)
     return g
 
 
@@ -264,7 +278,10 @@ class DoneReq(BaseModel):
 @app.post("/api/lessons/{lesson_id}/done")
 def lesson_done(lesson_id: str, req: DoneReq, x_kori_device: str | None = Header(None)):
     _, st, device = _money(req.customer, "en", x_kori_device)
-    st.setdefault("lessons", {})[lesson_id] = {"done": True, "ts": time.time()}
+    previous = st.get("lessons", {}).get(lesson_id) or {}
+    if not previous.get("teachback", {}).get("passed"):
+        return JSONResponse({"ok": False, "skipped": True, "reason": "teachback_not_passed"}, status_code=409)
+    st.setdefault("lessons", {})[lesson_id] = {**previous, "done": True, "ts": time.time()}
     S.save(device, req.customer, st)
     return {"ok": True}
 

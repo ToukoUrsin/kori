@@ -6,12 +6,13 @@ from __future__ import annotations
 
 from datetime import date, timedelta
 
-from ..taxonomy import CATEGORIES, EVERYDAY, FIXED, SURPRISE, cat_label
-from .core import Money, month_bounds, r2
+from ..taxonomy import CATEGORIES, EVERYDAY, FIXED, SURPRISE, cat_label, kind_label
+from .core import DAYS_PER_MONTH, Money, month_bounds, r2
 from .query import fmt_day
 from . import peers
 
 SMALL = 15.0
+PURCHASES, OSTOKSET = ("purchase", "purchases"), ("ostos", "ostosta")
 
 
 def eur(v: float, lang: str, cents: bool = False) -> str:
@@ -25,15 +26,39 @@ def eur(v: float, lang: str, cents: bool = False) -> str:
     return f"{'−' if neg else ''}€{s}"
 
 
-def slips(m: Money, days: int = 90) -> dict:
-    """Small everyday purchases that are easy to forget."""
+def slips(m: Money, days: int = 90, under: float = SMALL) -> dict:
+    """Small everyday purchases that are easy to forget: how many, what they add up to, and where they go."""
+    lang = m.prefs.lang
+    days = int(max(7, min(365, days or 90)))
+    under = float(under or SMALL)
     start = m.today - timedelta(days=days - 1)
-    d = m.df[(m.df["date"] >= start) & (m.df["basket"] == EVERYDAY) & (m.df["spend"] > 0) & (m.df["spend"] < SMALL)]
+    start = max(start, m.df["date"].iloc[0])
+    days = (m.today - start).days + 1
+    d = m.df[(m.df["date"] >= start) & (m.df["basket"] == EVERYDAY) & (m.df["spend"] > 0) & (m.df["spend"] < under)]
+    every = m.df[(m.df["date"] >= start) & (m.df["basket"] == EVERYDAY)]["spend"].sum()
     total = r2(d["spend"].sum())
     by_kind = d.groupby("kind")["spend"].agg(["sum", "count"]).sort_values("sum", ascending=False)
-    return {"days": days, "under": SMALL, "count": int(len(d)), "total": total,
-            "per_year": r2(total * 365 / days), "average": r2(total / len(d)) if len(d) else 0.0,
-            "top_kinds": [{"kind": k, "total": r2(s), "count": int(c)} for k, (s, c) in by_kind.head(3).iterrows()]}
+    by_place = d[d["merchant"].notna()].groupby("merchant")["spend"].agg(["sum", "count"]).sort_values(["count", "sum"], ascending=False)
+    E = lambda v, cents=False: eur(v, lang, cents)
+    L = lambda en, fi: en if lang == "en" else fi
+    return {"days": days, "under": under, "count": int(len(d)), "total": total,
+            "per_year": r2(total * 365 / days), "per_month": r2(total * DAYS_PER_MONTH / days),
+            "average": r2(total / len(d)) if len(d) else 0.0,
+            "share_of_everyday": round(float(total / every), 3) if every > 0 else 0.0,
+            "top_kinds": [{"kind": k, "label": kind_label(k, lang), "total": r2(s), "count": int(c)} for k, (s, c) in by_kind.head(3).iterrows()],
+            "top_places": [{"merchant": k, "total": r2(s), "count": int(c)} for k, (s, c) in by_place.head(3).iterrows()],
+            "window_label": L(f"Purchases under {E(under)}, the last {days} days", f"Alle {E(under)} ostokset, viimeiset {days} päivää"),
+            "headline": (L(f"{len(d)} purchases under {E(under)} in the last {days} days came to {E(total)}. At this rate that is {E(total * 365 / days)} a year.",
+                           f"{len(d)} alle {E(under)} ostosta viimeisten {days} päivän aikana teki yhteensä {E(total)}. Tällä tahdilla se on {E(total * 365 / days)} vuodessa.")
+                         if len(d) != 1 else
+                         L(f"1 purchase under {E(under)} in the last {days} days: {E(total, True)}.",
+                           f"1 alle {E(under)} ostos viimeisten {days} päivän aikana: {E(total, True)}."))}
+
+
+def plural(n: int, lang: str, en: tuple[str, str], fi: tuple[str, str]) -> str:
+    """'1 purchase' / '3 purchases'; '1 ostos' / '3 ostosta'."""
+    one, many = en if lang == "en" else fi
+    return f"{n} {one if n == 1 else many}"
 
 
 def negative_days(m: Money, months: int = 12) -> dict:
@@ -144,11 +169,12 @@ def notices(m: Money, limit: int = 6) -> list[dict]:
                 hot.append(c)
     if hot:
         c = max(hot, key=lambda x: x["amount"] - x["usual"])
+        left_days = b["days_in_month"] - b["days_elapsed"]
         add("hot_" + c["category"], "warn", 80,
             L(f"{c['label']} is at {E(c['amount'])} this month. Your usual whole month is {E(c['usual'])}",
               f"{c['label']}: {E(c['amount'])} tässä kuussa. Tavallinen koko kuukautesi on {E(c['usual'])}"),
-            L(f"{c['count']} purchases so far, with {b['days_in_month'] - b['days_elapsed']} days of the month left.",
-              f"{c['count']} ostosta tähän mennessä, kuukautta jäljellä {b['days_in_month'] - b['days_elapsed']} päivää."),
+            L(f"{plural(c['count'], lang, PURCHASES, OSTOKSET)} so far, with {left_days} {'day' if left_days == 1 else 'days'} of the month left.",
+              f"{plural(c['count'], lang, PURCHASES, OSTOKSET)} tähän mennessä, kuukautta jäljellä {left_days} {'päivä' if left_days == 1 else 'päivää'}."),
             L(f"Show me my {c['label'].lower()} spending this month", f"Näytä {c['label'].lower()} tässä kuussa"),
             metric=r2(c["amount"] - c["usual"]))
 

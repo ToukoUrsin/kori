@@ -109,3 +109,28 @@ def check(text: str, allowed: set[float], lang: str = "en") -> list[str]:
         if not _ok(v, tok, allowed):
             bad.append(tok)
     return list(dict.fromkeys(bad))
+
+
+def consistency_issues(results: list[dict]) -> list[dict]:
+    """Find contradictory canonical quantities returned in one turn.
+
+    Only fields with an explicit canonical name participate. Transaction totals,
+    category totals and labelled windows are intentionally left alone.
+    """
+    found: dict[str, list[float]] = {}
+
+    def walk(obj, parent: str = ""):
+        if isinstance(obj, dict):
+            for key, value in obj.items():
+                if key in ("monthly_income", "income_typical") and isinstance(value, (int, float)):
+                    found.setdefault("monthly_income", []).append(float(value))
+                elif parent == "usual_month" and key == "income" and isinstance(value, (int, float)):
+                    found.setdefault("monthly_income", []).append(float(value))
+                walk(value, key)
+        elif isinstance(obj, list):
+            for value in obj:
+                walk(value, parent)
+    for result in results:
+        walk(result)
+    return [{"quantity": key, "values": sorted({round(v, 2) for v in vals})}
+            for key, vals in found.items() if len({round(v, 2) for v in vals}) > 1]

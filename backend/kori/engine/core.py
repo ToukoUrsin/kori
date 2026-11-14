@@ -220,6 +220,8 @@ class Money:
             EVERYDAY: self._typ(EVERYDAY, 6, "median"),
             "invested": self.invest_typical,
             "categories": cats,
+            "window": {"en": "last 6 complete months, median for baskets and mean for categories",
+                       "fi": "viimeiset 6 täyttä kuukautta, koreissa mediaani ja kategorioissa keskiarvo"}[self.prefs.lang],
         }
         u["spend"] = r2(u[FIXED] + u[SURPRISE] + u[EVERYDAY])
         u["left_over"] = r2(u["income"] - u["spend"] - u["invested"])
@@ -353,6 +355,7 @@ class Money:
         for b in out["baskets"]:
             b["share"] = round(b["amount"] / total, 3) if total else 0.0
         out["usual_spend"] = self.usual["spend"]
+        out["usual_window"] = self.usual["window"]
         out["saved"] = r2(row["invested"] - row["withdrawn"]) if row is not None else 0.0
         out["left_over"] = r2(out["income"] - out["spend"] - out["saved"])
         return out
@@ -436,9 +439,11 @@ class Money:
             need = r2(extra_fixed + extra_days * usual_day)
             late = {"date": self.late_payday.isoformat(), "extra_days": extra_days, "rate": self.late_pay_rate,
                     "extra_needed": need, "covered": bool(free_total - amount >= need)}
+        label, line = self._status_words(status, per_day, usual_day, free_cash)
         return {
             "amount": amount, "per_day": per_day, "this_week": r2(per_day * week_days), "week_days": week_days,
             "days_to_payday": days, "next_payday": self.next_payday.isoformat(), "status": status,
+            "status_label": label, "status_line": line,
             "limit": limit, "balance": self.balance,
             "usual_per_day": usual_day, "pace_ratio": round(ratio, 2) if usual_day > 0 else None,
             "budget": {"income": self.income_typical, "fixed": self.usual[FIXED], "surprise": surprise_monthly,
@@ -450,6 +455,36 @@ class Money:
                      "saving_left": savings_left, "cushion": self.cushion, "free": free_cash},
             "upcoming": upcoming, "spoken_for": spoken, "late_pay": late, "partial_view": self.partial_view,
         }
+
+    def _status_words(self, status: str, per_day: float, usual_day: float, free_cash: float) -> tuple[str, str]:
+        """The status in plain words: a short label and one sentence that says what is meant."""
+        from .insights import eur          # local import: insights imports this module
+        lang = self.prefs.lang
+        L = lambda en, fi: en if lang == "en" else fi
+        pd_, us = eur(per_day, lang, True), eur(usual_day, lang, True)
+        if self.partial_view:
+            return (L("This account only", "Vain tämä tili"),
+                    L(f"I only see part of your money. On this account {pd_} a day is free until payday.",
+                      f"Näen vain osan rahoistasi. Tällä tilillä on vapaana {pd_} päivässä palkkapäivään asti."))
+        if status == "comfortable":
+            return (L("On track", "Hyvässä tahdissa"),
+                    L(f"{pd_} a day until payday. Your usual pace is {us} a day, so your usual days fit.",
+                      f"{pd_} päivässä palkkapäivään asti. Tavallinen tahtisi on {us} päivässä, joten tavalliset päiväsi mahtuvat siihen."))
+        if status == "tight":
+            return (L("Tight", "Tiukkaa"),
+                    L(f"{pd_} a day until payday. Your usual pace is {us} a day, so it takes some care.",
+                      f"{pd_} päivässä palkkapäivään asti. Tavallinen tahtisi on {us} päivässä, joten se vaatii tarkkuutta."))
+        if status == "very_tight":
+            return (L("Very tight", "Hyvin tiukkaa"),
+                    L(f"{pd_} a day until payday, far under your usual {us} a day. The bills due before payday are already set aside.",
+                      f"{pd_} päivässä palkkapäivään asti, selvästi alle tavallisen tahtisi ({us} päivässä). Ennen palkkapäivää erääntyvät laskut on jo varattu."))
+        if free_cash < 0:
+            return (L("Short", "Vajaa"),
+                    L(f"The account is {eur(-free_cash, lang)} short of the bills and reserves due before payday.",
+                      f"Tililtä puuttuu {eur(-free_cash, lang)} ennen palkkapäivää erääntyvistä laskuista ja varauksista."))
+        return (L("Used up", "Käytetty"),
+                L("This pay cycle's everyday money is used up. The bills due before payday are already set aside.",
+                  "Tämän palkkajakson arkiraha on käytetty. Ennen palkkapäivää erääntyvät laskut on jo varattu."))
 
     # ------------------------------------------------------------ forecast
     def forecast(self, pace: str = "usual") -> dict:
@@ -484,9 +519,31 @@ class Money:
                 low, low_date = bal, d
             series.append({"date": d.isoformat(), "balance": r2(bal), "events": events})
         before_pay = series[-2]["balance"] if len(series) >= 2 else r2(bal)
-        return {"pace": pace, "series": series, "lowest": {"balance": r2(low), "date": low_date.isoformat()},
+        return {"pace": pace, "series": series, "bills": self.bills_on_the_way(),
+                "lowest": {"balance": r2(low), "date": low_date.isoformat()},
                 "before_payday": before_pay, "next_payday": self.next_payday.isoformat(),
                 "goes_negative": bool(low < 0), "below_cushion": bool(low < self.cushion)}
+
+    def bills_on_the_way(self) -> dict:
+        """Every fixed must expected before payday, with one total. The total is the same figure as
+        `safe.cash.fixed_due`; `largest_day` is the single day with the most leaving (what a chart marks)."""
+        from .query import fmt_day          # local import: query imports this module
+        lang = self.prefs.lang
+        items = self.upcoming_fixed(self.next_payday)
+        by_day: dict[str, list[dict]] = {}
+        for it in items:
+            by_day.setdefault(it["date"], []).append(it)
+        largest = None
+        if by_day:
+            d, its = max(by_day.items(), key=lambda kv: sum(i["amount"] for i in kv[1]))
+            day = fmt_day(date.fromisoformat(d), lang)
+            largest = {"date": d, "total": r2(sum(i["amount"] for i in its)), "count": len(its),
+                       "label": {"en": f"Bills on {day}", "fi": f"Laskut {day}"}[lang] if len(its) > 1
+                       else {"en": f"{its[0]['label']} on {day}", "fi": f"{its[0]['label']} {day}"}[lang]}
+        return {"total": r2(sum(i["amount"] for i in items)), "count": len(items),
+                "label": {"en": "Bills before payday", "fi": "Laskut ennen palkkapäivää"}[lang],
+                "items": [{"date": i["date"], "category": i["category"], "label": i["label"], "amount": i["amount"]} for i in items],
+                "largest_day": largest}
 
     # --------------------------------------------------------- safe to save
     @cached_property
@@ -530,6 +587,7 @@ class Money:
             "usual_month": {"income": self.usual["income"], "fixed": self.usual[FIXED], "surprise": self.usual[SURPRISE],
                             "everyday": self.usual[EVERYDAY], "saving": self.usual["invested"],
                             "left_over": self.usual["left_over"],
-                            "categories": {cat_label(k, lang): v for k, v in self.usual["categories"].items() if v > 0}},
+                            "categories": {cat_label(k, lang): v for k, v in self.usual["categories"].items() if v > 0},
+                            "window": self.usual["window"]},
             "months_of_history": len(self.full_months),
         }

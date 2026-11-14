@@ -7,6 +7,8 @@ made it (`source`), so it can be pinned to "My view" and recomputed later on fre
 from __future__ import annotations
 
 from ..engine import insights, lessons, peers, persona
+from ..engine.afford import afford
+from ..engine.calc import calculate
 from ..engine.core import Money
 from ..engine.insights import eur
 from ..engine.query import query, resolve_period
@@ -31,7 +33,9 @@ def _clean(args: dict) -> dict:
 def query_title(m: Money, a: dict) -> tuple[str, str]:
     lang = m.prefs.lang
     L = lambda en, fi: en if lang == "en" else fi
-    if a.get("kinds"):
+    if a.get("flow") == "income":
+        subject = L("Income payments", "Tulot ja maksut")
+    elif a.get("kinds"):
         subject = ", ".join(kind_label(k, lang) for k in a["kinds"][:3])
     elif a.get("categories"):
         subject = ", ".join(cat_label(c, lang) for c in a["categories"][:3])
@@ -66,6 +70,8 @@ def query_title(m: Money, a: dict) -> tuple[str, str]:
 
 
 def query_card(m: Money, args: dict) -> dict:
+    if args.get("slips"):
+        return slips_card(m)
     a = _clean({k: args.get(k) for k in QUERY_KEYS})
     g = a.get("group_by")
     limit = 6 if not g else 0 if g in TREND_GROUPS else 3
@@ -78,6 +84,29 @@ def query_card(m: Money, args: dict) -> dict:
         if len(full) >= 3:
             res["average"] = round(sum(x["total"] for x in full) / len(full), 2)
     return card(type_, title, res, {"tool": "spending", "args": a}, sub)
+
+
+def slips_card(m: Money) -> dict:
+    L = lambda en, fi: en if m.prefs.lang == "en" else fi
+    data = insights.slips(m)
+    return card("slips", L("Small purchases", "Pienet ostokset"), data,
+                {"tool": "small_purchases", "args": {}},
+                L("Under €15 in the last 90 days", "Alle 15 € viimeisten 90 päivän aikana"))
+
+
+def afford_card(m: Money, args: dict) -> dict:
+    a = _clean({k: args.get(k) for k in ("amount", "label", "basket")})
+    data = afford(m, a.get("amount"), a.get("label"), a.get("basket"))
+    return card("afford", data["label"], data, {"tool": "can_i_afford", "args": a})
+
+
+def calculate_card(m: Money, args: dict, allowed: set[float] | None = None) -> dict:
+    a = _clean({k: args.get(k) for k in ("expression", "values")})
+    values = a.get("values") or {}
+    if isinstance(values, dict):
+        allowed = set(allowed or ()) | {abs(float(v)) for v in values.values() if isinstance(v, (int, float))}
+    data = calculate(m, a.get("expression", ""), allowed=allowed or set())
+    return card("calculate", data["expression"], data, {"tool": "calculate", "args": a})
 
 
 def safe_card(m: Money) -> dict:
@@ -138,7 +167,8 @@ def track_card(m: Money) -> dict:
     from ..engine.trackrecord import track_record
     L = lambda en, fi: en if m.prefs.lang == "en" else fi
     t = track_record(m)
-    sub = L(f"Held in {t['held']} of your last {t['months_checked']} months", f"Piti {t['held']} kertaa viimeisistä {t['months_checked']} kuukaudestasi")
+    sub = L(f"Safe number would have held in {t['months_number_would_have_held']} months; you stayed within it in {t['months_stayed_within_number']} months",
+             f"Turvallinen luku olisi pitänyt {t['months_number_would_have_held']} kuukautena; pysyit siinä {t['months_stayed_within_number']} kuukautena")
     return card("track", L("Was this number right before?", "Onko tämä luku pitänyt ennen?"), t, {"tool": "track_record", "args": {}}, sub)
 
 
@@ -161,6 +191,12 @@ def from_source(m: Money, tool: str, args: dict) -> dict | None:
     args = args or {}
     if tool == "spending":
         return query_card(m, args)
+    if tool == "small_purchases":
+        return slips_card(m)
+    if tool == "can_i_afford":
+        return afford_card(m, args)
+    if tool == "calculate":
+        return calculate_card(m, args)
     if tool == "safe_to_spend":
         return safe_card(m)
     if tool == "balance_forecast":

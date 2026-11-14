@@ -132,6 +132,26 @@ WITHHELD = {
            "Kysy uudelleen, niin lasken sen alusta."),
 }
 
+_CREDIT_WORDS = re.compile(r"\b(loan|credit|pay[- ]?later|installment|consumer loan|investment|stock|fund)s?\b|\b(luotto|kulutusluotto|osamaksu|luottokortti|sijoit|osake|rahasto)", re.I)
+_BAD_TONE = {
+    "en": re.compile(r"\b(comfortable|plenty|room|breathing room|more room)\b", re.I),
+    "fi": re.compile(r"\b(mukavasti|paljon liikkumavaraa|enemmän liikkumavaraa|reilusti tilaa|hyvin varaa|tilaa)\b", re.I),
+}
+
+
+def credit_boundary(text: str, lang: str) -> str | None:
+    """A fixed boundary keeps model wording from becoming credit or investment advice."""
+    if not _CREDIT_WORDS.search(text or ""):
+        return None
+    return ({"en": "I cannot recommend for or against loans, credit cards, pay-later products or investments. I can show what a monthly payment would do to your safe-to-spend number in a simple scenario.",
+             "fi": "En voi suositella lainaa, luottokorttia, osamaksua tai sijoitusta enkä niitä vastaan. Voin näyttää yksinkertaisella laskelmalla, miten tietty kuukausierä muuttaisi turvallista käyttövaraasi."}[lang])
+
+
+def tone_violations(text: str, status: str, lang: str) -> list[str]:
+    if status not in ("tight", "very_tight", "empty"):
+        return []
+    return _BAD_TONE["fi" if lang == "fi" else "en"].findall(text or "")
+
 
 FAST_FIRST = True                # let the small model choose the calculation
 HEDGE = (0.0, 4.5, 9.0)          # seconds after which the 1st, 2nd and 3rd attempt of a model call start
@@ -207,6 +227,7 @@ async def run_turn(sess: Session, text: str, mode: str, emit: Emit) -> dict:
     allowed: set[float] = grounding.collect(text)
     used: list[str] = []
     cards: list[dict] = []
+    results: list[dict] = []
     final = ""
     final_content = None
     retried = False
@@ -236,11 +257,12 @@ async def run_turn(sess: Session, text: str, mode: str, emit: Emit) -> dict:
                 label = T.STATUS.get(name, ("Thinking", "Mietin"))[0 if sess.lang == "en" else 1]
                 await emit("status", {"tool": name, "label": label, "first": not used})
                 try:
-                    out = T.execute(m, st, name, args)
+                    out = T.execute(m, st, name, args, allowed=allowed)
                 except Exception as e:   # noqa: BLE001 - the model gets the error and can fix its arguments
                     log.info("tool %s%s failed: %s", name, args, e)
                     out = T.ToolOut({"error": str(e)[:400]})
                 used.append(name)
+                results.append(out.result)
                 grounding.collect(out.result, allowed)
                 for c in out.cards:
                     cards.append(c)
@@ -262,17 +284,26 @@ async def run_turn(sess: Session, text: str, mode: str, emit: Emit) -> dict:
         final = _plain(_text_of(content))
         final_content = content
         flagged = grounding.check(final, allowed, sess.lang) if used or any(ch.isdigit() for ch in final) else []
+        flagged += [f"tone:{x}" for x in tone_violations(final, m.safe["status"], sess.lang)]
         if flagged and not retried:
             retried = True
             log.info("ungrounded numbers %s in: %s", flagged, final[:200])
+            tone = [x.removeprefix("tone:") for x in flagged if x.startswith("tone:")]
+            reason = ("Do not use comfortable, plenty, room or similar reassuring language for this tight status. State the constraint plainly."
+                      if tone else
+                      "These figures are not in any tool result: " + ", ".join(flagged) + ". Use only numbers that appear in the tool results.")
             turn_probe = [content, types.Content(role="user", parts=[types.Part(text=(
-                "[automatic number check] These figures are not in any tool result: " + ", ".join(flagged) +
-                ". Rewrite your last answer using only numbers that appear in the tool results (call a tool if you need another "
-                "number). Reply with the corrected answer only, in the same language."))])]
+                "[automatic answer check] " + reason + " Call a tool if you need another number. Reply with the corrected answer only, in the same language."))])]
             turn.extend(turn_probe)
             continue
         break
 
+    boundary = credit_boundary(text, sess.lang)
+    if boundary:
+        final = boundary
+        final_content = types.Content(role="model", parts=[types.Part(text=final)])
+        flagged = []
+        retried = False
     withheld = bool(flagged)
     if withheld:
         # Second failure: the draft is not shown at all. The cards carry the engine's own figures.
@@ -283,7 +314,7 @@ async def run_turn(sess: Session, text: str, mode: str, emit: Emit) -> dict:
     if retried and final_content is not None:
         # keep the history clean: drop the rejected draft and the check message
         idx = next((i for i, c in enumerate(turn) if c.role == "user" and c.parts and c.parts[0].text
-                    and c.parts[0].text.startswith("[automatic number check]")), None)
+                    and c.parts[0].text.startswith("[automatic answer check]")), None)
         if idx is not None:
             turn = turn[:idx - 1] + turn[idx + 1:]
     if final_content is not None and (not turn or turn[-1] is not final_content):
@@ -294,9 +325,11 @@ async def run_turn(sess: Session, text: str, mode: str, emit: Emit) -> dict:
     sess.log.append({"role": "user", "text": text})
     sess.log.append({"role": "coach", "text": final, "cards": [c["id"] for c in cards]})
     await emit("text", {"text": final})
+    consistency = grounding.consistency_issues(results)
     done = {"grounded": not flagged, "flagged": flagged, "withheld": withheld, "error": failed,
             "checked": len(grounding.numbers_in_text(final, sess.lang)),
-            "followups": T.followups(used, sess.lang), "tools": used, "ms": int((time.time() - t0) * 1000)}
+            "followups": T.followups(used, sess.lang), "tools": used, "ms": int((time.time() - t0) * 1000),
+            "consistency": consistency}
     await emit("done", done)
     return {"text": final, "cards": cards, **done}
 
@@ -314,11 +347,46 @@ async def grade_teachback(lang: str, lesson: dict, answer: str) -> dict:
     try:
         resp = await _generate([types.Content(role="user", parts=[types.Part(text=prompt)])], cfg)
         out = json.loads(resp.text)
-        return {"passed": bool(out.get("passed")), "got": out.get("got", ""), "missing": out.get("missing", ""),
-                "encouragement": out.get("encouragement", ""), "by": "gemini"}
+        result = {"passed": bool(out.get("passed")), "got": out.get("got", ""), "missing": out.get("missing", ""),
+                  "encouragement": out.get("encouragement", ""), "by": "gemini"}
     except Exception as e:   # noqa: BLE001
         log.warning("teachback grading failed: %s", e)
         ok = len(answer.split()) >= 6
-        return {"passed": ok, "got": {"en": "Thanks for putting it in your own words.", "fi": "Kiitos, että sanoit sen omin sanoin."}[lang],
-                "missing": "" if ok else {"en": "Try a full sentence about the main idea.", "fi": "Kokeile kokonaista lausetta pääajatuksesta."}[lang],
-                "encouragement": "", "by": "fallback"}
+        result = {"passed": ok, "got": {"en": "Thanks for putting it in your own words.", "fi": "Kiitos, että sanoit sen omin sanoin."}[lang],
+                  "missing": "" if ok else {"en": "Try a full sentence about the main idea.", "fi": "Kokeile kokonaista lausetta pääajatuksesta."}[lang],
+                  "encouragement": "", "by": "fallback"}
+    # The model's generous boolean is useful copy, but completion is gated by
+    # a small deterministic concept check so the exact misconception cannot pass.
+    text = (answer or "").lower()
+    concept = lesson.get("id", "")
+    groups = {
+        "baskets": ([("fixed", "kiinte"), ("surprise", "ylläty"), ("everyday", "arki")], ("steer", "ohja", "control")),
+        "safe": ([("bill", "lask", "rent", "vuokr", "reserve", "vara")], ("safe", "turvall", "budget", "budjet")),
+        "surprise": ([("irregular", "epäsäänn", "unpredict", "arvaam")], ("reserve", "vara", "set aside", "sivuun")),
+        "slips": ([("small", "pien", "tiny")], ("add", "sum", "year", "vuod")),
+        "paycycle": ([("payday", "palkkapäiv", "income", "tulo")], ("before", "ennen", "rent", "asum")),
+        "buffer": ([("month", "kuukaus")], ("must", "pakoll", "essential")),
+        "payfirst": ([("payday", "palkkapäiv", "first", "ensin")], ("save", "sääst", "siir")),
+        "whatif": ([("month", "kuukaus")], ("year", "vuod", "annual")),
+    }
+    req = groups.get(concept)
+    if req:
+        a, b = req
+        has_a = all(any(k in text for k in group) for group in a)
+        has_b = any(k in text for k in b)
+        misconception = concept == "safe" and any(x in text for x in ("balance is what i can spend", "saldo on se mitä voin käyttää", "katson vain saldon"))
+        if misconception:
+            has_a = has_b = False
+        grade = "got_it" if has_a and has_b and len(text.split()) >= 4 else "partly" if (has_a or has_b) and len(text.split()) >= 3 else "not_yet"
+        result["passed"] = grade == "got_it"
+        result["grade"] = grade
+        if grade != "got_it":
+            result["missing"] = {"en": "Mention the money already set aside and why the number lasts until payday.",
+                                  "fi": "Mainitse jo varatut rahat ja miksi luku kestää palkkapäivään asti."}[lang] if concept == "safe" else result.get("missing") or {"en": "Add the main idea in one clear sentence.", "fi": "Lisää pääajatus yhteen selkeään lauseeseen."}[lang]
+            result["hint"] = {"en": "Try again using the lesson's own words.", "fi": "Yritä uudelleen oppitunnin omilla sanoilla."}[lang]
+        else:
+            result["hint"] = ""
+    else:
+        result["grade"] = "got_it" if result["passed"] else "not_yet"
+        result["hint"] = "" if result["passed"] else {"en": "Try again with the main idea.", "fi": "Yritä uudelleen pääajatuksella."}[lang]
+    return result

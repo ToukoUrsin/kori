@@ -9,6 +9,7 @@ import copy
 from dataclasses import dataclass, field
 
 from ..engine import insights, lessons, persona
+from ..engine.afford import afford
 from ..engine.core import Money
 from ..engine.query import PERIODS
 from ..taxonomy import BASKETS, CATEGORIES, KINDS, kind_label
@@ -29,6 +30,12 @@ DECLARATIONS = [
                     "balance is already spoken for (upcoming fixed musts, surprise reserve, planned saving, cushion) and a late-pay "
                     "stress test. Use for 'what can I spend', 'can I afford X', 'how am I doing'.",
      "parameters": {"type": "object", "properties": {}}},
+    {"name": "can_i_afford",
+     "description": "Check one purchase against safe to spend. Return safe before and after, both daily paces until payday, the usual daily pace, a yes/tight/no verdict, any shortfall, surprise-reserve coverage, and options to wait or spread the cost. Use this for every can-I-afford question.",
+     "parameters": {"type": "object", "required": ["amount"], "properties": {
+         "amount": {"type": "number", "description": "One-off amount in euros"},
+         "label": {"type": "string", "description": "What the purchase is called"},
+         "basket": {"type": "string", "enum": ["everyday", "surprise"], "description": "everyday purchase, or surprise for an unavoidable must"}}}},
     {"name": "balance_forecast",
      "description": "Projected account balance day by day until the next payday, at the user's usual pace and at the safe pace, "
                     "with the lowest point and the bills on the way. Use for 'will I make it to payday', 'when is my money tightest'.",
@@ -42,7 +49,7 @@ DECLARATIONS = [
      "description": "Free exploration of the user's own transactions. Filter by period, category, kind (from merchant codes, e.g. taxi, "
                     "fast_food, supermarket), basket, merchant name, amount, weekday or hour; group the result; compare with an earlier "
                     "period. Returns totals, counts, groups and the largest or latest transactions. Use this for any 'how much did I "
-                    "spend on…', 'show me…', 'when do I…' question about a category, a merchant, a kind of purchase or a time. Also covers income and saving via flow.",
+                    "spend on…', 'show me…', 'when do I…' question about a category, a merchant, a kind of purchase or a time. Also covers income and saving via flow. For a monthly income question with flow=income, say the single monthly_income field and do not report period_total.",
      "parameters": {"type": "object", "properties": {
          "period": _period,
          "date_from": {"type": "string", "description": "YYYY-MM-DD, instead of period"},
@@ -59,6 +66,13 @@ DECLARATIONS = [
          "group_by": {"type": "string", "enum": ["category", "kind", "merchant", "basket", "month", "week", "day", "weekday", "hour", "size"]},
          "compare": {"type": "string", "enum": ["previous", "same_period_last_year"], "description": "Add a comparison with an earlier period."},
          "sort": {"type": "string", "enum": ["largest", "recent"]}}}},
+    {"name": "small_purchases",
+     "description": "Show the app's own slips-through-your-fingers analysis: everyday purchases under 15 euros in the last 90 days, their count, total, yearly pace and top kinds. Use for where does my money slip through my fingers.",
+     "parameters": {"type": "object", "properties": {}}},
+    {"name": "calculate",
+     "description": "Do simple arithmetic on a number the user gave or a number in this turn's tool result. Supports +, minus, times, divide and percent. For example expression 15% of safe_to_spend.",
+     "parameters": {"type": "object", "required": ["expression"], "properties": {
+         "expression": {"type": "string"}, "values": {"type": "object", "additionalProperties": {"type": "number"}}}}},
     {"name": "what_if",
      "description": "Simulate changes on the user's own typical month: spend less or more on a category/kind/basket, cap it, add a new "
                     "monthly cost, change income, take a one-off hit (e.g. a broken washing machine) or save a monthly amount. Returns the "
@@ -228,10 +242,13 @@ def _explain(m: Money, concept: str) -> dict:
     return {"concept": concept, **base[concept]}
 
 
-def execute(m: Money, state: dict, name: str, args: dict) -> ToolOut:
+def execute(m: Money, state: dict, name: str, args: dict, allowed: set[float] | None = None) -> ToolOut:
     args = dict(args or {})
     if name == "safe_to_spend":
         return ToolOut(m.safe, [C.safe_card(m)])
+    if name == "can_i_afford":
+        c = C.afford_card(m, args)
+        return ToolOut(c["data"], [c])
     if name == "balance_forecast":
         c = C.forecast_card(m)
         d = c["data"]
@@ -244,7 +261,18 @@ def execute(m: Money, state: dict, name: str, args: dict) -> ToolOut:
         return ToolOut(c["data"], [c])
     if name == "spending":
         c = C.query_card(m, args)
-        return ToolOut(_slim_query(copy.deepcopy(c["data"])) | {"shown_as": c["title"] + ", " + (c["subtitle"] or "")}, [c])
+        if args.get("slips"):
+            return ToolOut(c["data"], [c])
+        # An empty lookup is useful to the model while it chooses a better
+        # filter, but an empty card only confuses the person.
+        has_answer = bool(c["data"].get("count") or c["data"].get("transactions") or c["data"].get("total"))
+        return ToolOut(_slim_query(copy.deepcopy(c["data"])) | {"shown_as": c["title"] + ", " + (c["subtitle"] or "")}, [c] if has_answer else [])
+    if name == "small_purchases":
+        c = C.slips_card(m)
+        return ToolOut(c["data"], [c])
+    if name == "calculate":
+        c = C.calculate_card(m, args, allowed=allowed)
+        return ToolOut(c["data"], [c])
     if name == "what_if":
         c = C.whatif_card(m, args)
         return ToolOut({k: v for k, v in c["data"].items() if k != "series"}, [c])

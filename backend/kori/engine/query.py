@@ -268,6 +268,17 @@ def query(m: Money, *, period: str | None = None, date_from: str | None = None, 
         "per_month": r2(total / months_span) if rng["days"] >= 45 else None,
         "per_day": r2(total / rng["days"]),
     }
+    if flow == "income":
+        # One canonical income figure for a monthly-earnings question. Keep
+        # the filtered period total only as a labelled audit field.
+        out["period_total"] = out["total"]
+        out["monthly_income"] = m.salary_typical
+        out["monthly_income_label"] = {"en": "typical monthly income payment, last 6 complete months",
+                                       "fi": "tyypillinen kuukausittainen tulomaksu, viimeiset 6 täyttä kuukautta"}[lang]
+        out["total"] = out["monthly_income"]
+        out["average_per_purchase"] = out["monthly_income"]
+        out["per_month"] = out["monthly_income"]
+        out["count_label"] = {"en": "payments", "fi": "maksut"}[lang]
     if group_by and group_by != "none":
         out["group_by"] = group_by
         out["groups"] = _groups(m, df, val, group_by, rng, top_n)
