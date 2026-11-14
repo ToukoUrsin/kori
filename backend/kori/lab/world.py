@@ -40,7 +40,7 @@ import httpx
 from kori import config
 
 _BASE = Path(__file__).with_name("world")
-_CACHE_DIR = config.STATE_DIR / "world_cache"
+_CACHE_DIR = config.STATE_DIR / "world_cache_v2"          # v1 held results of the first, unverified pass: never read them
 _CACHE_DIR.mkdir(parents=True, exist_ok=True)
 _CACHE: dict[str, tuple[float, Any]] = {}
 _CACHE_LOCK = threading.Lock()
@@ -533,6 +533,24 @@ def _quantity(p: dict) -> float:
     return float(p.get("price") or 0) / up if up else 0.0
 
 
+# Kinds that hold different foods under one name (corn, capers and garlic paste are all "canned vegetables"):
+# inside these a swap must also share a word of the product's own name, so it is the same thing in a cheaper pack.
+_MIXED_KINDS = {"canned_vegetables", "ready_meal", "frozen_vegetables", "sweets", "baby_food", "cat_food", "dog_food",
+                "fresh_fish", "frozen_fish", "frozen_berries", "sausage", "cold_cuts", "chocolate", "tea"}
+_FILLER = {"pakaste", "säilyke", "suomi", "luomu", "rainforest", "alliance", "gluteeniton", "laktoositon", "valmis", "ateria", "kotimainen",
+           "ohut", "ohuen", "viipale", "viipaloitu", "pieni", "original", "classic"}
+
+
+def _own_words(p: dict) -> set[str]:
+    brand = {w for w in re.findall(r"[a-zåäö]{3,}", str(p.get("brand") or "").lower())}
+    return {w for w in re.findall(r"[a-zåäö]{4,}", str(p.get("name") or "").lower())} - brand - _FILLER
+
+
+def _same_food(a: dict, b: dict) -> bool:
+    """Two product names share the start of a word: "kalkkunaleike" and "kalkkunaleikkele" are the same food."""
+    return any(x[:6] == y[:6] for x in _own_words(a) for y in _own_words(b) if len(x) >= 6 and len(y) >= 6)
+
+
 def cheaper_like(product: dict | str, n: int = 3) -> list[dict]:
     """Products of the same kind and comparable size with a lower unit price, own brands first.
 
@@ -558,6 +576,8 @@ def cheaper_like(product: dict | str, n: int = 3) -> list[dict]:
         if r["kind"] != orig["kind"] or r["unit"] != orig.get("unit") or r["ean"] == orig.get("ean"):
             continue
         if bool(r.get("by_weight")) != bool(orig.get("by_weight")):
+            continue
+        if orig["kind"] in _MIXED_KINDS and not _same_food(r, orig):
             continue
         if not r.get("by_weight") and not 0.5 <= _quantity(r) / q0 <= 2.0:
             continue

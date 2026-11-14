@@ -76,7 +76,14 @@
   }
 
   /* ---------------- ledger ---------------- */
-  function fact(name) { var f = S.data.facts && S.data.facts[name]; return f == null ? undefined : (typeof f === "object" ? f.v : f); }
+  function fact(name) { var f = S.data.facts && S.data.facts[name]; return f == null ? cell(name) : (typeof f === "object" ? f.v : f); }
+  // "table.3.column", "table.last.column": one cell of a table, when a view asks for it as a single figure
+  function cell(name) {
+    var m = /^([\w-]+)\.(\d+|first|last)\.([\w-]+)$/.exec(String(name)); if (!m) return undefined;
+    var t = S.data.tables && S.data.tables[m[1]], rows = t && t.rows; if (!rows || !rows.length) return undefined;
+    var r = rows[m[2] === "first" ? 0 : m[2] === "last" ? rows.length - 1 : +m[2]], v = r && r[m[3]];
+    return v == null ? undefined : v;
+  }
   function factUnit(name) { var f = S.data.facts && S.data.facts[name]; return f && f.unit; }
   function table(name) { var t = S.data.tables && S.data.tables[name]; return t ? t.rows : []; }
   function product(id) { var ps = S.data.products || []; for (var i = 0; i < ps.length; i++) if (ps[i].id === id) return ps[i]; return typeof id === "number" ? ps[id] : undefined; }
@@ -107,6 +114,13 @@
       return f === "eur" ? figHtml(v, f) : esc(apply(v, f));
     });
   }
+
+  document.addEventListener("error", function (e) {
+    var t = e.target; if (!t || t.nodeName !== "IMG") return;
+    var src = t.getAttribute("src") || "";
+    if (src && !t._kRetry && /^\/api\//.test(src)) { t._kRetry = 1; setTimeout(function () { t.src = src + (src.indexOf("?") < 0 ? "?" : "&") + "again=1"; }, 500); return; }
+    t._kKeep = { src: 1 }; t.removeAttribute("src");
+  }, true);
 
   /* ---------------- placeholders ---------------- */
   var PH = /\{\{\s*([\w.-]+)\s*(?:\|\s*(\w+)\s*)?(\|[^{}]*)?\}\}/g; // anything after the format is ignored, never shown
@@ -631,6 +645,13 @@
       var svg = el("svg", { viewBox: "0 0 " + W + " " + H, height: H }); svg.setAttribute("data-k-own", ""); this.appendChild(svg);
       el("line", { x1: 0, x2: W, y1: T + ph + 0.5, y2: T + ph + 0.5, class: "k-grid" }, svg);
       var step = Math.max(1, Math.ceil(34 / band)), bars = [], labs = [], val = el("text", { class: "k-ax on", "text-anchor": "middle" }, svg);
+      // a label gets the width of its slot: a long weekday becomes its short form, anything else is cut with an ellipsis
+      var maxCh = Math.max(2, Math.floor((band * step - 4) / 6.6)), full = lab, all = rows.map(full);
+      var days = all.some(function (t) { return t.length > maxCh; }) && all.every(function (t) { return isNaN(+t) && wdIndex(t) >= 0; }); // one long weekday: all go short together
+      lab = function (r) {
+        var t = full(r); if (days) t = loc().wd[wdIndex(t)];
+        return t.length <= maxCh ? t : t.slice(0, Math.max(1, maxCh - 1)).replace(/\s+$/, "") + "…";
+      };
       rows.forEach(function (r, i) {
         var v = Math.max(0, +r[yc] || 0), bh = Math.max(v > 0 ? 2 : 0, (v / vmax) * ph), x = i * band + (band - bw) / 2;
         var b = el("rect", { x: x, y: T + ph - bh, width: bw, height: bh, rx: Math.min(5, bw / 2.5) }, svg);
@@ -661,16 +682,28 @@
       var tpl = this.querySelector(":scope > template"); this._clear(); if (!tpl) return;
       var src = this.hasAttribute("products") ? S.data.products : table(this.getAttribute("table")), rows = src.slice(), sort = this.getAttribute("sort");
       if (sort) { var desc = sort[0] === "-", sc = sort.replace(/^-/, ""); rows.sort(function (a, b) { return desc ? (b[sc] > a[sc] ? 1 : -1) : a[sc] > b[sc] ? 1 : -1; }); }
-      var limit = +this.getAttribute("limit"); if (limit) rows = rows.slice(0, limit);
+      var limit = +this.getAttribute("limit"), more = this.getAttribute("more"), total = rows.length;
       var html = tpl.innerHTML, box = document.createElement("template"), me = this, firstDraw = !this._drawn; this._drawn = true;
-      rows.forEach(function (r, i) {
+      function add(r, i, fresh, order) {
         box.innerHTML = fillRow(html, r, i);
         Array.prototype.slice.call(box.content.children).forEach(function (c) {
           c.setAttribute("data-k-own", ""); c.setAttribute("data-i", i); c.kRow = r;
-          if (firstDraw && !REDUCED) { c.setAttribute("data-k-new", ""); c.style.animationDelay = Math.min(i, 8) * 45 + "ms"; }
+          if (fresh && !REDUCED) { c.setAttribute("data-k-new", ""); c.style.animationDelay = Math.min(order, 8) * 45 + "ms"; }
           me.appendChild(c);
         });
-      });
+      }
+      var cut = limit && !(more && this._all) ? Math.min(limit, total) : total;
+      for (var i = 0; i < cut; i++) add(rows[i], i, firstDraw, i);
+      // more="Show all {n}": the rest stay out of the way until asked for, and then simply join the list (nothing is re-drawn)
+      if (more && cut < total) {
+        var btn = h("button", "k-more", esc(more.replace(/\{n\}/g, String(total)))); btn.type = "button";
+        btn.addEventListener("click", function () {
+          me._all = true; btn.remove();
+          for (var j = cut; j < total; j++) add(rows[j], j, true, j - cut);
+          me.dispatchEvent(new CustomEvent("k-more", { bubbles: true }));
+        });
+        this.appendChild(btn);
+      }
     },
   });
 

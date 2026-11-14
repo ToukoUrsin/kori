@@ -16,7 +16,7 @@ markets for 6 hours). A failed call is never cached.
 **Prisma Kaari Kannelmäki (store id 513971200)**, on 2026-11-14. The rows were fetched from S-kaupat's own GraphQL API
 (`api.s-kaupat.fi`, the API the site uses) by `python -m kori.lab.world build-skaupat`, one request at a time with a pause.
 
-- 66 kinds of an ordinary weekly shop, from milk, oat drink and rye bread to toilet paper, shampoo and cat food.
+- 67 kinds of an ordinary weekly shop, from milk, oat drink and rye bread to toilet paper, shampoo and cat food.
   234 rows are S Group's own brands (Kotimaista, Rainbow, Xtra, Coop) and the rest are known brands, side by side in
   almost every kind, so a cheaper real alternative exists.
 - Each row has `ean` (valid GS1 check digit), `name`, `brand`, `price`, `unit_price`, `unit` (kg, l or kpl), `size`,
@@ -45,7 +45,8 @@ exists it returns `[]`.
 The bank's data stops at the merchant: item lines live in S-mobiili's "Omat ostot", which this demo does not have.
 `receipts(payments, seed)` therefore builds a **sample** basket for each supermarket payment from the real catalogue,
 and every receipt says `sample: true` with a note. Baskets are believable weekly shops: staples first, mostly known
-brands so swaps exist, 8 to 25 lines for payments of 20 € or more, at most 4 of a cheap item and 1 or 2 of most others.
+brands so swaps exist, 8 to 25 lines for payments of 20 € or more, one of most things and at most 4 of a cheap
+staple (2 of a dearer one) such as milk or yoghurt.
 Lines add up to the payment within 5 cents; one loose-produce line may be weighed to close the gap. The same seed and
 payment always give the same basket. A payment the catalogue cannot fill believably comes back with `not_itemised`.
 
@@ -83,9 +84,9 @@ answered in 6 to 8 seconds. If it fails or takes more than 10 seconds it raises
 on 2026-11-14, with `url`, `source` and `as_of`. It is a fact list, not a recommendation; any illustration must say
 that investments can lose value.
 
-- The Säästäjä service: what it is, the monthly amount the saver chooses (the site states no minimum), spare-change
-  saving of 0.50 to 5 € per purchase moved to the fund once it passes 10 €, the two funds it invests in, no service fee,
-  and age 18 or more.
+- The Säästäjä service in S-mobiili: a monthly amount the saver chooses (the site states no minimum), round-ups of
+  0.50 to 5 € per card purchase moved to the fund once they pass 10 €, the two funds it invests in (Varainhoito
+  Säästäjä 10 and 100), no service fee, and age 18 or more.
 - 12 funds a first-time saver meets, each with its exact name, `type`, `risk` (1 to 7 from the key information
   document), `ongoing_charges_pct`, `minimum_eur` where the bank publishes one, ISIN and the document link.
 - S-Tuottotili with its current rate tiers (0.01 % to 1.75 %, tied to S-Prime 2.0 %).
@@ -112,7 +113,7 @@ shop.cheaper("Paulig Juhla Mokka kahvi suodatinjauhatus 500g")
 # first: Coop kahvi vaalea paahto suodatinjauhatus 500 g, 4.99 €, saves 3.50 € (41.2 %)
 
 web.products("kannettava alle 900 euroa")
-# first: a laptop under 900 € from Verkkokauppa.com or Prisma.fi, with its picture and product page
+# first (live): Lenovo V15 G6 15,6" kannettava tietokone, Windows 11 Pro, 549.99 €, Verkkokauppa.com
 ```
 
 ## Sources

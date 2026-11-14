@@ -174,3 +174,11 @@ def test_market_snapshot_shapes():
     assert {"symbol", "name", "currency", "points", "source", "as_of", "live"} <= set(history)
     assert history["live"] is False and len(history["points"]) >= 120
     assert all(s["currency"] in {"EUR", "USD"} for s in world.market_symbols())
+
+
+def test_a_swap_inside_a_mixed_kind_is_the_same_food():
+    from kori.lab import world
+    garlic = world.shop_search("Valkoliekki valkosipulimurska", n=1)[0]
+    assert all("valkosipuli" in x["name"].lower() for x in world.cheaper_like(garlic))
+    capers = world.shop_search("Fragata kapris", n=1)[0]
+    assert all("kapris" in x["name"].lower() for x in world.cheaper_like(capers))

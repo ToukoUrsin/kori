@@ -143,44 +143,39 @@ def explore(m: Money, lang: str) -> dict:
 
 
 # ------------------------------------------------------------------ 2. swap: the same groceries, cheaper
-# Real S-kaupat products (name, price, comparison price, picture, page), read from s-kaupat.fi on PRICES_DATE.
-# (key, English, Finnish, a month's quantity on the SAMPLE receipt, what she buys, the cheaper pick)
-_SK = "https://cdn.s-cloud.fi/v1/w280h280@_q75/assets/dam-id/{}.webp?clientId=5621"
+# Real S-kaupat products from the world snapshot (kori/lab/world/skaupat.jsonl: name, price, picture, page, the day read).
+# (key, English, Finnish, a month's quantity on the SAMPLE receipt, what she buys, the cheaper pick of the same kind and size)
+_SKAUPAT = Path(__file__).resolve().parents[1] / "kori" / "lab" / "world" / "skaupat.jsonl"
 _GROCERIES = [
-    ("mince", "Minced meat", "Jauheliha", 4,
-     ("Atria Parempi Nauta Jauheliha 10% 400g", "Atria", 5.99, 14.98, "kg", "400 g", "54SmcvDqas69Sjj8Jo2x1v", "atria-parempi-nauta-jauheliha-10-400g/6407840041172"),
-     ("Kotimaista sika-nauta jauheliha 23% 400g", "Kotimaista", 3.65, 9.13, "kg", "400 g", "5v-uwZ5QaQ6BbUfiApFMj5", "kotimaista-sika-nauta-jauheliha-23-400g/6414893500075")),
-    ("coffee", "Coffee", "Kahvi", 2,
-     ("Paulig Juhla Mokka kahvi suodatinjauhatus 500g", "Paulig", 8.49, 16.98, "kg", "500 g", "110bN8NA4gvB2pOkhk2fbB", "paulig-juhla-mokka-kahvi-suodatinjauhatus-500g/6411300000494"),
-     ("Coop kahvi vaalea paahto suodatinjauhatus 500 g", "Coop", 4.99, 9.98, "kg", "500 g", "60MLaC98aLnBYbrclIJ6sn", "coop-kahvi-vaalea-paahto-suodatinjauhatus-500-g/7340191173545")),
-    ("tomato", "Crushed tomatoes", "Tomaattimurska", 6,
-     ("Mutti Polpa basilika hieno tomaattimurska 400g", "Mutti", 1.65, 4.12, "kg", "400 g", "Etv_Sh_1qOkAbqDw1fAEpT", "mutti-polpa-basilika-hieno-tomaattimurska-400g/8005110170423"),
-     ("Xtra tomaattimurska 400 g", "Xtra", 0.32, 0.80, "kg", "400 g", "BdR0cmnbKUSAI2bT3nAXIK", "xtra-tomaattimurska-400-g/7340191171480")),
-    ("oat", "Oat drink", "Kaurajuoma", 6,
-     ("Oatly iKaffe kaurajuoma 1L", "Oatly", 1.94, 1.94, "l", "1 l", "40Zue6GLKjyBXYJNwnzdkt", "oatly-ikaffe-kaurajuoma-1l/7394376616037"),
-     ("Coop Barista kaurajuoma 1 l", "Coop", 1.29, 1.29, "l", "1 l", "C1kwsqp84g2BmPFk9gGrP_", "coop-barista-kaurajuoma-1-l/7340191143265")),
-    ("juice", "Orange juice", "Appelsiinimehu", 4,
-     ("Valio appelsiinitäysmehu 1 l perinteinen", "Valio", 2.95, 2.95, "l", "1 l", "AJSRqTVvq8e8n_a1KnoYL0", "valio-appelsiinitaysmehu-1-l-perinteinen/6408430006007"),
-     ("Xtra appelsiinimehu 1 l", "Xtra", 1.99, 1.99, "l", "1 l", "7-TlUzesq4b8dHd1nrnFWX", "xtra-appelsiinimehu-1-l/7340191174542")),
-    ("milk", "Milk", "Maito", 8,
-     ("Valio vapaan lehmän kevytmaito 1 l", "Valio", 1.35, 1.35, "l", "1 l", "DwAzauujKKd94iekh7w4W-", "valio-vapaan-lehman-kevytmaito-1-l/6408430000128"),
-     ("Kotimaista kevytmaito 1 l", "Kotimaista", 0.95, 0.95, "l", "1 l", "Bzvv24s84pQBsOoAiB4535", "kotimaista-kevytmaito-1-l/6438460292804")),
+    ("coffee", "Coffee", "Kahvi", 2, "Paulig Juhla Mokka kahvi suodatinjauhatus 500g", "Coop kahvi vaalea paahto suodatinjauhatus 500 g"),
+    ("mince", "Minced meat", "Jauheliha", 4, "Atria Kevyt Nauta-Possu Jauheliha 9,5% 400g", "Kotimaista sika-nauta jauheliha 23% 400g"),
+    ("oat", "Oat drink", "Kaurajuoma", 6, "Oatly iKaffe kaurajuoma 1L", "Coop Barista kaurajuoma 1 l"),
+    ("juice", "Orange juice", "Appelsiinimehu", 4, "Valio appelsiinitäysmehu 1 l perinteinen", "Xtra appelsiinimehu 1 l"),
+    ("tomato", "Crushed tomatoes", "Tomaattimurska", 6, "Mutti Polpa basilika hieno tomaattimurska 400g", "Coop tomaattimurska yrteillä 390 g"),
+    ("pasta", "Spaghetti", "Spagetti", 2, "Barilla Spaghetti n.5 durumvehnästä valmistettu pasta 1kg", "Xtra Spaghetti 1kg"),
+    ("oats", "Porridge oats", "Kaurahiutaleet", 2, "Elovena 1kg täysjyvä kaurahiutale", "Kotimaista kaurahiutale 1 kg"),
+    ("milk", "Milk", "Maito", 8, "Valio Luomu™ kevytmaito 1 l", "Kotimaista kevytmaito 1 l"),
 ]
+_COUNT = {"en": {6: "Six", 7: "Seven", 8: "Eight", 9: "Nine"}, "fi": {6: "Kuusi", 7: "Seitsemän", 8: "Kahdeksan", 9: "Yhdeksän"}}
 
 
-def _grocery(pid: str, p: tuple) -> dict:
-    name, brand, price, unit_price, unit, size, pic, slug = p
-    return {"id": pid, "name": name, "brand": brand, "price": price, "unit_price": unit_price, "unit": unit, "size": size,
-            "image": img(_SK.format(pic)), "url": "https://www.s-kaupat.fi/tuote/" + slug, "store": "S-kaupat", "fetched": PRICES_DATE, "run": RUN}
+def _shelf() -> dict:
+    return {r["name"]: r for r in (json.loads(x) for x in _SKAUPAT.read_text().splitlines() if x.strip())}
+
+
+def _grocery(pid: str, p: dict) -> dict:
+    return {"id": pid, "name": p["name"], "brand": p.get("brand") or "", "price": p["price"], "unit_price": p.get("unit_price"), "unit": p.get("unit"),
+            "size": p.get("size"), "image": img(p["image"]), "url": p["url"], "store": "S-kaupat", "fetched": p.get("fetched") or PRICES_DATE, "run": RUN}
 
 
 def swap(m: Money, lang: str) -> dict:
-    products, rows = [], []
-    for key, en, fi, qty, have, pick in _GROCERIES:
+    products, rows, shelf = [], [], _shelf()
+    for key, en, fi, qty, have_name, pick_name in _GROCERIES:
+        have, pick = shelf[have_name], shelf[pick_name]
         products += [_grocery(key + "_have", have), _grocery(key + "_pick", pick)]
-        each = r2(have[2] - pick[2])
-        rows.append({"item": fi if lang == "fi" else en, "have": key + "_have", "pick": key + "_pick", "qty_month": qty, "have_price": have[2],
-                     "pick_price": pick[2], "saving_each": each, "saving_month": r2(each * qty), "saving_year": r2(each * qty * 12)})
+        each = r2(have["price"] - pick["price"])
+        rows.append({"item": fi if lang == "fi" else en, "have": key + "_have", "pick": key + "_pick", "qty_month": qty, "have_price": have["price"],
+                     "pick_price": pick["price"], "saving_each": each, "saving_month": r2(each * qty), "saving_year": r2(each * qty * 12)})
     rows.sort(key=lambda x: -x["saving_month"])
     month = r2(sum(x["saving_month"] for x in rows))
     left = r2(m.usual["left_over"])
@@ -199,17 +194,18 @@ def swap(m: Money, lang: str) -> dict:
                                "S-kaupat product of the same kind. have and pick are product ids. Sorted by saving_month.")}
     return {
         "question": {"en": "Can my grocery shopping be cheaper?", "fi": "Voisiko ruokaostokseni olla halvempia?"}[lang],
-        "answer": {"en": f"Yes. Six swaps on the same shelf come to about **{eur0(month, lang)} a month** without leaving anything out.",
-                   "fi": f"Voisi. Kuusi vaihtoa samalta hyllyltä tekee noin **{eur0(month, lang)} kuukaudessa**, eikä mitään jää pois."}[lang],
+        "answer": {"en": f"Yes. {_COUNT['en'][len(rows)]} swaps on the same shelf come to about **{eur0(month, lang)} a month** without leaving anything out.",
+                   "fi": f"Voisi. {_COUNT['fi'][len(rows)]} vaihtoa samalta hyllyltä tekee noin **{eur0(month, lang)} kuukaudessa**, eikä mitään jää pois."}[lang],
         "title": {"en": "The same basket for less", "fi": "Sama kori halvemmalla"}[lang],
         "brief": (
-            "Form: her usual grocery lines, each beside the cheaper pick from the same shelf, with the pictures of both and both prices; each pair is one row "
-            "with a switch, all on to begin with. `swaps` rows: `item` (the kind, in words), `have` and `pick` (product ids: name, price, image), "
+            "Form: her usual grocery lines, each beside the cheaper pick from the same shelf, with the pictures of both and the saving a month; each pair is one row "
+            "with a switch, all on to begin with; the five biggest savings show, the rest behind a show-all control. `swaps` rows: `item` (the kind, in words), `have` and `pick` (product ids: name, price, image), "
             "`qty_month`, `have_price`, `pick_price`, `saving_month`, `saving_year`. The headline figure is the sum of saving_month over the rows that are on "
             "(starts at saving_month); show it per year too, and what a usual month then leaves: left_over plus that sum (starts at left_over_with_swaps). "
             "One quiet line: the receipt lines are a sample, because the bank sees only the total at the till, and the prices are S-kaupat's on prices_date."),
         "data": ledger(m, facts, tables, products, [{"title": "S-kaupat", "host": "s-kaupat.fi", "url": "https://www.s-kaupat.fi/"}], lang),
-        "act": [{"do": "tap", "sel": "input.k-switch", "nth": 0}, {"do": "tap", "sel": "input.k-switch", "nth": 2}, {"do": "wait", "ms": 900}, {"do": "shot", "name": "touch"}],
+        "act": [{"do": "tap", "sel": "input.k-switch", "nth": 0}, {"do": "tap", "sel": "input.k-switch", "nth": 2}, {"do": "wait", "ms": 900}, {"do": "shot", "name": "touch"},
+                {"do": "tap", "sel": ".k-more", "nth": 0}, {"do": "wait", "ms": 700}, {"do": "shot", "name": "all"}],
     }
 
 

@@ -13,6 +13,8 @@ type Strings = {
   send: string;
   voice: string;
   thinking: string;
+  thinkingShort: string;
+  ask: string;
   work: string;
   working: string;
   sandbox: (rows: number) => string;
@@ -41,12 +43,14 @@ export const strings: Record<LabLang, Strings> = {
     language: "Language",
     menu: "Open menu",
     reset: "New conversation",
-    emptyTitle: "What should we look at?",
+    emptyTitle: "What do you want to know about your money?",
     emptyIntro: "Ask anything about your spending, plans or next move.",
     placeholder: "Ask Kori anything…",
     send: "Send",
     voice: "Talk to Kori",
     thinking: "Kori is working…",
+    thinkingShort: "Thinking",
+    ask: "Ask anything",
     work: "Show the work",
     working: "Working",
     sandbox: (rows) => `Private sandbox · ${rows.toLocaleString("en-GB")} of your payments · no network`,
@@ -79,12 +83,14 @@ export const strings: Record<LabLang, Strings> = {
     language: "Kieli",
     menu: "Avaa valikko",
     reset: "Uusi keskustelu",
-    emptyTitle: "Mitä katsotaan?",
+    emptyTitle: "Mitä haluat tietää rahoistasi?",
     emptyIntro: "Kysy menoistasi, suunnitelmistasi tai seuraavasta askeleesta.",
     placeholder: "Kysy Korilta mitä vain…",
     send: "Lähetä",
     voice: "Puhu Korille",
     thinking: "Kori työskentelee…",
+    thinkingShort: "Mietin",
+    ask: "Kysy mitä vain",
     work: "Näytä työ",
     working: "Työn alla",
     sandbox: (rows) => `Oma hiekkalaatikko · ${rows.toLocaleString("fi-FI")} maksuasi · ei verkkoyhteyttä`,

@@ -687,7 +687,11 @@ k-choice.k-seg {
   border-radius: 12px;
   background: var(--color-sunk);
 }
-k-choice.k-seg > * {
+k-choice.k-seg > k-each {
+  display: contents;
+}
+k-choice.k-seg > :not(k-each),
+k-choice.k-seg > k-each > [value] {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -701,12 +705,14 @@ k-choice.k-seg > * {
   transition: background-color 200ms var(--ease-out-expo), color 200ms, box-shadow 200ms;
   position: relative;
 }
-k-choice.k-seg > *::after {
+k-choice.k-seg > :not(k-each)::after,
+k-choice.k-seg > k-each > [value]::after {
   content: "";
   position: absolute;
   inset: -3px 0;
 }
-k-choice.k-seg > [aria-checked="true"] {
+k-choice.k-seg > [aria-checked="true"],
+k-choice.k-seg > k-each > [aria-checked="true"] {
   background: var(--color-surface);
   color: var(--color-ink);
   box-shadow: 0 1px 2px oklch(0.22 0.02 160 / 0.1), 0 2px 8px -2px oklch(0.22 0.02 160 / 0.12);
@@ -1220,4 +1226,79 @@ k-slides .k-readout b {
 /* a one-line name needs a parent that may shrink, in any grid or row */
 :where(div, span, label, a, li):has(> .k-ellip) {
   min-width: 0;
+}
+
+/* ---------- a swap: what they buy now, faded, beside what to buy instead ---------- */
+.k-swap {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 0;
+  border-top: 1px solid var(--color-line);
+  cursor: pointer;
+}
+.k-pair {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: none;
+}
+.k-pair > .k-pic:first-child {
+  opacity: 0.6;
+  filter: grayscale(0.5);
+}
+.k-swap > :nth-child(2) {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.k-swap b {
+  text-wrap: balance;
+  font-weight: 540;
+  font-size: 14px;
+  line-height: 18px;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+.k-swap small {
+  display: block;
+  font-size: 12.5px;
+  line-height: 17px;
+  color: var(--color-ink-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.k-swap small.k-pos {
+  color: var(--color-brand);
+  font-weight: 540;
+  overflow: visible;
+}
+.k-swap > :not(input) {
+  transition: opacity 220ms var(--ease-out-expo);
+}
+.k-swap:has(input.k-switch:not(:checked)) > :not(input) {
+  opacity: 0.38;
+}
+/* the rest of a list, on request */
+.k-more {
+  display: block;
+  width: 100%;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  border-top: 1px solid var(--color-line);
+  background: none;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 540;
+  color: var(--color-ink-2);
+  text-align: left;
+  cursor: pointer;
+}
+.k-more:active {
+  color: var(--color-ink);
 }

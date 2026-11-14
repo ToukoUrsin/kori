@@ -113,7 +113,10 @@ NO_SHOP = """\
  coming and answer what their own data can answer.)
 """
 WEB_SHOP = """\
-web.products(query, n=6)                     things for sale in Finnish shops right now, with price, picture and link (laptops, phones, bikes...)
+web.products(query, n=6)                     things for sale in Finnish shops right now (Verkkokauppa.com, Prisma.fi), about 2 s. A price cap in the
+                                             query works ("laptop under 900 euros"). Each: name, price, image, url, store, snippet, live, and on
+                                             Prisma rows member_price (the S-Etukortti owner's price). Real products only: never add one by hand.
+                                             show(products) puts them in the view with their pictures.
 """
 NO_WEB_SHOP = """\
 (web.products is not switched on in this version. For a purchase, work with the amount the customer names, or ask for one.)

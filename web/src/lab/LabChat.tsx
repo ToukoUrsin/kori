@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
-import { ArrowLeft, ArrowUp, Check, ChevronRight, CircleAlert, Code2, ExternalLink, Globe2, Loader2, Menu, Mic, ShieldCheck, Sparkles, X } from "lucide-react";
+import { ArrowLeft, ArrowUp, Check, ChevronRight, CircleAlert, Code2, ExternalLink, Globe2, Loader2, Menu, Mic, ShieldCheck, Sparkles, SquarePen, X } from "lucide-react";
 import { playMock } from "./dev/mock";
 import stubFrame from "./dev/stub-frame.html?raw";
 import { strings, type LabLang, type LabStrings } from "./strings";
 import "./lab.css";
+import "./chat.css";
 
 export type LabEventName = "status" | "run" | "run_code" | "call" | "run_done" | "text" | "ui" | "sources" | "chips" | "done" | "error";
 export type LabEvent = { event: LabEventName | string; data: any };
@@ -187,6 +188,9 @@ export default function LabChat({ onVoice }: { onVoice?: () => void } = {}) {
   const [voiceNote, setVoiceNote] = useState("");
   const [draft, setDraft] = useState("");
   const [mock] = useState(() => new URLSearchParams(location.search).get("mock") === "1");
+  // The customer sees a plain chat. `?dev=1` shows the work behind an answer (code, ledger, sources) for a technical reader.
+  const [dev] = useState(() => new URLSearchParams(location.search).get("dev") === "1");
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const abortRef = useRef<AbortController | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const stickRef = useRef(true);
@@ -209,7 +213,12 @@ export default function LabChat({ onVoice }: { onVoice?: () => void } = {}) {
     fetch(`/api/lab/starters?customer=${encodeURIComponent(customer)}&lang=${lang}`).then((r) => r.ok ? r.json() : Promise.reject(new Error("starters"))).then((data: { items?: { text: string }[] }) => { if (active && data.items?.length) setStarters(data.items.map((item) => item.text).slice(0, 5)); }).catch(() => undefined);
     return () => { active = false; };
   }, [customer, lang]);
-  useEffect(() => { if (stickRef.current && scrollRef.current) scrollRef.current.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" }); }, [turns]);
+  useEffect(() => { if (dev && stickRef.current && scrollRef.current) scrollRef.current.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" }); }, [dev, turns]);
+  useEffect(() => {                        // a new question goes to the top of the screen and its answer unfolds under it
+    if (dev || !turns.length) return;
+    const last = scrollRef.current?.querySelector(".kc-turn:last-child");
+    if (last) requestAnimationFrame(() => last.scrollIntoView({ block: "start", behavior: "smooth" }));
+  }, [dev, turns.length]);
   useEffect(() => {
     if (!sheet) return;
     const fresh = turns.flatMap((turn) => turn.runs).find((run) => run.id === sheet.run.id);
@@ -273,6 +282,46 @@ export default function LabChat({ onVoice }: { onVoice?: () => void } = {}) {
     setSheet({ run, fact: run.done?.facts?.find((fact: Fact) => fact.name === name), table: run.done?.tables?.find((table: Table) => table.name === name) });
   };
   const talk = () => { if (onVoice) onVoice(); else setVoiceNote(copy.voiceUnavailable); };
+
+  useEffect(() => {                        // the input grows with what is typed, up to a few lines
+    const el = inputRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${Math.min(el.scrollHeight, 132)}px`;
+  }, [draft]);
+
+  if (!dev) {
+    const busy = !!currentTurn?.pending;
+    return <div className="kc-root"><div className="kc-col">
+      <header className="kc-head">
+        <a className="kc-icon" href="/" aria-label={copy.home}><ArrowLeft size={20} strokeWidth={1.9} /></a>
+        <strong>{copy.name}</strong>
+        <button className="kc-icon" type="button" aria-label={copy.reset} onClick={() => void reset()} disabled={!turns.length}><SquarePen size={19} strokeWidth={1.9} /></button>
+      </header>
+      <div className="kc-scroll" ref={scrollRef} onScroll={onScroll}>
+        {turns.length === 0 ? <section className="kc-empty"><h1>{copy.emptyTitle}</h1></section> : <div className="kc-thread">{turns.map((turn) => {
+          const shown = turn.text.length > 0 || !turn.pending;        // the answer first, then the view it built: never a half-drawn screen
+          const working = turn.pending && !turn.text;
+          const doing = turn.runs.length ? turn.runs[turn.runs.length - 1].title : "";
+          return <article className="kc-turn" key={turn.id} data-state={turn.pending ? "working" : "done"}>
+            <div className="kc-user">{turn.question}</div>
+            {working && <div className="kc-working" role="status"><span className="kc-dots" aria-hidden><i /><i /><i /></span><span className="kc-doing">{doing || copy.thinkingShort}</span></div>}
+            {turn.text && <div className="kc-answer">{renderBold(turn.text)}</div>}
+            {turn.views.map((view) => <div className={`kc-view ${shown && view.html ? "on" : ""}`} key={view.id}><FrameHost view={view} lang={lang} mock={mock} onAsk={(text) => void runQuestion(text)} onTrace={() => undefined} sources={turn.sources} /></div>)}
+            {turn.error && <div className="kc-error">{turn.error} <button type="button" onClick={() => void runQuestion(turn.question)}>{copy.tryAgain}</button></div>}
+            {!turn.pending && !turn.views.length && turn.chips.length > 0 && <div className="kc-chips">{turn.chips.map((chip) => <button type="button" key={chip} onClick={() => void runQuestion(chip)}>{chip}</button>)}</div>}
+          </article>;
+        })}</div>}
+      </div>
+      {turns.length === 0 && <div className="kc-starters">{starters.slice(0, 4).map((starter) => <button type="button" key={starter} onClick={() => void runQuestion(starter)}>{starter}</button>)}</div>}
+      <form className="kc-composer" onSubmit={submit}>
+        <div className="kc-pill">
+          <textarea ref={inputRef} value={draft} onChange={(e) => setDraft(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void runQuestion(draft); } }} placeholder={copy.ask} rows={1} aria-label={copy.ask} />
+          <button className="kc-send" type="submit" aria-label={copy.send} disabled={!draft.trim() || busy}><ArrowUp size={18} strokeWidth={2.4} /></button>
+        </div>
+      </form>
+    </div></div>;
+  }
 
   return <div className="lab-root"><div className="lab-shell"><main className="lab-main"><header className="lab-header"><a className="lab-brand" href="/"><ArrowLeft size={16} /><span className="lab-mark" aria-hidden><i /><i /><i /></span><strong>{copy.name}</strong><span>{copy.tagline}</span></a><div className="lab-actions"><button className="lab-icon" type="button" aria-label={copy.menu} onClick={() => setMenuOpen((open) => !open)}><Menu size={19} /></button>{menuOpen && <div className="lab-menu"><button type="button" className={lang === "en" ? "active" : ""} onClick={() => changeLang("en")}>English{lang === "en" && <Check size={14} />}</button><button type="button" className={lang === "fi" ? "active" : ""} onClick={() => changeLang("fi")}>Suomi{lang === "fi" && <Check size={14} />}</button><button type="button" className="danger" onClick={() => void reset()}>{copy.reset}</button></div>}</div></header><div className="lab-scroll" ref={scrollRef} onScroll={onScroll}><div className="lab-scroll-inner">{turns.length === 0 ? <section className="lab-empty"><h1>{copy.emptyTitle}</h1><p>{copy.emptyIntro}</p><div className="lab-starters">{starters.map((starter) => <button className="lab-starter" type="button" key={starter} onClick={() => void runQuestion(starter)}>{starter}<ChevronRight size={17} /></button>)}</div></section> : turns.map((turn) => <article className="lab-turn" key={turn.id}><div className="lab-user">{turn.question}</div><div className="lab-coach">{turn.sandbox && <div className="lab-sandbox"><ShieldCheck size={13} strokeWidth={1.9} />{copy.sandbox(turn.sandbox.rows)}</div>}{!turn.runs.some((run) => !run.done) && <Status status={turn.status} pending={turn.pending} text={copy.thinking} />}<WorkStrip runs={turn.runs} copy={copy} onOpen={(run) => setSheet({ run })} />{turn.text && <div className="lab-answer">{renderBold(turn.text)}</div>}{turn.views.map((view) => <div key={view.id}><FrameHost view={view} lang={lang} mock={mock} onAsk={(text) => void runQuestion(text)} onTrace={(name) => openTrace(turn, name)} sources={turn.sources} /></div>)}{turn.sources.length > 0 && <section><div className="lab-view-title">{copy.sources}</div><div className="lab-sources">{turn.sources.slice(0, 3).map((source) => <a className="lab-source" key={source.url} href={source.url} target="_blank" rel="noreferrer"><ExternalLink size={13} /><span>{source.host || source.title}</span></a>)}</div></section>}<CheckLine turn={turn} copy={copy} onOpen={(run) => setSheet({ run })} />{turn.error && <div className="lab-check warn"><CircleAlert size={15} />{turn.error} <button type="button" onClick={() => void runQuestion(turn.question)}>{copy.tryAgain}</button></div>}{turn.chips.length > 0 && <div className="lab-chips">{turn.chips.map((chip) => <button type="button" className="lab-chip" key={chip} onClick={() => void runQuestion(chip)}>{chip}</button>)}</div>}</div></article>)}</div></div><form className="lab-composer" onSubmit={submit}><div className="lab-input-wrap"><textarea className="lab-input" value={draft} onChange={(e) => setDraft(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void runQuestion(draft); } }} placeholder={copy.placeholder} rows={1} aria-label={copy.placeholder} /></div><button className="lab-mic" type="button" aria-label={copy.voice} onClick={talk}><Mic size={19} /></button><button className="lab-send" type="submit" aria-label={copy.send} disabled={!draft.trim() || !!currentTurn?.pending}><ArrowUp size={20} /></button>{voiceNote && <div className="lab-note" role="status">{voiceNote}</div>}</form></main><UnderHood runs={currentTurn?.runs || []} done={currentTurn?.done} copy={copy} /></div>{sheet && <WorkSheet target={sheet} copy={copy} lang={lang} onClose={() => setSheet(null)} />}</div>;
 }
