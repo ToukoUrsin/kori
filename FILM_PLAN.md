@@ -1,6 +1,12 @@
 # Kori film plan (max 1:55)
 
-For Touko to film. Everything below was run on the live site on Sat 14.11 at 20:55.
+For Touko to film. Everything below was run on the live site on Sun 15.11 at 00:45 (build 7753a25).
+
+**Two things before recording**
+- **The opening is a ready-made 10-second cold open**, not the phone shot: `/bulk3/runs/opens/final/kori/open.mp4` (final version lands by 03:30; `open_bridge.mp4` joins it to the real Home screen, `end.mp4` is a 2-second end card, `README.md` there says how it cuts). It takes the place of shot 0:00–0:08 below, and the spoken line of that shot plays over it. With the open and the end card the plan runs 1:59 of the 2:00 allowed, so nothing may run long: if it does, drop the 0:20–0:24 line.
+- **The voiceover wording below is the working draft.** The final lines come from the main thread.
+
+**Changed on screen since the last plan**: the sentence under the big number now ends "and €230 more stays as savings"; the replay button reads "Tested on 18 past paydays: the number held 17 times"; the laptop view says "In Finnish shops now, real prices"; twenty questions now open in a second in any wording (not only the four suggested ones); voice works again.
 
 ## The story
 
@@ -32,6 +38,7 @@ Options:
 - The whole 0:20 to 1:18 run also works on a laptop: on the first page the four questions sit under **Try this** on the left, and each one opens the chat inside the phone in the middle.
 - Instead of tapping the grocery question, tap the microphone in the input, say "Can my grocery shopping be cheaper?", and tap again. It is written down and asked (uses a few ElevenLabs credits).
 - If there is time for one more beat: **See it inside a bank app** (left column on a laptop) opens Kori inside a stand-in bank app with the consent step.
+- A bank-safety beat (10 s): in the bank app tap **Data and permissions**, switch off **New answers written by AI**, open **20 answers the bank has checked**, then ask "my washing machine broke, 600 euros, can I cover it": it answers in a second with no AI in the turn (€198.61 from the surprise reserve, safe to spend goes to €1,186.05, €49.42 a day).
 
 ## Links, device, reset
 

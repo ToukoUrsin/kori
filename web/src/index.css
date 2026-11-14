@@ -1,6 +1,9 @@
 @import "tailwindcss";
 @import "@fontsource-variable/geist/wght.css";
 
+/* the quiet phone frame on a laptop or tablet; a phone held sideways is wide but short, and stays full screen */
+@custom-variant framed (@media (min-width: 640px) and (min-height: 500px));
+
 @theme {
   --font-sans: "Geist Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
 
@@ -61,7 +64,7 @@
   --safe-t: env(safe-area-inset-top, 0px);
   --safe-b: env(safe-area-inset-bottom, 0px);
 }
-@media (min-width: 640px) {
+@media (min-width: 640px) and (min-height: 500px) {
   :root {
     --safe-t: 20px;
     --safe-b: 14px;

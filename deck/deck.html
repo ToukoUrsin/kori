@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Kori</title>
+<style>
+@font-face { font-family: "Geist"; src: url("../web/public/lab/vendor/geist-latin-wght-normal.woff2") format("woff2"); font-weight: 100 900; }
+@page { size: 1920px 1080px; margin: 0; }
+:root { --bg:#ffffff; --ink:#0f1a14; --ink2:#48524c; --ink3:#7c857f; --line:#e3e6e2; --green:#085C38; --soft:#eef4f0; --red:#b3402e; }
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--ink); font: 400 30px/1.4 "Geist", "Helvetica Neue", Arial, sans-serif; -webkit-font-smoothing: antialiased; }
+.slide { width: 1920px; height: 1080px; padding: 92px 112px 96px; position: relative; overflow: hidden; break-after: page; display: flex; flex-direction: column; }
+.kicker { font: 500 22px/1 "Geist"; color: var(--green); letter-spacing: .02em; margin-bottom: 26px; }
+h1 { font: 600 150px/1 "Geist"; letter-spacing: -.045em; margin: 0; }
+h2 { font: 600 68px/1.06 "Geist"; letter-spacing: -.03em; margin: 0 0 30px; max-width: 1500px; }
+p { margin: 0; }
+.lead { font-size: 34px; line-height: 1.36; color: var(--ink2); max-width: 1180px; }
+.foot { position: absolute; left: 112px; right: 112px; bottom: 44px; display: flex; justify-content: space-between; font: 400 19px/1 "Geist"; color: var(--ink3); }
+.cols { display: flex; gap: 80px; flex: 1; min-height: 0; }
+.col { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.screen { border: 1px solid var(--line); border-radius: 30px; overflow: hidden; background: #fff; box-shadow: 0 24px 60px -30px rgba(15, 26, 20, .28); }
+.screen img { display: block; width: 100%; }
+.num { font-variant-numeric: tabular-nums; }
+.g { color: var(--green); }
+.dim { color: var(--ink3); }
+.rows { margin-top: 44px; border-top: 1px solid var(--line); max-width: 860px; }
+.row { display: flex; justify-content: space-between; align-items: baseline; padding: 19px 0; border-bottom: 1px solid var(--line); font-size: 31px; color: var(--ink2); }
+.row b { font-weight: 500; color: var(--ink); font-variant-numeric: tabular-nums; }
+.row.total { border-bottom: 0; padding-top: 26px; font-size: 38px; color: var(--ink); font-weight: 600; }
+.row.total b { font-weight: 600; color: var(--green); font-size: 54px; letter-spacing: -.03em; }
+.stats { display: flex; gap: 120px; margin-top: 60px; }
+.stat .v { font: 600 190px/1 "Geist"; letter-spacing: -.05em; font-variant-numeric: tabular-nums; }
+.stat .l { margin-top: 18px; font-size: 30px; line-height: 1.32; color: var(--ink2); max-width: 520px; }
+.four { display: grid; grid-template-columns: repeat(4, 1fr); gap: 44px; margin-top: 18px; }
+.four .screen { height: 572px; border-radius: 26px; }
+.four .q { margin-top: 20px; font: 600 25px/1.25 "Geist"; letter-spacing: -.01em; }
+.four .a { margin-top: 6px; font-size: 22px; line-height: 1.34; color: var(--ink2); }
+ol.steps { list-style: none; margin: 30px 0 0; padding: 0; counter-reset: s; display: flex; flex-direction: column; gap: 26px; }
+ol.steps li { counter-increment: s; padding-left: 64px; position: relative; font-size: 29px; line-height: 1.34; color: var(--ink2); }
+ol.steps li::before { content: counter(s); position: absolute; left: 0; top: 2px; width: 40px; height: 40px; border-radius: 50%; border: 1.5px solid var(--green); color: var(--green); font: 600 20px/38px "Geist"; text-align: center; }
+ol.steps li b { color: var(--ink); font-weight: 600; }
+ul.pts { list-style: none; margin: 30px 0 0; padding: 0; display: flex; flex-direction: column; gap: 22px; }
+ul.pts li { padding-left: 34px; position: relative; font-size: 29px; line-height: 1.34; color: var(--ink2); }
+ul.pts li::before { content: ""; position: absolute; left: 0; top: 17px; width: 14px; height: 2px; background: var(--green); }
+ul.pts li b { color: var(--ink); font-weight: 600; }
+.quote { margin-top: 30px; padding: 30px 34px; border-radius: 22px; background: var(--soft); font-size: 30px; line-height: 1.38; color: var(--ink); }
+.quote span { display: block; margin-bottom: 12px; font: 500 20px/1 "Geist"; color: var(--green); }
+.tag { display: inline-block; font: 500 20px/1 "Geist"; color: var(--green); border: 1.5px solid var(--green); border-radius: 999px; padding: 9px 16px; margin-bottom: 20px; }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 72px; margin-top: 44px; }
+.box { border-top: 2px solid var(--green); padding-top: 26px; }
+.box h3 { font: 600 40px/1.1 "Geist"; letter-spacing: -.02em; margin: 0 0 6px; }
+.box .sub { font-size: 24px; color: var(--ink3); margin-bottom: 20px; }
+.box ul.pts { margin-top: 0; gap: 16px; }
+.box ul.pts li { font-size: 28px; }
+.links { margin-top: 64px; display: flex; gap: 64px; font-size: 27px; color: var(--ink2); }
+.links b { display: block; font: 500 19px/1 "Geist"; color: var(--ink3); margin-bottom: 10px; }
+</style>
+</head>
+<body>
+
+<section class="slide">
+  <div class="cols" style="align-items:center">
+    <div class="col" style="flex:1.25">
+      <div class="kicker">S-Pankki · Personal Economic Trainer · Junction 2026</div>
+      <h1>Kori</h1>
+      <h2 style="margin-top:38px;font-size:76px">Your balance is<br>not your budget.</h2>
+      <p class="lead">A coach in your bank app. It says what's safe to spend until payday and proves it on your own past. Ask anything and it builds the screen for the answer.</p>
+    </div>
+    <div class="col" style="flex:.75;align-items:center">
+      <div class="screen" style="width:520px"><img src="img/home.jpg" alt=""></div>
+    </div>
+  </div>
+  <div class="foot"><span>kori-coach.fly.dev</span><span>1</span></div>
+</section>
+
+<section class="slide">
+  <div class="kicker">The number</div>
+  <h2>Elli has €2,764 in her account.<br><span class="g">€1,357 of it is hers to spend.</span></h2>
+  <p class="lead">The rest is already spoken for. Kori takes it off before she sees a number, and shows what it took.</p>
+  <div class="rows num">
+    <div class="row"><span>Balance today</span><b>€2,764.49</b></div>
+    <div class="row"><span>Bills that land before payday</span><b>− €878.44</b></div>
+    <div class="row"><span>Reserve for surprises</span><b>− €198.61</b></div>
+    <div class="row"><span>Cushion</span><b>− €100.00</b></div>
+    <div class="row"><span>Stays as savings</span><b>− €230.55</b></div>
+    <div class="row total"><span>Safe to spend until payday</span><b>€1,356.89</b></div>
+  </div>
+  <p class="lead" style="position:absolute;right:112px;bottom:150px;width:560px;font-size:30px"><b style="font:600 96px/1 Geist;letter-spacing:-.04em;color:var(--ink);display:block;margin-bottom:14px" class="num">€56.54</b>a day, for the 24 days until payday. One screen on her phone.</p>
+  <div class="foot"><span>Kori</span><span>2</span></div>
+</section>
+
+<section class="slide">
+  <div class="kicker">The proof</div>
+  <h2>We tested the number on the past,<br>with the days ahead hidden.</h2>
+  <p class="lead">S-Pankki's challenge data: 106,553 past days from 4,850 customers. On 89,619 of them there was something safe to spend.</p>
+  <div class="stats">
+    <div class="stat"><div class="v g">95.9%</div><div class="l">stayed above zero when spending exactly what Kori said</div></div>
+    <div class="stat"><div class="v" style="color:var(--red)">28.6%</div><div class="l">stayed above zero when spending the balance</div></div>
+  </div>
+  <p class="lead" style="margin-top:56px">In the app Elli replays it on her own past paydays. It held on <b style="color:var(--ink)">17 of 18</b>.</p>
+  <div class="foot"><span>Kori</span><span>3</span></div>
+</section>
+
+<section class="slide" style="padding-top:76px">
+  <div class="kicker">The chat</div>
+  <h2 style="margin-bottom:14px;font-size:60px;max-width:none">Ask anything. Kori builds the screen for the answer.</h2>
+  <div class="four">
+    <div><div class="screen"><img src="img/groceries.jpg" alt=""></div><div class="q">Can my grocery shopping be cheaper?</div><div class="a">Her brands next to the S Group product that is the same thing. €69 a month.</div></div>
+    <div><div class="screen"><img src="img/eating.jpg" alt=""></div><div class="q">When do I spend the most on eating out?</div><div class="a">€552 a month. A slider shows what fewer visits would leave her.</div></div>
+    <div><div class="screen"><img src="img/saving.jpg" alt=""></div><div class="q">Save the difference</div><div class="a">Ten years in one of S-Pankki's own funds. An illustration, not investment advice.</div></div>
+    <div><div class="screen"><img src="img/laptop.jpg" alt=""></div><div class="q">I need a new laptop. What can I afford?</div><div class="a">€287 at her usual pace, €715 with tighter days. Real prices in Finnish shops now.</div></div>
+  </div>
+  <div class="foot"><span>Typed or spoken, in English or Finnish</span><span>4</span></div>
+</section>
+
+<section class="slide">
+  <div class="cols">
+    <div class="col" style="flex:.82">
+      <div class="kicker">How an answer is made</div>
+      <h2 style="font-size:64px">No number is guessed.</h2>
+      <ol class="steps">
+        <li><b>She asks</b> in her own words.</li>
+        <li><b>Gemini writes code</b> for that one question.</li>
+        <li><b>The code runs on her own payments</b>, in a locked sandbox with no network.</li>
+        <li><b>A check stops any figure</b> the run did not produce.</li>
+        <li><b>The screen is drawn</b> from those figures only.</li>
+      </ol>
+      <p class="lead" style="margin-top:34px;font-size:27px">Twenty common questions have code and a screen the bank approved once. They open in about a second and are worked out again on her payments each time.</p>
+    </div>
+    <div class="col" style="flex:1.18;justify-content:center">
+      <div class="tag" style="align-self:flex-start">Gemini writes this code</div>
+      <div class="screen" style="border-radius:20px"><img src="img/work.jpg" alt=""></div>
+      <p class="dim" style="font-size:21px;margin-top:16px">The work view of the same chat. Customers never see code.</p>
+    </div>
+  </div>
+  <div class="foot"><span>Every figure on screen traces to a run</span><span>5</span></div>
+</section>
+
+<section class="slide">
+  <div class="cols">
+    <div class="col" style="flex:1.2">
+      <div class="kicker">The coach</div>
+      <h2 style="font-size:64px">It coaches and teaches.</h2>
+      <div class="quote"><span>Kori speaks first · Voice: ElevenLabs</span>"Hi Elli, it's Kori. You have 57 euros a day until payday. Last pay cycle went 141 euros over because of one purchase: Matkatoimisto Mylly, 293 euros. Will something like it come again within a year?"</div>
+      <ul class="pts">
+        <li>Her answer decides the <b>one thing</b> Kori suggests before payday.</li>
+        <li><b>Five to eight two-minute lessons</b> on S-Pankki's three baskets, made from her own payments.</li>
+        <li>Each lesson ends with her <b>saying the idea back</b> in her own words. The idea is graded, not the wording.</li>
+      </ul>
+    </div>
+    <div class="col" style="flex:.8;align-items:center;justify-content:center">
+      <div class="screen" style="width:500px"><img src="img/learn.jpg" alt=""></div>
+    </div>
+  </div>
+  <div class="foot"><span>Kori</span><span>6</span></div>
+</section>
+
+<section class="slide">
+  <div class="cols">
+    <div class="col" style="flex:1.05">
+      <div class="kicker">Integration</div>
+      <h2 style="font-size:64px">Ready for S-mobiili.</h2>
+      <ul class="pts">
+        <li>The bank app asks for consent, opens Kori in a <b>web view</b> and gets the safe-to-spend number back for its own home screen.</li>
+        <li>The code runs <b>inside the bank</b>, next to the data.</li>
+        <li>A bank can start with <b>no AI writing answers</b>: one switch leaves 20 approved answers, still asked in the customer's own words.</li>
+        <li>When the salary goes to another bank, Kori <b>says what it can't see</b> and doesn't guess.</li>
+        <li>It says it's an AI and gives <b>no investment or credit advice</b>.</li>
+      </ul>
+    </div>
+    <div class="col" style="flex:.95;flex-direction:row;gap:36px;align-items:center;justify-content:flex-end">
+      <div class="screen" style="width:380px"><img src="img/host.jpg" alt=""></div>
+      <div class="screen" style="width:380px"><img src="img/switch.jpg" alt=""></div>
+    </div>
+  </div>
+  <div class="foot"><span>kori-coach.fly.dev/host · a stand-in bank app</span><span>7</span></div>
+</section>
+
+<section class="slide">
+  <div class="kicker">Built with</div>
+  <h2 style="font-size:64px;margin-bottom:10px">Two partners do the two hardest jobs.</h2>
+  <div class="two">
+    <div class="box">
+      <h3>Gemini API</h3>
+      <div class="sub">It writes the code behind every answer</div>
+      <ul class="pts">
+        <li>Writes the code for each new question. We run it on the customer's own payments.</li>
+        <li>Finds real products and prices with Google Search.</li>
+        <li>In the coach, picks which of 22 calculations to run.</li>
+        <li>Grades what the customer says back in a lesson.</li>
+      </ul>
+    </div>
+    <div class="box">
+      <h3>ElevenLabs</h3>
+      <div class="sub">Kori's voice and ears</div>
+      <ul class="pts">
+        <li>The voice coach is an ElevenLabs Agent with our server as its brain, so spoken figures pass the same check.</li>
+        <li>Kori speaks first, in English or Finnish.</li>
+        <li>The microphone in the chat is ElevenLabs speech to text.</li>
+        <li>The daily money minute is read aloud by ElevenLabs.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="links">
+    <div><b>Demo</b>kori-coach.fly.dev</div>
+    <div><b>Film</b>kori-coach.fly.dev/film</div>
+    <div><b>Source</b>github.com/ToukoUrsin/kori</div>
+    <div><b>Checked by</b>over 1,000 automated tests</div>
+  </div>
+  <div class="foot"><span>Open it on your phone and ask anything</span><span>8</span></div>
+</section>
+
+</body>
+</html>

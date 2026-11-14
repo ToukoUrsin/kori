@@ -292,6 +292,13 @@ interface LogEntry {
 
 /** A sheet of the bank app: it rises inside the phone, over the bank's own screen. */
 function SheetFrame({ lang, icon, children, onClose }: { lang: Lang; icon: React.ReactNode; children: React.ReactNode; onClose: () => void }) {
+  const close = useRef(onClose);
+  close.current = onClose;
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => event.key === "Escape" && close.current();
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
   return (
     <div className="host-sheet-backdrop" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
       <section className="host-sheet" role="dialog" aria-modal="true">

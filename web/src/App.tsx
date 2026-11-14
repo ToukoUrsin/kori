@@ -31,9 +31,9 @@ function Stage() {
   return (
     <div className={embed ? "flex h-full w-full items-center justify-center overflow-hidden" : "flex h-full w-full items-center justify-center overflow-hidden lg:gap-14 lg:px-10 xl:gap-12"}>
       {!embed && <JudgePanel part="intro" className="hidden xl:flex" />}
-      {/* below 640px the app is the whole screen; above it sits in a quiet phone frame */}
-      <div className={embed ? "h-full w-full shrink-0" : "h-[var(--app-h,100dvh)] w-full shrink-0 sm:h-[min(864px,calc(100dvh-32px))] sm:w-[410px] sm:rounded-[54px] sm:bg-ink sm:p-[10px] sm:shadow-[0_30px_70px_-30px_oklch(0.22_0.02_160/0.55)]"}>
-        <div className={embed ? "relative h-full w-full overflow-hidden bg-ground" : "relative h-full w-full overflow-hidden bg-ground sm:rounded-[44px]"}>
+      {/* below 640px wide or 500px tall the app is the whole screen; above it sits in a quiet phone frame */}
+      <div className={embed ? "h-full w-full shrink-0" : "h-[var(--app-h,100dvh)] w-full shrink-0 framed:h-[min(864px,calc(100dvh-32px))] framed:w-[410px] framed:rounded-[54px] framed:bg-ink framed:p-[10px] framed:shadow-[0_30px_70px_-30px_oklch(0.22_0.02_160/0.55)]"}>
+        <div className={embed ? "relative h-full w-full overflow-hidden bg-ground" : "relative h-full w-full overflow-hidden bg-ground framed:rounded-[44px]"}>
           <Shell />
         </div>
       </div>

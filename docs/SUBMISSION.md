@@ -45,11 +45,19 @@ She can type it or say it. Twenty common questions open in about a second, howev
 
 ## How it's built
 
-Every figure is calculated by code and checked before you see or hear it. The chat and the app's own screens run the same calculations, so they agree. A zero is checked a second time before it's shown.
+Every figure is calculated by code and checked before you see or hear it. The chat and the app's own screens run the same calculations, so they agree. A zero is checked a second time before it's shown. Claude only draws: each screen is built from what Gemini's code produced. Over 1,000 automated tests.
 
-- Gemini (gemini-4-hydrogen) writes and runs the code in the chat and searches the web with Google Search. A larger one (gemini-4-carbon) runs the ten-year model. In the coach, Gemini chooses which of 22 calculations to run (function calling) and grades the lessons.
-- ElevenLabs Agents run the voice conversation with our own server as the brain, so the voice goes through the same check. Spoken questions in the chat are written down by ElevenLabs too.
-- Claude only draws: each screen is built from what Gemini's code produced.
-- Over 1,000 automated tests.
+## Gemini API: it writes the code behind every answer
+
+- For each new question gemini-4-hydrogen writes Python. We run it in a locked sandbox on the customer's own transactions, and a check stops any figure the run did not produce.
+- It finds real products and prices with Google Search.
+- In the coach it chooses which of 22 calculations to run (function calling), and it grades the lessons.
+- gemini-4-carbon runs the ten-year model.
+
+## ElevenLabs: Kori's voice and ears
+
+- The voice coach is an ElevenLabs Agent with our own server as its brain, so every spoken figure passes the same check. Kori speaks first, in English or Finnish.
+- The microphone in the chat is ElevenLabs speech to text.
+- The daily money minute is read aloud with ElevenLabs text to speech.
 
 Open it on your phone and ask anything.

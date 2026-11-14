@@ -87,7 +87,7 @@ export function Sheet({ open, onClose, label, children, size = "auto", z = 40, i
             tabIndex={-1}
             className={
               "relative flex min-h-0 flex-col rounded-t-[22px] bg-ground shadow-sheet outline-none " +
-              (size === "full" ? "h-[calc(100%-10px)] sm:h-[calc(100%-14px)]" : "max-h-[90%]")
+              (size === "full" ? "h-[calc(100%-10px)] framed:h-[calc(100%-14px)]" : "max-h-[90%]")
             }
             initial={reduce ? { opacity: 0 } : { y: "100%" }}
             animate={reduce ? { opacity: 1 } : { y: 0 }}

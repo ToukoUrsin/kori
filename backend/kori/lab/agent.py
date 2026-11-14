@@ -1030,6 +1030,7 @@ async def run_turn(sess: LabSession, turn: Turn) -> None:
             if not answer:
                 answer = {"en": "I could not finish working that out. Ask me again, or put it another way.",
                           "fi": "En saanut tätä laskettua loppuun. Kysy uudelleen tai vähän toisin sanoin."}[lang]
+            answer = re.sub(r"\s*[—–]\s*(?=\D)", ", ", answer)             # house style the model sometimes forgets: no dash between clauses
             flagged = check.answer(answer, check.allowed(w.ledger(), turn.message), lang)
             for piece in re.findall(r"\S+\s*", answer):
                 turn.emit("text", {"delta": piece})

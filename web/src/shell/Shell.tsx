@@ -6,13 +6,12 @@ import { CoachSheet } from "../coach/CoachSheet";
 import { MinutePlayer } from "../coach/MinutePlayer";
 import { CardView } from "../components/cards/CardView";
 import { StatusChip } from "../components/cards/parts";
-import { Button, Chip, IconButton, LangToggle, Mark, Skel, cx, useLast } from "../components/ui/bits";
+import { Button, IconButton, LangToggle, Mark, Skel, cx, useLast } from "../components/ui/bits";
 import { FRAME_ID, Sheet } from "../components/ui/Sheet";
 import { api } from "../lib/api";
 import { initials, longDate, money } from "../lib/format";
 import { isEmbedMode } from "../lib/host";
 import type { Key } from "../lib/i18n";
-import { useStarters } from "../lib/starters";
 import { LEGACY_COACH, useApp, type Tab } from "../lib/store";
 import LabChat from "../lab/LabChat";
 import { Baskets } from "../screens/Baskets";
@@ -91,7 +90,7 @@ function TabBar({ joined }: { joined?: boolean }) {
         )}
       >
         <x.icon size={22} strokeWidth={on ? 2.1 : 1.75} aria-hidden />
-        <span className="max-w-full truncate px-0.5">{t(x.label)}</span>
+        <span className="max-w-full truncate max-[359px]:text-[10px] max-[359px]:tracking-[-0.01em]">{t(x.label)}</span>
       </button>
     );
   };
@@ -142,30 +141,13 @@ function TopTabs() {
 /* ---------------------------------------------------------------- ask bar */
 
 function AskBar() {
-  const { t, home, openCoach, minuteOn, minuteFocus, customer, lang } = useApp();
+  const { t, openCoach, minuteOn, minuteFocus } = useApp();
   const coach = useCoach();
-  const starters = useStarters(customer, lang);
-  const chips = LEGACY_COACH ? home.data?.suggestions : starters?.slice(0, 4);
-  // in the bank app the questions wait in the chat itself: the bottom stays one field above the bank's bar
+  // one field above the tab bar: the suggested questions wait in the chat itself, one tap away on the "Ask Kori anything" card.
+  // On a phone held sideways there is no room for it: the card and the coach button in the bar still open the chat.
   const embed = isEmbedMode();
   return (
-    <div className={cx("shrink-0 bg-surface", embed ? "pb-2.5" : "pb-1.5", minuteOn ? "pt-1" : "border-t border-line pt-2.5")}>
-      {!minuteOn && !embed && (
-        <div className="scroll-x flex h-11 items-start gap-2 px-4 [mask-image:linear-gradient(to_right,black_calc(100%-32px),transparent)]">
-          {chips
-            ? chips.map((q) => (
-                <Chip key={q} onClick={() => openCoach({ ask: q })}>
-                  {q}
-                </Chip>
-              ))
-            : [150, 190, 130].map((w) => (
-                <div key={w} style={{ width: w }} className="shrink-0">
-                  <Skel className="h-9 !rounded-full" />
-                </div>
-              ))}
-          <span className="w-4 shrink-0" aria-hidden />
-        </div>
-      )}
+    <div className={cx("shrink-0 bg-surface [@media(max-height:500px)]:hidden", embed ? "pb-2.5" : "pb-2", minuteOn ? "pt-1" : "border-t border-line pt-2.5")}>
       <div className="px-4">
         <div
           data-on={minuteFocus === "ask" ? "true" : undefined}
@@ -310,7 +292,7 @@ function ToastHost() {
         <motion.div
           key={toast.id}
           role="status"
-          className={cx("pointer-events-none absolute inset-x-0 z-[70] flex justify-center px-4", embed ? (aboveDock ? "bottom-[calc(72px+var(--safe-b))]" : "bottom-[calc(16px+var(--safe-b))]") : aboveDock ? "bottom-[calc(176px+var(--safe-b))]" : "bottom-[calc(76px+var(--safe-b))]")}
+          className={cx("pointer-events-none absolute inset-x-0 z-[70] flex justify-center px-4", embed ? (aboveDock ? "bottom-[calc(72px+var(--safe-b))]" : "bottom-[calc(16px+var(--safe-b))]") : aboveDock ? "bottom-[calc(132px+var(--safe-b))]" : "bottom-[calc(76px+var(--safe-b))]")}
           initial={reduce ? { opacity: 0 } : { opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, transition: { duration: 0.15 } }}

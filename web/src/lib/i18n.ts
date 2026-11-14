@@ -45,7 +45,7 @@ const D = {
   "common.you": ["You", "Sinä"],
   "common.now": ["Now", "Nyt"],
   "common.after": ["After", "Muutoksen jälkeen"],
-  "common.demoDay": ["Demo data. Today is fixed at {date}.", "Demoaineisto. Tämä päivä on lukittu: {date}."],
+  "common.demoDay": ["Demo customer. Today is fixed at {date}.", "Demoasiakas. Tämä päivä on lukittu: {date}."],
   "common.language": ["Language", "Kieli"],
 
   "status.comfortable": ["Comfortable", "Väljää"],
@@ -384,7 +384,7 @@ const D = {
   "replay.numberHeld": ["Safe-to-spend held", "Turvallinen summa piti"],
   "replay.balanceHeld": ["Balance as the budget held", "Saldo budjettina piti"],
   "replay.everyoneTitle": ["Across the same check", "Sama tarkistus kaikille"],
-  "replay.synthetic": ["Backtest on S-Pankki's synthetic dataset.", "Takautuva testi S-Pankin synteettisellä aineistolla."],
+  "replay.synthetic": ["Tested on S-Pankki's synthetic demo customers.", "Testattu S-Pankin synteettisillä demoasiakkailla."],
   "replay.ask": ["Was this number right before?", "Oliko tämä luku oikein ennen?"],
 
   "afford.pace": ["Daily pace", "Päivätahti"],
@@ -404,7 +404,7 @@ const D = {
   "slips.perYear": ["at this rate per year", "tällä tahdilla vuodessa"],
   "slips.kinds": ["Kinds", "Tyypit"],
   "slips.places": ["Places", "Paikat"],
-  "calculate.engine": ["Calculated from the engine's numbers.", "Laskettu moottorin luvuista."],
+  "calculate.engine": ["Calculated from your own transactions.", "Laskettu omista tapahtumistasi."],
 
   "lesson.start": ["Start lesson", "Aloita oppitunti"],
   "lesson.again": ["Open again", "Avaa uudelleen"],
@@ -442,7 +442,7 @@ const D = {
   ],
   "coach.figuresTitle": ["Where these numbers come from", "Mistä nämä luvut tulevat"],
   "coach.rounded": ["rounded", "pyöristetty"],
-  "coach.figuresFoot": ["Computed by plain code from your transactions. The language model only chose which calculation to run.", "Laskettu selkeällä koodilla tapahtumistasi. Kielimalli valitsi vain, minkä laskelman suorittaa."],
+  "coach.figuresFoot": ["Worked out exactly from your transactions. Kori only picked which calculation to run.", "Laskettu tarkasti tapahtumistasi. Kori valitsi vain, mikä laskelma tehdään."],
   "coach.speak": ["Listen", "Kuuntele"],
   "coach.speakStop": ["Stop", "Pysäytä"],
   "coach.speakFail": ["Speech isn't available right now.", "Puhe ei ole juuri nyt käytettävissä."],

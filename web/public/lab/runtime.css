@@ -335,6 +335,50 @@ mark.k-flag {
   font-size: 22px;
   line-height: 26px;
 }
+/* three across stops fitting on a narrow phone (inside a card on a 375 phone, anywhere on a 320 one; the frame is the phone's width):
+   the figures stack, value then label on one line, so nothing breaks inside a word or touches its neighbour */
+@media (max-width: 380px) {
+  .k-card .k-stats:has(> :nth-child(3)) {
+    grid-auto-flow: row;
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .k-card .k-stats:has(> :nth-child(3)) > * {
+    flex-direction: row;
+    align-items: baseline;
+    gap: 12px;
+    padding: 8px 0;
+    border-left: 0;
+    border-top: 1px solid var(--color-line);
+  }
+  .k-card .k-stats:has(> :nth-child(3)) > :first-child {
+    padding-top: 0;
+    border-top: 0;
+  }
+  .k-card .k-stats:has(> :nth-child(3)) .k-fig > :first-child {
+    flex: 0 0 96px;
+  }
+}
+@media (max-width: 340px) {
+  .k-stats:has(> :nth-child(3)) {
+    grid-auto-flow: row;
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .k-stats:has(> :nth-child(3)) > * {
+    flex-direction: row;
+    align-items: baseline;
+    gap: 12px;
+    padding: 8px 0;
+    border-left: 0;
+    border-top: 1px solid var(--color-line);
+  }
+  .k-stats:has(> :nth-child(3)) > :first-child {
+    padding-top: 0;
+    border-top: 0;
+  }
+  .k-stats:has(> :nth-child(3)) .k-fig > :first-child {
+    flex: 0 0 96px;
+  }
+}
 
 /* ---------- rows ---------- */
 .k-rows {
