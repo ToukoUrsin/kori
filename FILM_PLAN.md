@@ -42,7 +42,7 @@ Option for the grocery shot: instead of tapping the question, tap the microphone
 
 ## Before filming
 
-1. **ElevenLabs credits.** 1,605 left on Sat 16:35, which is about one take of the voice shot. Top up first.
+1. **ElevenLabs credits.** 1,605 left on Sat 18:02, which is about one take of the voice shot. Top up first.
 2. Open https://kori-coach.fly.dev/api/lab/health. It should name three models and say `"claude": true`.
 3. Ask each of the four questions once before the real take, so you know what is coming.
 4. Every view is built fresh, so the layout is a little different on each take. The numbers are the same. Film each twice and keep the nicer one.
