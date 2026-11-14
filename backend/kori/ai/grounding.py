@@ -136,14 +136,73 @@ def consistency_issues(results: list[dict]) -> list[dict]:
             for key, vals in found.items() if len({round(v, 2) for v in vals}) > 1]
 
 
+# Where a figure came from, in words. Looked up by the end of its path in the tool result: two keys first, then one.
 _FIELD_LABELS = {
     "amount": ("Safe to spend until payday", "Turvallista käyttää palkkapäivään asti"),
-    "per_day": ("Safe pace per day", "Turvallinen päivätahti"),
+    "per_day": ("Safe pace a day", "Turvallinen päivätahti"),
     "this_week": ("Safe to spend this week", "Turvallista käyttää tällä viikolla"),
-    "usual_per_day": ("Your usual everyday pace per day", "Tavallinen arjen päivätahtisi"),
-    "everyday_spent": ("Everyday spending in the pay cycle", "Palkkajakson arjen menot"),
-    "everyday_available": ("Everyday money left by income", "Tuloista arkeen jäävä raha"),
-    "total": ("Total in the tool result", "Työkalun tulos yhteensä"),
+    "usual_per_day": ("Your usual everyday pace a day", "Tavallinen arjen päivätahtisi"),
+    "days_to_payday": ("Days to payday", "Päiviä palkkapäivään"),
+    "balance": ("Account balance", "Tilin saldo"),
+    "cushion": ("Your cushion", "Puskurisi"),
+    "per_day.before": ("Pace a day before the purchase", "Päivätahti ennen ostoa"),
+    "per_day.after": ("Pace a day after the purchase", "Päivätahti oston jälkeen"),
+    "safe.before": ("Safe to spend before the purchase", "Käyttövara ennen ostoa"),
+    "safe.after": ("Safe to spend after the purchase", "Käyttövara oston jälkeen"),
+    "short_by": ("Short by", "Jää vajaaksi"),
+    "everyday_spent": ("Everyday spending in the last pay cycle", "Arjen menot viime palkkajaksolla"),
+    "everyday_available": ("What the pay left for everyday", "Palkasta arkeen jäänyt raha"),
+    "over_by": ("Over in the last pay cycle", "Ylitys viime palkkajaksolla"),
+    "cycle.difference": ("Difference in the last pay cycle", "Ero viime palkkajaksolla"),
+    "without_one_off.difference": ("The cycle without the one big purchase", "Jakso ilman yhtä isoa menoa"),
+    "driver.spent": ("Spent on what did it", "Käytetty suurimpaan syyhyn"),
+    "driver.usual": ("Your usual for it", "Tavallinen määräsi siihen"),
+    "driver.above_usual": ("Above your usual", "Yli tavallisen"),
+    "biggest.amount": ("The biggest single purchase", "Suurin yksittäinen meno"),
+    "history.within": ("Pay cycles that held", "Pitäneet palkkajaksot"),
+    "history.total": ("Pay cycles looked at", "Tarkastellut palkkajaksot"),
+    "cap": ("The limit of your one thing", "Yhden asiasi raja"),
+    "limit": ("The limit of your one thing", "Yhden asiasi raja"),
+    "spent": ("Spent so far", "Käytetty tähän mennessä"),
+    "left": ("Left on your limit", "Rajasta jäljellä"),
+    "left_per_week": ("Left a week", "Jäljellä viikossa"),
+    "lands_at_current_pace": ("Where it lands at this pace", "Mihin päädyt tällä tahdilla"),
+    "pace_now": ("Your safe pace now", "Turvallinen tahtisi nyt"),
+    "saving_monthly": ("Planned saving a month", "Suunniteltu säästö kuussa"),
+    "days_left": ("Days left", "Päiviä jäljellä"),
+    "days_in": ("Days into the pay cycle", "Päiviä palkkajaksoa kulunut"),
+    "income": ("Income", "Tulot"),
+    "fixed": ("Fixed musts", "Kiinteät pakolliset"),
+    "surprise_reserve": ("Share for surprises", "Osuus yllätyksiin"),
+    "planned_saving": ("Planned saving", "Suunniteltu säästö"),
+    "total": ("Total of the matching transactions", "Osuvien tapahtumien summa"),
+    "count": ("Number of transactions", "Tapahtumien määrä"),
+    "average": ("Average per transaction", "Keskiarvo tapahtumaa kohden"),
+    "per_year": ("In a year", "Vuodessa"),
+    "monthly": ("A month", "Kuukaudessa"),
+    "yearly": ("A year", "Vuodessa"),
+    "result": ("Result of the calculation", "Laskun tulos"),
+    "usual": ("Your usual", "Tavallinen määräsi"),
+    "median": ("Typical for people like you", "Tyypillinen kaltaisillesi"),
+    "percentile": ("Where you stand among people like you", "Sijoituksesi kaltaistesi joukossa"),
+    "average_per_purchase": ("Average per purchase", "Keskiarvo ostosta kohden"),
+    "held": ("Months the number held", "Kuukaudet, joina luku piti"),
+    "missed": ("Months it missed", "Kuukaudet, joina se ei pitänyt"),
+    "months_checked": ("Months checked", "Tarkastetut kuukaudet"),
+    "months_number_would_have_held": ("Months the number would have held", "Kuukaudet, joina luku olisi pitänyt"),
+    "months_stayed_within_number": ("Months you stayed within it", "Kuukaudet, joina pysyit siinä"),
+    "share_held": ("Share of customers for whom the number held", "Osuus asiakkaista, joilla luku piti"),
+}
+_TOOL_NAMES = {
+    "safe_to_spend": ("Safe to spend", "Turvallinen käyttövara"), "can_i_afford": ("Can I afford it", "Onko varaa"),
+    "check_in": ("Your last pay cycle", "Viime palkkajaksosi"), "set_action": ("Your one thing", "Yksi asiasi"),
+    "spending": ("Your transactions", "Tapahtumasi"), "small_purchases": ("Small purchases", "Pienet ostot"),
+    "what_if": ("What-if on your usual month", "Entä jos tavallisessa kuussasi"), "track_record": ("Past months replayed", "Menneet kuukaudet uudelleen"),
+    "balance_forecast": ("Balance until payday", "Saldo palkkapäivään asti"), "baskets": ("Your three baskets", "Kolme koriasi"),
+    "compare_with_peers": ("People like you", "Kaltaisesi asiakkaat"), "calculate": ("A calculation on your numbers", "Lasku omilla luvuillasi"),
+    "coach_notices": ("Worth knowing today", "Hyvä tietää tänään"), "safe_to_save": ("Safe to save", "Turvallista säästää"),
+    "spender_profile": ("Your spending patterns", "Kulutustapasi"), "update_plan": ("Your plan", "Suunnitelmasi"),
+    "explain": ("Your own numbers", "Omat lukusi"),
 }
 
 
@@ -160,41 +219,63 @@ def _paths(obj, path=""):
             yield from _paths(v, f"{path}[{i}]")
 
 
-def _fallback_label(tool: str, path: str, lang: str) -> str:
-    key = path.rsplit(".", 1)[-1].split("[")[0]
-    if key in _FIELD_LABELS:
-        return _FIELD_LABELS[key][1 if lang == "fi" else 0]
-    words = key.replace("_", " ").strip() or "figure"
-    if lang == "fi":
-        words = {"count": "määrä", "spent": "käytetty", "usual": "tavallinen", "total": "yhteensä",
-                 "difference": "ero", "over_by": "ylitys", "days_left": "päiviä jäljellä"}.get(key, words)
-        return f"{tool.replace('_', ' ')}: {words}"
-    title = tool.replace("_", " ").title()
-    return f"{title}: {words}" if lang == "en" else f"{title}: {words}"
+_DATE_AFTER = re.compile(r"\s*(?:st|nd|rd|th)?\s*(?:of\s+)?(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)", re.I)
+_DATE_FI = re.compile(r"\.\d{1,2}\.")
+
+
+def _label(path: str, lang: str) -> tuple[str, bool]:
+    """Words for a field, and whether we really know it (so a known field wins when two fields hold the same value)."""
+    keys = [k.split("[")[0] for k in path.split(".")]
+    i = 1 if lang == "fi" else 0
+    for cand in (".".join(keys[-2:]), keys[-1]):
+        if cand in _FIELD_LABELS:
+            return _FIELD_LABELS[cand][i], True
+    words = keys[-1].replace("_", " ").strip() or ("figure" if lang == "en" else "luku")
+    return words[:1].upper() + words[1:], False
 
 
 def figures(text: str, results: list, lang: str = "en") -> list[dict]:
-    """Map each number written in an answer to its first matching tool field.
+    """Where each number in an answer came from: the tool that computed it and the field, in words.
 
     ``results`` accepts either plain result dicts or ``{tool, result}`` records.
-    Rounded speech keeps the source field and is marked as rounded.
+    A rounded figure keeps its source and is marked as rounded.
     """
+    i = 1 if lang == "fi" else 0
     paths = []
     for item in results:
         if isinstance(item, dict) and "result" in item:
             tool, obj = item.get("tool", "tool"), item.get("result")
         else:
             tool, obj = "tool", item
-        paths.extend((tool, p, abs(v)) for p, v in _paths(obj))
-    out = []
+        for pth, v in _paths(obj):
+            label, known = _label(pth, lang)
+            paths.append((tool, pth, abs(v), label, known))
+    paths.sort(key=lambda x: not x[4])                 # stable: named fields first
+    out, seen, pos = [], set(), 0
     for written, value in numbers_in_text(text, lang):
-        match = next(((tool, path, source) for tool, path, source in paths
-                      if abs(source - value) < 1e-9 or abs(round(source) - value) < 0.5), None)
+        at = text.find(written, pos)
+        if at >= 0:
+            pos = at + len(written)
+        if at >= 0 and (_DATE_AFTER.match(text[pos:pos + 12]) or _DATE_FI.match(text[pos:pos + 4]) or
+                        (lang == "fi" and re.search(r"\d\.$", text[max(0, at - 3):at]))):
+            continue                                   # a day of the month, not a figure
+        match = (next((x for x in paths if abs(x[2] - value) < 1e-9), None)
+                 or next((x for x in paths if abs(round(x[2]) - value) < 0.5), None))
         if not match:
             continue
-        tool, path, source = match
-        key = path.rsplit(".", 1)[-1].split("[")[0]
-        label = _fallback_label(tool, path, lang)
-        out.append({"text": written, "value": value, "tool": tool, "path": path,
-                    "label": label, "rounded": abs(source - value) > 1e-9})
+        tool, pth, source, label, _ = match
+        if (pth, value) in seen:
+            continue
+        seen.add((pth, value))
+        shown = written
+        if at >= 0:                                    # keep the unit the answer used
+            before, after = text[max(0, at - 1):at], text[pos:pos + 2]
+            if before == "€":
+                shown = "€" + written
+            elif after.strip().startswith("€"):
+                shown = written + " €"
+            elif after.strip().startswith("%"):
+                shown = written + ("%" if lang == "en" else " %")
+        out.append({"text": shown, "value": value, "tool": tool, "source": _TOOL_NAMES.get(tool, (tool.replace("_", " "),) * 2)[i],
+                    "path": pth, "label": label, "rounded": abs(source - value) > 1e-9})
     return out
