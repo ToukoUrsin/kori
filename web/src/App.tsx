@@ -60,7 +60,10 @@ function EmbedWaiting() {
 
 function EmbedRuntime() {
   const init = useHostInit();
-  const { home, coachOpen, coachRequest, openCoach, setTab } = useApp();
+  const { home, coachOpen: sheetOpen, coachRequest, chatOpen, chatRequest, openCoach, openChat, setTab } = useApp();
+  // the host sees one coach: the chat layer or the voice sheet, whichever is open
+  const coachOpen = sheetOpen || chatOpen;
+  const request = chatOpen ? chatRequest : coachRequest;
   const lastRequest = useRef(0);
   const wasOpen = useRef(false);
   const ready = !!init?.consent.transactions;
@@ -77,12 +80,12 @@ function EmbedRuntime() {
         openCoach({ ask: message.question });
         postToHost({ type: "kori:event", v: 1, name: "question_received" });
       } else if (message.type === "kori:open") {
-        if (message.screen === "coach") openCoach();
+        if (message.screen === "coach") openChat();
         else setTab("today");
       }
     };
     return subscribeHost(onMessage);
-  }, [openCoach, ready, setTab]);
+  }, [openChat, openCoach, ready, setTab]);
 
   useEffect(() => {
     if (!ready || !home.data) return;
@@ -95,15 +98,15 @@ function EmbedRuntime() {
     if (coachOpen) {
       wasOpen.current = true;
       postToHost({ type: "kori:navigate", v: 1, screen: "coach" });
-      if (lastRequest.current !== coachRequest?.id) {
-        lastRequest.current = coachRequest?.id || lastRequest.current;
-        postToHost({ type: "kori:event", v: 1, name: coachRequest?.ask ? "question_sent" : "coach_opened" });
+      if (lastRequest.current !== request?.id) {
+        lastRequest.current = request?.id || lastRequest.current;
+        postToHost({ type: "kori:event", v: 1, name: request?.ask ? "question_sent" : "coach_opened" });
       }
     } else if (wasOpen.current) {
       wasOpen.current = false;
       postToHost({ type: "kori:close", v: 1 });
     }
-  }, [coachOpen, coachRequest, ready]);
+  }, [coachOpen, request, ready]);
 
   return null;
 }

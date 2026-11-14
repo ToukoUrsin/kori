@@ -421,6 +421,7 @@ const D = {
   "coach.stopped": ["Stopped.", "Keskeytetty."],
   "coach.voice": ["Talk to Kori", "Puhu Korille"],
   "coach.type": ["Type instead", "Kirjoita"],
+  "coach.talkAgain": ["Talk again", "Puhu uudelleen"],
 
   "voice.connecting": ["Connecting…", "Yhdistetään…"],
   "voice.listening": ["Listening", "Kuuntelen"],
@@ -503,7 +504,7 @@ const D = {
   "persona.current": ["Selected", "Valittu"],
 
   "judge.try": ["Try this", "Kokeile tätä"],
-  "judge.tryHint": ["Each one drives the phone.", "Jokainen ohjaa puhelinta."],
+  "judge.tryHint": ["Each one builds its own screen in the phone.", "Jokainen rakentaa oman näkymänsä puhelimeen."],
   "judge.bankApp": ["See it inside a bank app", "Katso pankkisovelluksessa"],
   "judge.firstStep": ["Try first: answer the question about last pay cycle.", "Kokeile ensin: vastaa kysymykseen viime palkkajaksosta."],
   "judge.voice": ["Talk to it", "Puhu sille"],
@@ -512,14 +513,14 @@ const D = {
   "judge.how": ["How it works", "Näin se toimii"],
   "judge.s1": ["Your transactions", "Tapahtumasi"],
   "judge.s1b": ["Account events, sorted into three baskets.", "Tilitapahtumat, lajiteltuna kolmeen koriin."],
-  "judge.s2": ["Calculation engine", "Laskentamoottori"],
-  "judge.s2b": ["Every figure is computed in code, never by the model.", "Jokainen luku lasketaan koodissa, ei koskaan mallissa."],
-  "judge.s3": ["Gemini explains", "Gemini selittää"],
-  "judge.s3b": ["It picks the calculation and puts the result in plain words.", "Se valitsee laskelman ja kertoo tuloksen selkokielellä."],
+  "judge.s2": ["Code does the math", "Koodi laskee"],
+  "judge.s2b": ["Every figure is calculated by code, never by the model.", "Jokainen luku lasketaan koodissa, ei koskaan mallissa."],
+  "judge.s3": ["Gemini writes the code", "Gemini kirjoittaa koodin"],
+  "judge.s3b": ["For each question it writes code and runs it on your own data.", "Jokaiseen kysymykseen se kirjoittaa koodin ja ajaa sen omilla tiedoillasi."],
   "judge.s4": ["Numbers checked", "Luvut tarkistetaan"],
-  "judge.s4b": ["Each number in the answer is matched against the engine.", "Jokainen vastauksen luku täsmäytetään moottorin tulokseen."],
-  "judge.s5": ["ElevenLabs speaks", "ElevenLabs puhuu"],
-  "judge.s5b": ["Voice in and out, with cards on screen while it talks.", "Puhe sisään ja ulos, kortit näytöllä puheen aikana."],
+  "judge.s4b": ["Every number on screen is matched against what the code returned.", "Jokainen näytön luku täsmäytetään koodin tulokseen."],
+  "judge.s5": ["Claude draws, ElevenLabs speaks", "Claude piirtää, ElevenLabs puhuu"],
+  "judge.s5b": ["The screen is built for that one answer. Voice goes through the same check.", "Näkymä rakennetaan juuri tälle vastaukselle. Puhe kulkee saman tarkistuksen läpi."],
 } as const;
 
 export type Key = keyof typeof D;

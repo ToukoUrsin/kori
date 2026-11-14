@@ -25,6 +25,9 @@ export interface CoachRequest {
   focus?: boolean;
 }
 
+/** `?coach=old`: the old typed coach, as it was before the chat moved into the phone. */
+export const LEGACY_COACH = new URLSearchParams(location.search).get("coach") === "old";
+
 interface App {
   lang: Lang;
   setLang: (l: Lang) => void;
@@ -48,6 +51,11 @@ interface App {
   coachRequest: CoachRequest | null;
   openCoach: (o?: { ask?: string; voice?: boolean; focus?: boolean }) => void;
   closeCoach: () => void;
+  /** the chat that builds a screen for each answer: a layer over the whole phone screen */
+  chatOpen: boolean;
+  chatRequest: CoachRequest | null;
+  openChat: (o?: { ask?: string; focus?: boolean }) => void;
+  closeChat: () => void;
   lessonId: string | null;
   openLesson: (id: string | null) => void;
   minuteOn: boolean;
@@ -108,6 +116,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [overlay, setOverlay] = useState<Overlay>(null);
   const [coachOpen, setCoachOpen] = useState(false);
   const [coachRequest, setCoachRequest] = useState<CoachRequest | null>(null);
+  // `/lab` is the app with the chat already open
+  const [chatOpen, setChatOpen] = useState(() => !LEGACY_COACH && location.pathname === "/lab");
+  const [chatRequest, setChatRequest] = useState<CoachRequest | null>(null);
   const [lessonId, setLessonId] = useState<string | null>(null);
   const [minuteOn, setMinuteOn] = useState(false);
   const [minuteFocus, setMinuteFocus] = useState<string | null>(null);
@@ -157,6 +168,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setOverlay(null);
     setLessonId(null);
     setCoachOpen(false); // another customer is another conversation, so their own screen comes first
+    setChatOpen(false);
     setMinuteOn(false);
     setMinuteFocus(null);
     const q = new URLSearchParams(location.search);
@@ -256,18 +268,37 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [home.data]);
   const basketOf = useCallback((c: string) => basketMap.get(c), [basketMap]);
 
-  const openCoach = useCallback((o?: { ask?: string; voice?: boolean; focus?: boolean }) => {
+  const openChat = useCallback((o?: { ask?: string; focus?: boolean }) => {
     const partialAsk = home.data?.notices.find((notice) => notice.id === "partial_view")?.ask;
     if (isEmbedMode() && o?.ask && partialAsk === o.ask) {
       postToHost({ type: "kori:request", v: 1, what: "link_other_bank" });
       return;
     }
+    setMinuteOn(false);
+    setMinuteFocus(null);
+    if (LEGACY_COACH) {
+      setCoachOpen(true);
+      setCoachRequest(o && (o.ask || o.focus) ? { id: ++reqId.current, ...o } : null);
+      return;
+    }
+    setCoachOpen(false); // the voice sheet steps aside: one way to ask at a time
+    setChatOpen(true);
+    setChatRequest({ id: ++reqId.current, ...o });
+  }, [home.data]);
+  // A question or a tap on the ask bar goes to the chat; the old sheet is the voice screen (`openCoach()` then `coach.voice.start()`).
+  const openCoach = useCallback((o?: { ask?: string; voice?: boolean; focus?: boolean }) => {
+    if (!o?.voice && (o?.ask || o?.focus)) return openChat(o);
     setCoachOpen(true);
     setMinuteOn(false);
     setMinuteFocus(null);
     setCoachRequest(o && (o.ask || o.voice || o.focus) ? { id: ++reqId.current, ...o } : null);
-  }, [home.data]);
+  }, [openChat]);
   const closeCoach = useCallback(() => setCoachOpen(false), []);
+  const closeChat = useCallback(() => {
+    setChatOpen(false);
+    // `/lab` closes to the home screen, with the same customer, language and mock
+    if (location.pathname === "/lab") history.replaceState(null, "", "/" + location.search + location.hash);
+  }, []);
   const openLesson = useCallback((id: string | null) => setLessonId(id), []);
 
   const value: App = {
@@ -292,6 +323,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     coachRequest,
     openCoach,
     closeCoach,
+    chatOpen,
+    chatRequest,
+    openChat,
+    closeChat,
     lessonId,
     openLesson,
     minuteOn,

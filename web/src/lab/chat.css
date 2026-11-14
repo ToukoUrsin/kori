@@ -65,3 +65,14 @@
 @keyframes kc-shine{from{background-position:200% 0}to{background-position:0 0}}
 @keyframes kc-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 @media (prefers-reduced-motion:reduce){.kc-dots i,.kc-doing,.kc-answer,.kc-view.on{animation:none}.kc-doing{color:var(--kc-soft);background:none}}
+
+/* inside the app: a layer over the phone screen, sized by the frame (and by the visual viewport on a real phone) */
+.kc-root.kc-embed{height:100%}
+.kc-embed .kc-col{max-width:none}
+.kc-embed .kc-scroll{container-type:size}
+.kc-embed .kc-turn:last-child{min-height:100cqh}
+
+/* every figure in the built view was found in what the code returned */
+.kc-checked{display:flex;align-items:center;gap:6px;margin-top:-4px;color:var(--kc-faint);font-size:13px;line-height:1.4;animation:kc-in .45s cubic-bezier(.16,1,.3,1)}
+.kc-checked svg{flex:none;color:#2f7a5b}
+@media (prefers-reduced-motion:reduce){.kc-checked{animation:none}}

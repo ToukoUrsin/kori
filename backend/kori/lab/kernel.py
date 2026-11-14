@@ -133,6 +133,7 @@ class Kernel:
         self.used = time.time()
         self.rows = 0
         self._lock = asyncio.Lock()
+        self._starting = asyncio.Lock()
 
     def _write_data(self) -> None:
         self.dir = Path(tempfile.mkdtemp(prefix="kori-lab-"))
@@ -148,6 +149,10 @@ class Kernel:
             os.chmod(f, 0o644)
 
     async def start(self) -> None:
+        async with self._starting:          # the chat opening and the first question may both ask for it: one start, the other waits
+            await self._start()
+
+    async def _start(self) -> None:
         if self.proc and self.proc.returncode is None:
             return
         await asyncio.to_thread(self._write_data)

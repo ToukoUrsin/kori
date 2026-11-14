@@ -26,7 +26,7 @@ from google.genai import types
 from .. import config, state as S
 from ..ai import agent as coach
 from ..engine.core import Money
-from . import check, kernel
+from . import check, kept, kernel
 from .door import Door
 
 log = logging.getLogger("kori.lab.agent")
@@ -243,6 +243,7 @@ class Turn:
     message: str
     events: coach.EventLog = field(default_factory=coach.EventLog)
     started: float = field(default_factory=time.time)
+    fresh: bool = False                                     # build it new even if this question has a kept view
 
     def emit(self, kind: str, data: dict) -> None:
         self.events.put_nowait((kind, data))
@@ -728,6 +729,39 @@ async def _view(w: _Work, question: str, answer: str, title: str, brief: str) ->
     t.emit("ui", {"id": uid, "phase": "done", "ms": int((time.time() - t0) * 1000), "by": by, "check": check.fragment(html, ledger, ok, lang)})
 
 
+async def _kept_cells(w: _Work, rec: dict) -> list | None:
+    """A question the chat suggests itself (kept.py): the code Kori wrote for it runs again on this customer's own data.
+    Returns the model's record of the turn, or None when anything is off, and then the question is built fresh."""
+    record: list = []
+    for c in rec["cells"]:
+        by = c.get("by") or (rec.get("by") or {}).get("analyst") or config.GEMINI_MODEL
+        out = await w.cell(c.get("title") or rec.get("title") or "", c["code"], by)
+        if not out["ok"]:
+            return None
+        record += [_said("RUN: " + (c.get("title") or "") + "\n```python\n" + c["code"] + "\n```"), _result(out)]
+    ledger = w.ledger()
+    ok = check.allowed(ledger, w.turn.message)
+    if not w.said or check.answer(w.said, ok, w.lang) or check.fragment(rec["html"], ledger, ok, w.lang)["flagged"]:
+        return None
+    return record + [_said("ANSWER: " + w.said)]
+
+
+def _kept_view(w: _Work, rec: dict) -> None:
+    """The approved screen, filled from the ledger this run just wrote."""
+    t = w.turn
+    w.views += 1
+    uid = f"v{w.views}-{t.id[:6]}"
+    ledger = w.ledger()
+    by = (rec.get("by") or {}).get("designer") or "kept"
+    w.models["designer"] = by
+    if (rec.get("by") or {}).get("modeller"):
+        w.models["modeller"] = rec["by"]["modeller"]
+    t.emit("ui", {"id": uid, "phase": "start", "title": rec.get("title") or "", "data": ledger})
+    t.emit("ui", {"id": uid, "phase": "delta", "html": rec["html"]})
+    t.emit("ui", {"id": uid, "phase": "done", "ms": 0, "by": by, "kept": True,
+                  "check": check.fragment(rec["html"], ledger, check.allowed(ledger, t.message), w.lang)})
+
+
 async def run_turn(sess: LabSession, turn: Turn) -> None:
     async with sess.lock:
         t0 = time.time()
@@ -741,13 +775,24 @@ async def run_turn(sess: LabSession, turn: Turn) -> None:
         contents = [c for h in sess.history[-KEEP_TURNS:] for c in h] + mine
         answer, title, brief, chips, retried = "", "", "", [], False
         view: asyncio.Task | None = None
+        rec = None if turn.fresh else kept.find(turn.message, lang, sess.customer_id)
 
         def add(*cs) -> None:
             mine.extend(cs)
             contents.extend(cs)
 
         try:
-            for step in range(MAX_STEPS):
+            if rec:
+                await warm
+                record = await _kept_cells(w, rec)
+                if record:
+                    answer, chips = w.said, list(rec.get("chips") or [])
+                    mine.extend(record)
+                    log.info("kept view %s: %.1fs", rec.get("file"), time.time() - t0)
+                else:
+                    log.warning("kept view %s did not hold for %s, building fresh", rec.get("file"), sess.customer_id)
+                    rec, w = None, _Work(sess, turn, m, st)
+            for step in range(MAX_STEPS if not rec else 0):
                 typing = _Typing(w)
                 t_step = time.time()
                 text, model = await _stream(_analyst_attempts(), contents, cfg, typing, race=2)
@@ -791,7 +836,9 @@ async def run_turn(sess: LabSession, turn: Turn) -> None:
             for piece in re.findall(r"\S+\s*", answer):
                 turn.emit("text", {"delta": piece})
                 await asyncio.sleep(0.012)
-            if view is None and brief and (w.facts or w.tables or w.products):
+            if rec:
+                _kept_view(w, rec)
+            elif view is None and brief and (w.facts or w.tables or w.products):
                 view = asyncio.create_task(_view(w, turn.message, answer, title or answer[:60], brief))
             if view is not None:
                 await view
@@ -812,7 +859,7 @@ async def run_turn(sess: LabSession, turn: Turn) -> None:
         sess.history.append(mine)
         sess.history = sess.history[-KEEP_TURNS:]
         turn.emit("done", {"ms": int((time.time() - t0) * 1000), "runs": w.runs, "calls": w.calls, "models": w.models,
-                           "isolation": kernel.isolation(), "flagged": flagged,
+                           "isolation": kernel.isolation(), "flagged": flagged, "kept": bool(rec),
                            "figures": len(w.facts) + sum(len(x["rows"]) for x in w.tables.values())})
 
 

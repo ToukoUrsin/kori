@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { ArrowLeft, ArrowUp, Check, ChevronRight, CircleAlert, Code2, ExternalLink, Globe2, Loader2, Menu, Mic, ShieldCheck, Sparkles, Square, SquarePen, X } from "lucide-react";
 import { api } from "../lib/api";
+import { useStarters } from "../lib/starters";
 import { RecError, useRecorder } from "../lib/useRecorder";
 import { playMock } from "./dev/mock";
 import stubFrame from "./dev/stub-frame.html?raw";
@@ -64,13 +65,16 @@ function fmtValue(value: number | string, unit: string, lang: LabLang) {
   return new Intl.NumberFormat(lang === "fi" ? "fi-FI" : "en-IE", { maximumFractionDigits: 1 }).format(value);
 }
 
+// `?fresh=1`: a suggested question is built new, as a typed one always is (docs/LAB.md, kept views).
+const FRESH = new URLSearchParams(location.search).get("fresh") === "1";
+
 // One turn as events. The turn keeps running on the server if the connection drops (a lift, a tunnel, a booth's wifi):
 // the same turn id with the last event number picks the stream up where it broke.
 async function* realEvents(customer: string, lang: LabLang, session: string, message: string, turn: string, signal: AbortSignal): AsyncGenerator<LabEvent> {
   let last = 0, tries = 0, finished = false;
   while (!finished) {
     try {
-      const response = await fetch("/api/lab/chat", { method: "POST", headers: { "Content-Type": "application/json", Accept: "text/event-stream", "X-Kori-Device": readStored("kori.device") || "lab-web" }, body: JSON.stringify({ customer, lang, session, message, turn, after: last }), signal });
+      const response = await fetch("/api/lab/chat", { method: "POST", headers: { "Content-Type": "application/json", Accept: "text/event-stream", "X-Kori-Device": readStored("kori.device") || "lab-web" }, body: JSON.stringify({ customer, lang, session, message, turn, after: last, fresh: FRESH }), signal });
       if (!response.ok || !response.body) {
         if (response.status >= 400 && response.status < 500) throw Object.assign(new Error(`Chat request failed (${response.status})`), { final: true });
         throw new Error(`Chat request failed (${response.status})`);
@@ -205,20 +209,27 @@ function UnderHood({ runs, done, copy }: { runs: Run[]; done?: any; copy: LabStr
   return <aside className="lab-under"><div className="lab-under-head"><h2>{copy.underHood}</h2>{runs.some((run) => !run.done) && <span className="lab-live"><Sparkles size={12} /> live</span>}</div><div className="lab-under-scroll">{runs.map((run) => <div className="lab-under-run" key={run.id}><h3>{run.title} <span className="lab-run-meta">· {run.by}</span></h3><pre>{run.code}</pre>{run.calls.map((call) => <div className="lab-door" key={`${run.id}-${call.name}`}><Globe2 size={13} /><span><strong>{call.name}</strong><br />{call.summary}</span></div>)}{run.done?.output && <div className="lab-door"><Check size={13} /><span>{run.done.output}</span></div>}</div>)}<div className="lab-isolation"><h3><ShieldCheck size={15} color="var(--lab-green)" />{copy.isolation}</h3><p>{done?.isolation || copy.isolationText}</p></div></div></aside>;
 }
 
-export default function LabChat({ onVoice }: { onVoice?: () => void } = {}) {
+/** Inside the app: the customer and language come from the app, and a question can arrive from anywhere in it. */
+export type LabEmbed = { customer: string; lang: LabLang; request: { id: number; ask?: string; focus?: boolean } | null; onClose: () => void };
+
+let handledRequest = 0;                    // outlives a remount (a new language), so one tap never asks twice
+
+export default function LabChat({ onVoice, embed }: { onVoice?: () => void; embed?: LabEmbed } = {}) {
   const persona = useMemo(initialPersona, []);
-  const [lang, setLang] = useState<LabLang>(persona.lang);
-  const [customer] = useState(persona.customer);
+  const [ownLang, setLang] = useState<LabLang>(persona.lang);
+  const [ownCustomer] = useState(persona.customer);
+  const lang = embed ? embed.lang : ownLang;
+  const customer = embed ? embed.customer : ownCustomer;
   const [session, setSession] = useState(newId);
   const [turns, setTurns] = useState<Turn[]>([]);
-  const [starters, setStarters] = useState<string[]>(strings[persona.lang].starter);
+  const starters = useStarters(customer, lang) || strings[lang].starter;
   const [menuOpen, setMenuOpen] = useState(false);
   const [sheet, setSheet] = useState<SheetTarget | null>(null);
   const [voiceNote, setVoiceNote] = useState("");
   const [draft, setDraft] = useState("");
   const [mock] = useState(() => new URLSearchParams(location.search).get("mock") === "1");
   // The customer sees a plain chat. `?dev=1` shows the work behind an answer (code, ledger, sources) for a technical reader.
-  const [dev] = useState(() => new URLSearchParams(location.search).get("dev") === "1");
+  const [dev] = useState(() => !embed && new URLSearchParams(location.search).get("dev") === "1");
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const abortRef = useRef<AbortController | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -227,26 +238,27 @@ export default function LabChat({ onVoice }: { onVoice?: () => void } = {}) {
   const currentTurn = turns[turns.length - 1];
 
   useEffect(() => {
+    if (embed) return;                     // inside the app, the app owns the address, storage and page language
     try { localStorage.setItem("kori.lang", lang); localStorage.setItem("kori.customer", customer); } catch { /* private mode */ }
     document.documentElement.lang = lang;
     setLangInUrl(lang);
-    setStarters(strings[lang].starter);
-  }, [customer, lang]);
+  }, [customer, embed, lang]);
   useEffect(() => {
+    if (embed) return;                     // inside the app, heights come from the phone frame
     const root = document.documentElement;
     const update = () => root.style.setProperty("--lab-vh", `${Math.round(window.visualViewport?.height || window.innerHeight)}px`);
     update(); window.visualViewport?.addEventListener("resize", update); window.visualViewport?.addEventListener("scroll", update); return () => { window.visualViewport?.removeEventListener("resize", update); window.visualViewport?.removeEventListener("scroll", update); };
-  }, []);
-  useEffect(() => {
-    let active = true;
-    fetch(`/api/lab/starters?customer=${encodeURIComponent(customer)}&lang=${lang}`).then((r) => r.ok ? r.json() : Promise.reject(new Error("starters"))).then((data: { items?: { text: string }[] }) => { if (active && data.items?.length) setStarters(data.items.map((item) => item.text).slice(0, 5)); }).catch(() => undefined);
-    return () => { active = false; };
-  }, [customer, lang]);
+  }, [embed]);
+  useEffect(() => {                        // the chat is open: its sandbox starts now, so the first question does not wait for it
+    if (mock) return;
+    void fetch("/api/lab/warm", { method: "POST", headers: { "Content-Type": "application/json", "X-Kori-Device": readStored("kori.device") || "lab-web" }, body: JSON.stringify({ customer, lang, session }) }).catch(() => undefined);
+  }, [customer, lang, mock, session]);
   useEffect(() => { if (dev && stickRef.current && scrollRef.current) scrollRef.current.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" }); }, [dev, turns]);
   useEffect(() => {                        // a new question goes to the top of the screen and its answer unfolds under it
     if (dev || !turns.length) return;
-    const last = scrollRef.current?.querySelector(".kc-turn:last-child");
-    if (last) requestAnimationFrame(() => last.scrollIntoView({ block: "start", behavior: "smooth" }));
+    const el = scrollRef.current, last = el?.querySelector(".kc-turn:last-child");
+    // scroll the list itself: scrollIntoView would also move the phone frame and the page around it
+    if (el && last) requestAnimationFrame(() => el.scrollTo({ top: el.scrollTop + last.getBoundingClientRect().top - el.getBoundingClientRect().top - 8, behavior: "smooth" }));
   }, [dev, turns.length]);
   useEffect(() => {
     if (!sheet) return;
@@ -297,6 +309,18 @@ export default function LabChat({ onVoice }: { onVoice?: () => void } = {}) {
     } finally { if (abortRef.current === controller) abortRef.current = null; }
   }, [customer, lang, mock, patchTurn, session, turns]);
 
+  const runRef = useRef(runQuestion);
+  runRef.current = runQuestion;
+  const request = embed?.request;
+  useEffect(() => {
+    if (!request || request.id <= handledRequest) return;
+    handledRequest = request.id;
+    if (request.ask) {
+      if (turns.some((turn) => turn.pending)) setDraft(request.ask);   // one answer at a time: the question waits in the input
+      else void runRef.current(request.ask);
+    } else if (request.focus) window.setTimeout(() => inputRef.current?.focus({ preventScroll: true }), 60);   // once the layer is visible
+  }, [request]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const reset = useCallback(async (nextLang?: LabLang) => {
     abortRef.current?.abort();
     try { await fetch("/api/lab/reset", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ session }) }); } catch { /* a local reset still works */ }
@@ -341,9 +365,11 @@ export default function LabChat({ onVoice }: { onVoice?: () => void } = {}) {
 
   if (!dev) {
     const busy = !!currentTurn?.pending;
-    return <div className="kc-root"><div className="kc-col">
+    return <div className={`kc-root ${embed ? "kc-embed" : ""}`}><div className="kc-col">
       <header className="kc-head">
-        <a className="kc-icon" href="/" aria-label={copy.home}><ArrowLeft size={20} strokeWidth={1.9} /></a>
+        {embed
+          ? <button className="kc-icon" type="button" aria-label={copy.home} onClick={embed.onClose}><ArrowLeft size={20} strokeWidth={1.9} /></button>
+          : <a className="kc-icon" href="/" aria-label={copy.home}><ArrowLeft size={20} strokeWidth={1.9} /></a>}
         <strong>{copy.name}</strong>
         <button className="kc-icon" type="button" aria-label={copy.reset} onClick={() => void reset()} disabled={!turns.length}><SquarePen size={19} strokeWidth={1.9} /></button>
       </header>
@@ -357,7 +383,7 @@ export default function LabChat({ onVoice }: { onVoice?: () => void } = {}) {
             {working && <div className="kc-working" role="status"><span className="kc-dots" aria-hidden><i /><i /><i /></span><span className="kc-doing">{doing || copy.thinkingShort}</span></div>}
             {turn.text && <div className="kc-answer">{renderBold(turn.text)}</div>}
             {turn.views.map((view) => <div className={`kc-view ${shown && view.html ? "on" : ""}`} key={view.id}><FrameHost view={view} lang={lang} mock={mock} onAsk={(text) => void runQuestion(text)} onTrace={() => undefined} sources={turn.sources} /></div>)}
-            {!turn.pending && (() => { const n = (turn.done?.flagged ?? turn.views.find((view) => view.check)?.check?.flagged ?? []).length; return n ? <div className="kc-flag">{copy.warning(n)}</div> : null; })()}
+            {!turn.pending && (() => { const n = (turn.done?.flagged ?? turn.views.find((view) => view.check)?.check?.flagged ?? []).length; return n ? <div className="kc-flag">{copy.warning(n)}</div> : !turn.error && turn.views.some((view) => view.html) ? <div className="kc-checked"><Check size={13} strokeWidth={2.2} aria-hidden />{copy.checked}</div> : null; })()}
             {turn.error && <div className="kc-error">{turn.error} <button type="button" onClick={() => void runQuestion(turn.question)}>{copy.tryAgain}</button></div>}
             {!turn.pending && !turn.views.length && turn.chips.length > 0 && <div className="kc-chips">{turn.chips.map((chip) => <button type="button" key={chip} onClick={() => void runQuestion(chip)}>{chip}</button>)}</div>}
           </article>;
@@ -376,5 +402,5 @@ export default function LabChat({ onVoice }: { onVoice?: () => void } = {}) {
     </div></div>;
   }
 
-  return <div className="lab-root"><div className="lab-shell"><main className="lab-main"><header className="lab-header"><a className="lab-brand" href="/"><ArrowLeft size={16} /><span className="lab-mark" aria-hidden><i /><i /><i /></span><strong>{copy.name}</strong><span>{copy.tagline}</span></a><div className="lab-actions"><button className="lab-icon" type="button" aria-label={copy.menu} onClick={() => setMenuOpen((open) => !open)}><Menu size={19} /></button>{menuOpen && <div className="lab-menu"><button type="button" className={lang === "en" ? "active" : ""} onClick={() => changeLang("en")}>English{lang === "en" && <Check size={14} />}</button><button type="button" className={lang === "fi" ? "active" : ""} onClick={() => changeLang("fi")}>Suomi{lang === "fi" && <Check size={14} />}</button><button type="button" className="danger" onClick={() => void reset()}>{copy.reset}</button></div>}</div></header><div className="lab-scroll" ref={scrollRef} onScroll={onScroll}><div className="lab-scroll-inner">{turns.length === 0 ? <section className="lab-empty"><h1>{copy.emptyTitle}</h1><p>{copy.emptyIntro}</p><div className="lab-starters">{starters.map((starter) => <button className="lab-starter" type="button" key={starter} onClick={() => void runQuestion(starter)}>{starter}<ChevronRight size={17} /></button>)}</div></section> : turns.map((turn) => <article className="lab-turn" key={turn.id}><div className="lab-user">{turn.question}</div><div className="lab-coach">{turn.sandbox && <div className="lab-sandbox"><ShieldCheck size={13} strokeWidth={1.9} />{copy.sandbox(turn.sandbox.rows)}</div>}{!turn.runs.some((run) => !run.done) && <Status status={turn.status} pending={turn.pending} text={copy.thinking} />}<WorkStrip runs={turn.runs} copy={copy} onOpen={(run) => setSheet({ run })} />{turn.text && <div className="lab-answer">{renderBold(turn.text)}</div>}{turn.views.map((view) => <div key={view.id}><FrameHost view={view} lang={lang} mock={mock} onAsk={(text) => void runQuestion(text)} onTrace={(name) => openTrace(turn, name)} sources={turn.sources} /></div>)}{turn.sources.length > 0 && <section><div className="lab-view-title">{copy.sources}</div><div className="lab-sources">{turn.sources.slice(0, 3).map((source) => <a className="lab-source" key={source.url} href={source.url} target="_blank" rel="noreferrer"><ExternalLink size={13} /><span>{source.host || source.title}</span></a>)}</div></section>}<CheckLine turn={turn} copy={copy} onOpen={(run) => setSheet({ run })} />{turn.error && <div className="lab-check warn"><CircleAlert size={15} />{turn.error} <button type="button" onClick={() => void runQuestion(turn.question)}>{copy.tryAgain}</button></div>}{turn.chips.length > 0 && <div className="lab-chips">{turn.chips.map((chip) => <button type="button" className="lab-chip" key={chip} onClick={() => void runQuestion(chip)}>{chip}</button>)}</div>}</div></article>)}</div></div><form className="lab-composer" onSubmit={submit}><div className="lab-input-wrap"><textarea className="lab-input" value={draft} onChange={(e) => setDraft(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void runQuestion(draft); } }} placeholder={copy.placeholder} rows={1} aria-label={copy.placeholder} /></div><button className="lab-mic" type="button" aria-label={copy.voice} onClick={talk}><Mic size={19} /></button><button className="lab-send" type="submit" aria-label={copy.send} disabled={!draft.trim() || !!currentTurn?.pending}><ArrowUp size={20} /></button>{voiceNote && <div className="lab-note" role="status">{voiceNote}</div>}</form></main><UnderHood runs={currentTurn?.runs || []} done={currentTurn?.done} copy={copy} /></div>{sheet && <WorkSheet target={sheet} copy={copy} lang={lang} onClose={() => setSheet(null)} />}</div>;
+  return <div className="lab-root"><div className="lab-shell"><main className="lab-main"><header className="lab-header"><a className="lab-brand" href="/"><ArrowLeft size={16} /><span className="lab-mark" aria-hidden><i /><i /><i /></span><strong>{copy.name}</strong><span>{copy.tagline}</span></a><div className="lab-actions"><button className="lab-icon" type="button" aria-label={copy.menu} onClick={() => setMenuOpen((open) => !open)}><Menu size={19} /></button>{menuOpen && <div className="lab-menu"><button type="button" className={lang === "en" ? "active" : ""} onClick={() => changeLang("en")}>English{lang === "en" && <Check size={14} />}</button><button type="button" className={lang === "fi" ? "active" : ""} onClick={() => changeLang("fi")}>Suomi{lang === "fi" && <Check size={14} />}</button><button type="button" className="danger" onClick={() => void reset()}>{copy.reset}</button></div>}</div></header><div className="lab-scroll" ref={scrollRef} onScroll={onScroll}><div className="lab-scroll-inner">{turns.length === 0 ? <section className="lab-empty"><h1>{copy.emptyTitle}</h1><p>{copy.emptyIntro}</p><div className="lab-starters">{starters.slice(0, 5).map((starter) => <button className="lab-starter" type="button" key={starter} onClick={() => void runQuestion(starter)}>{starter}<ChevronRight size={17} /></button>)}</div></section> : turns.map((turn) => <article className="lab-turn" key={turn.id}><div className="lab-user">{turn.question}</div><div className="lab-coach">{turn.sandbox && <div className="lab-sandbox"><ShieldCheck size={13} strokeWidth={1.9} />{copy.sandbox(turn.sandbox.rows)}</div>}{!turn.runs.some((run) => !run.done) && <Status status={turn.status} pending={turn.pending} text={copy.thinking} />}<WorkStrip runs={turn.runs} copy={copy} onOpen={(run) => setSheet({ run })} />{turn.text && <div className="lab-answer">{renderBold(turn.text)}</div>}{turn.views.map((view) => <div key={view.id}><FrameHost view={view} lang={lang} mock={mock} onAsk={(text) => void runQuestion(text)} onTrace={(name) => openTrace(turn, name)} sources={turn.sources} /></div>)}{turn.sources.length > 0 && <section><div className="lab-view-title">{copy.sources}</div><div className="lab-sources">{turn.sources.slice(0, 3).map((source) => <a className="lab-source" key={source.url} href={source.url} target="_blank" rel="noreferrer"><ExternalLink size={13} /><span>{source.host || source.title}</span></a>)}</div></section>}<CheckLine turn={turn} copy={copy} onOpen={(run) => setSheet({ run })} />{turn.error && <div className="lab-check warn"><CircleAlert size={15} />{turn.error} <button type="button" onClick={() => void runQuestion(turn.question)}>{copy.tryAgain}</button></div>}{turn.chips.length > 0 && <div className="lab-chips">{turn.chips.map((chip) => <button type="button" className="lab-chip" key={chip} onClick={() => void runQuestion(chip)}>{chip}</button>)}</div>}</div></article>)}</div></div><form className="lab-composer" onSubmit={submit}><div className="lab-input-wrap"><textarea className="lab-input" value={draft} onChange={(e) => setDraft(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void runQuestion(draft); } }} placeholder={copy.placeholder} rows={1} aria-label={copy.placeholder} /></div><button className="lab-mic" type="button" aria-label={copy.voice} onClick={talk}><Mic size={19} /></button><button className="lab-send" type="submit" aria-label={copy.send} disabled={!draft.trim() || !!currentTurn?.pending}><ArrowUp size={20} /></button>{voiceNote && <div className="lab-note" role="status">{voiceNote}</div>}</form></main><UnderHood runs={currentTurn?.runs || []} done={currentTurn?.done} copy={copy} /></div>{sheet && <WorkSheet target={sheet} copy={copy} lang={lang} onClose={() => setSheet(null)} />}</div>;
 }

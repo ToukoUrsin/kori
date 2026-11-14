@@ -12,7 +12,7 @@ import { BigMoney, Collapse, Dot, ErrorInline, LangToggle, SectionHead, Skel } f
 import { day, longDate, money, weekday } from "../lib/format";
 import { api } from "../lib/api";
 import { isEmbedMode } from "../lib/host";
-import { useApp } from "../lib/store";
+import { LEGACY_COACH, useApp } from "../lib/store";
 import type { Card, Home } from "../lib/types";
 import { AvatarButton } from "../shell/Shell";
 
@@ -107,7 +107,7 @@ function Skeleton() {
 }
 
 export function Today() {
-  const { home, customer, lang, t, pins, setOverlay, setTab, openCoach, openLesson, minuteOn, setMinuteOn, minuteFocus } = useApp();
+  const { home, customer, lang, t, pins, setOverlay, setTab, openCoach, openChat, openLesson, minuteOn, setMinuteOn, minuteFocus } = useApp();
   const d = home.data;
   const [allNotices, setAllNotices] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
@@ -180,19 +180,23 @@ export function Today() {
         <Hero d={d} />
         <ReplayStrip story={replay || null} loading={replayLoading} onOpen={() => setReplayOpen(true)} />
         <ReplaySheet story={replay || null} open={replayOpen} onClose={() => setReplayOpen(false)} />
-        {!isEmbedMode() && (
-          <a
-            href={`/lab?customer=${encodeURIComponent(customer)}&lang=${lang}`}
-            data-entry="lab"
-            className="mt-3 flex min-h-[60px] w-full items-center gap-3 rounded-card border border-line bg-surface px-4 py-3 text-left transition-colors duration-150 hover:border-line-strong"
-          >
-            <span className="min-w-0 flex-1">
-              <span className="block text-[15px] font-semibold leading-5 tracking-[-0.01em] text-ink">{lang === "fi" ? "Kysy Korilta mitä vain" : "Ask Kori anything"}</span>
-              <span className="mt-0.5 block text-[13px] leading-[18px] text-ink-3">{lang === "fi" ? "Ruokaostokset, uusi läppäri, säästäminen" : "Groceries, a new laptop, saving"}</span>
-            </span>
-            <ChevronRight size={18} strokeWidth={2} className="shrink-0 text-ink-3" aria-hidden />
-          </a>
-        )}
+        <a
+          href={`/lab?customer=${encodeURIComponent(customer)}&lang=${lang}${LEGACY_COACH ? "&coach=old" : ""}`}
+          data-entry="lab"
+          onClick={(e) => {
+            if (LEGACY_COACH && !isEmbedMode()) return; // the old page, as before
+            if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return; // a new tab still gets its own page
+            e.preventDefault();
+            openChat();
+          }}
+          className="mt-3 flex min-h-[60px] w-full items-center gap-3 rounded-card border border-line bg-surface px-4 py-3 text-left transition-colors duration-150 hover:border-line-strong"
+        >
+          <span className="min-w-0 flex-1">
+            <span className="block text-[15px] font-semibold leading-5 tracking-[-0.01em] text-ink">{lang === "fi" ? "Kysy Korilta mitä vain" : "Ask Kori anything"}</span>
+            <span className="mt-0.5 block text-[13px] leading-[18px] text-ink-3">{lang === "fi" ? "Ruokaostokset, uusi läppäri, säästäminen" : "Groceries, a new laptop, saving"}</span>
+          </span>
+          <ChevronRight size={18} strokeWidth={2} className="shrink-0 text-ink-3" aria-hidden />
+        </a>
         <button
           type="button"
           aria-expanded={moreOpen}

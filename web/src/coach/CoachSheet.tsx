@@ -5,7 +5,8 @@ import { CardView } from "../components/cards/CardView";
 import { Button, Chip, Collapse, IconButton, Mark, Skel, cx } from "../components/ui/bits";
 import { HoldToTalk } from "../components/ui/HoldToTalk";
 import { Sheet } from "../components/ui/Sheet";
-import { useApp } from "../lib/store";
+import { useStarters } from "../lib/starters";
+import { LEGACY_COACH, useApp } from "../lib/store";
 import { useCoach, type Turn } from "./CoachProvider";
 import { FiguresSheet } from "./FiguresSheet";
 
@@ -66,7 +67,7 @@ function Answer({ text, animate }: { text: string; animate: boolean }) {
 /* ------------------------------------------------------------------ turns */
 
 function CoachTurn({ turn, last }: { turn: Turn; last: boolean }) {
-  const { t } = useApp();
+  const { t, openChat } = useApp();
   const coach = useCoach();
   const reduce = useReducedMotion();
   const [why, setWhy] = useState(false);
@@ -172,7 +173,7 @@ function CoachTurn({ turn, last }: { turn: Turn; last: boolean }) {
       {last && settled && d && d.followups.length > 0 && (
         <motion.div className="flex flex-wrap gap-2 pt-1" initial={reduce ? false : { opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.25, delay: 0.1 }}>
           {d.followups.map((f) => (
-            <Chip key={f} onClick={() => void coach.send(f)} wrap>
+            <Chip key={f} onClick={() => (LEGACY_COACH ? void coach.send(f) : openChat({ ask: f }))} wrap>
               {f}
             </Chip>
           ))}
@@ -391,10 +392,42 @@ function Composer({ inputRef }: { inputRef: RefObject<HTMLTextAreaElement | null
   );
 }
 
+/** Voice is off (ended, or it could not start): talk again, or type in the chat. The sheet itself takes no typing. */
+function VoiceOff() {
+  const { t, openChat } = useApp();
+  const coach = useCoach();
+  return (
+    <div className="shrink-0 border-t border-line bg-surface px-5 pt-3 pb-[max(14px,var(--safe-b))]">
+      {coach.voice.note && (
+        <p role="status" className="mb-3 text-[13px] leading-[18px] text-ink-2">
+          {coach.voice.note}
+        </p>
+      )}
+      <div className="grid grid-cols-2 gap-2">
+        <Button variant="primary" onClick={coach.voice.start}>
+          <Mic size={17} strokeWidth={2} aria-hidden />
+          {t("coach.talkAgain")}
+        </Button>
+        <Button
+          variant="secondary"
+          onClick={() => {
+            coach.voice.setNote(null);
+            openChat({ focus: true });
+          }}
+        >
+          <Keyboard size={17} strokeWidth={2} aria-hidden />
+          {t("coach.type")}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 /* ------------------------------------------------------------------ sheet */
 
 function Conversation({ inputRef, onClose }: { inputRef: RefObject<HTMLTextAreaElement | null>; onClose: () => void }) {
-  const { t, home } = useApp();
+  const { t, home, openChat, customer, lang } = useApp();
+  const starters = useStarters(customer, lang);
   const coach = useCoach();
   const reduce = useReducedMotion();
   const scroller = useRef<HTMLDivElement>(null);
@@ -425,7 +458,7 @@ function Conversation({ inputRef, onClose }: { inputRef: RefObject<HTMLTextAreaE
     firstRun.current = false;
   }, [anchor, reduce, hasOlder]);
 
-  const suggestions = home.data?.suggestions || [];
+  const suggestions = (LEGACY_COACH ? home.data?.suggestions : starters?.slice(0, 4)) || [];
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -460,7 +493,7 @@ function Conversation({ inputRef, onClose }: { inputRef: RefObject<HTMLTextAreaE
                   <li key={q}>
                     <button
                       type="button"
-                      onClick={() => void coach.send(q)}
+                      onClick={() => (LEGACY_COACH ? void coach.send(q) : openChat({ ask: q }))}
                       className="group flex min-h-[52px] w-full items-center gap-3 py-2.5 text-left text-[15px] leading-[22px] text-ink transition-colors duration-150 hover:text-brand"
                     >
                       <span className="min-w-0 flex-1">{q}</span>
@@ -485,7 +518,7 @@ function Conversation({ inputRef, onClose }: { inputRef: RefObject<HTMLTextAreaE
         )}
       </div>
 
-      {coach.voice.phase === "off" ? <Composer inputRef={inputRef} /> : <VoiceDock />}
+      {coach.voice.phase !== "off" ? <VoiceDock /> : LEGACY_COACH ? <Composer inputRef={inputRef} /> : <VoiceOff />}
     </div>
   );
 }
@@ -499,6 +532,10 @@ export function CoachSheet() {
     coach.voice.setNote(null);
     closeCoach();
   };
+  // closed from elsewhere (a question went to the chat): a live voice session ends with the sheet
+  useEffect(() => {
+    if (!coachOpen && coach.voice.phase !== "off") coach.voice.end();
+  }, [coachOpen]); // eslint-disable-line react-hooks/exhaustive-deps
   return (
     <Sheet open={coachOpen} onClose={close} label={t("tab.openCoach")} size="full" z={50} initialFocus={coachRequest?.focus ? inputRef : undefined}>
       <Conversation inputRef={inputRef} onClose={close} />

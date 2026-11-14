@@ -26,6 +26,7 @@ type Strings = {
   sources: string;
   check: (figures: number, runs: number) => string;
   warning: (figures: number) => string;
+  checked: string;
   openWork: string;
   close: string;
   noWork: string;
@@ -70,6 +71,7 @@ export const strings: Record<LabLang, Strings> = {
     sources: "Sources",
     check: (figures, runs) => `${figures} figure${figures === 1 ? "" : "s"}, all from ${runs === 1 ? "one run" : `${runs} runs`} of code on your own data`,
     warning: (figures) => `${figures} figure${figures === 1 ? "" : "s"} here could not be checked against your data`,
+    checked: "Numbers checked against your transactions",
     openWork: "Open work",
     close: "Close",
     noWork: "No work to show yet.",
@@ -118,6 +120,7 @@ export const strings: Record<LabLang, Strings> = {
     sources: "Lähteet",
     check: (figures, runs) => `${figures} lukua, kaikki ${runs === 1 ? "yhdestä koodiajosta" : `${runs} koodiajosta`} omilla tiedoillasi`,
     warning: (figures) => figures === 1 ? "Yhtä lukua ei voitu tarkistaa tiedoistasi" : `${figures} lukua ei voitu tarkistaa tiedoistasi`,
+    checked: "Luvut tarkistettu tapahtumiasi vasten",
     openWork: "Avaa työ",
     close: "Sulje",
     noWork: "Työtä ei ole vielä näytettäväksi.",

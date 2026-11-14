@@ -160,13 +160,15 @@ interface HomeProps {
   home: Home | null;
   transactions: Tx[];
   safe: { amount: number; per_day: number } | null;
+  /** the customer has let Kori read this account */
+  allowed: boolean;
   onAsk: (tx: Tx) => void;
   onKori: () => void;
   onPermissions: () => void;
 }
 
 /** The bank's own home: the account, the tile Kori fills in, the latest payments. */
-function HomeView({ lang, home, transactions, safe, onAsk, onKori, onPermissions }: HomeProps) {
+function HomeView({ lang, home, transactions, safe, allowed, onAsk, onKori, onPermissions }: HomeProps) {
   const payment = text(lang, "Payment", "Maksu");
   return (
     <main className="host-home scroll-y">
@@ -187,7 +189,7 @@ function HomeView({ lang, home, transactions, safe, onAsk, onKori, onPermissions
         <span className="host-tile-copy">
           <span className="host-tile-label">{text(lang, "Safe to spend", "Turvallista käyttää")}</span>
           <span className="host-tile-sub num">
-            {safe ? `${money(safe.per_day, lang, { cents: true })} ${text(lang, "a day · from Kori", "päivässä · Korilta")}` : text(lang, "Waiting for Kori", "Odotetaan Koria")}
+            {safe ? `${money(safe.per_day, lang, { cents: true })} ${text(lang, "a day · from Kori", "päivässä · Korilta")}` : allowed ? text(lang, "Tap to see it", "Napauta nähdäksesi") : text(lang, "After you allow Kori", "Kun annat Korille luvan")}
           </span>
         </span>
         {safe ? <strong className="num">{money(safe.amount, lang, { cents: true })}</strong> : <ChevronRight size={18} className="host-row-chevron" aria-hidden />}
@@ -665,7 +667,7 @@ export function HostDemo() {
           <div className="host-phone">
             <HostHeader lang={lang} customer={customer} persona={persona} personas={personas} onLang={setLang} onCustomer={setCustomer} onContract={() => setContractOpen(true)} />
             {tab === "home" ? (
-              <HomeView lang={lang} home={home} transactions={transactions} safe={safe} onAsk={askAbout} onKori={() => chooseTab("coach")} onPermissions={() => setSheet("permissions")} />
+              <HomeView lang={lang} home={home} transactions={transactions} safe={safe} allowed={consent.transactions} onAsk={askAbout} onKori={() => chooseTab("coach")} onPermissions={() => setSheet("permissions")} />
             ) : (
               <main className="host-coach">
                 {consent.transactions ? (

@@ -1,10 +1,11 @@
-import { ArrowRight, Mic, Play } from "lucide-react";
+import { ArrowRight, ArrowUpRight, Mic, Play } from "lucide-react";
 import type { ReactNode } from "react";
 import { useCoach } from "../coach/CoachProvider";
 import { LangToggle, Mark, Skel, cx } from "../components/ui/bits";
 import { longDate } from "../lib/format";
 import type { Key } from "../lib/i18n";
-import { useApp } from "../lib/store";
+import { useStarters } from "../lib/starters";
+import { LEGACY_COACH, useApp } from "../lib/store";
 
 const STEPS: [Key, Key][] = [
   ["judge.s1", "judge.s1b"],
@@ -16,7 +17,7 @@ const STEPS: [Key, Key][] = [
 
 const H2 = "text-[15px] font-semibold leading-5 tracking-[-0.01em] text-ink";
 const PILL =
-  "inline-flex h-10 items-center gap-2 rounded-full border border-line-strong bg-surface px-4 text-[14px] font-medium text-ink transition-colors duration-150 hover:border-ink-3";
+  "inline-flex h-9 items-center gap-1.5 whitespace-nowrap rounded-full border border-line-strong bg-surface px-3.5 text-[13px] font-medium text-ink transition-colors duration-150 hover:border-ink-3";
 const FINE = "text-[12px] leading-[17px] text-ink-3";
 
 function Brand() {
@@ -39,10 +40,11 @@ function Pitch() {
 }
 
 function Try() {
-  const { t, home, openCoach, setTab, setMinuteOn, closeCoach } = useApp();
+  const { t, home, openCoach, openChat, setTab, setMinuteOn, closeCoach, closeChat, customer, lang } = useApp();
   const coach = useCoach();
+  const starters = useStarters(customer, lang);
   const s = home.data?.suggestions;
-  const prompts = s ? [s[0], s[2], s[3]].filter(Boolean) : null;
+  const prompts = LEGACY_COACH ? (s ? [s[0], s[2], s[3]].filter(Boolean) : null) : starters ? starters.slice(0, 4) : null;
   return (
     <section>
       <h2 className={H2}>{t("judge.try")}</h2>
@@ -53,7 +55,7 @@ function Try() {
               <li key={q}>
                 <button
                   type="button"
-                  onClick={() => openCoach({ ask: q })}
+                  onClick={() => openChat({ ask: q })}
                   className="group flex min-h-12 w-full items-center gap-3 py-2 text-left text-[15px] leading-[22px] text-ink transition-colors duration-150 hover:text-brand"
                 >
                   <span className="min-w-0 flex-1">{q}</span>
@@ -61,17 +63,13 @@ function Try() {
                 </button>
               </li>
             ))
-          : [0, 1, 2].map((i) => (
+          : [0, 1, 2, 3].map((i) => (
               <li key={i} className="flex h-12 items-center">
                 <Skel className="h-3.5 w-3/4" />
               </li>
             ))}
       </ul>
-      <div className="mt-3 space-y-2 text-[13px] leading-[18px]">
-        <a href="/host" target="_blank" rel="noreferrer" className="block text-ink-2 hover:text-brand">{t("judge.bankApp")}</a>
-        <p className="text-ink-3">{t("judge.firstStep")}</p>
-      </div>
-      <div className="mt-3 flex flex-wrap gap-2">
+      <div className="mt-4 flex flex-wrap gap-1.5">
         <button
           type="button"
           onClick={() => {
@@ -80,22 +78,28 @@ function Try() {
           }}
           className={PILL}
         >
-          <Mic size={16} strokeWidth={2} aria-hidden />
+          <Mic size={15} strokeWidth={2} aria-hidden />
           {t("judge.voice")}
         </button>
+        <a href="/host" target="_blank" rel="noreferrer" className={PILL}>
+          <ArrowUpRight size={15} strokeWidth={2} aria-hidden />
+          {t("judge.bankApp")}
+        </a>
         <button
           type="button"
           onClick={() => {
             closeCoach();
+            closeChat();
             setTab("today");
             setMinuteOn(true);
           }}
           className={PILL}
         >
-          <Play size={14} strokeWidth={2} fill="currentColor" aria-hidden />
+          <Play size={13} strokeWidth={2} fill="currentColor" aria-hidden />
           {t("judge.minute")}
         </button>
       </div>
+      <p className={cx(FINE, "mt-3")}>{t("judge.firstStep")}</p>
     </section>
   );
 }
@@ -181,7 +185,7 @@ export function JudgePanel({ part, className }: { part: "intro" | "guide" | "all
     return (
       <Column className={className} top={<Brand />} foot={demoDay}>
         <Pitch />
-        <div className="mt-9">
+        <div className="mt-9 [@media(max-height:780px)]:mt-6">
           <Try />
         </div>
       </Column>

@@ -125,6 +125,7 @@ class LabReq(BaseModel):
     message: str
     turn: str | None = None
     after: int = 0
+    fresh: bool = False          # build the view new, even for a question that has a kept one
 
 
 class ResetReq(BaseModel):
@@ -180,6 +181,7 @@ async def chat(req: LabReq, x_kori_device: str | None = Header(None)):
     turn = sess.turn(req.turn) if req.turn else None
     if turn is None:
         turn = sess.new_turn(req.message.strip()[:1500], req.turn)
+        turn.fresh = bool(req.fresh)
 
         async def work():
             try:
@@ -211,6 +213,27 @@ async def chat(req: LabReq, x_kori_device: str | None = Header(None)):
                 yield _sse(n, kind, data)
 
     return StreamingResponse(stream(), media_type="text/event-stream", headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
+
+
+class WarmReq(BaseModel):
+    customer: str
+    lang: str = "en"
+    session: str
+
+
+@router.post("/api/lab/warm")
+async def warm(req: WarmReq, x_kori_device: str | None = Header(None)):
+    """The chat just opened: start this session's sandbox now, so the first question does not wait for it."""
+    from . import agent
+    if req.customer not in S.PERSONA_BY_ID:
+        raise HTTPException(404, "unknown customer")
+    lang = "fi" if (req.lang or "en").lower().startswith("fi") else "en"
+    device = (x_kori_device or "anon")[:64]
+    sess = agent.session(req.session[:64], device, req.customer, lang)
+    t = asyncio.create_task(agent._warm(sess, S.money(device, req.customer, lang)[0]))
+    _tasks.add(t)
+    t.add_done_callback(_tasks.discard)
+    return {"ok": True}
 
 
 @router.get("/api/lab/session")

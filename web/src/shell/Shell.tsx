@@ -12,7 +12,9 @@ import { api } from "../lib/api";
 import { initials, longDate, money } from "../lib/format";
 import { isEmbedMode } from "../lib/host";
 import type { Key } from "../lib/i18n";
-import { useApp, type Tab } from "../lib/store";
+import { useStarters } from "../lib/starters";
+import { LEGACY_COACH, useApp, type Tab } from "../lib/store";
+import LabChat from "../lab/LabChat";
 import { Baskets } from "../screens/Baskets";
 import { Learn } from "../screens/Learn";
 import { LessonPlayer } from "../screens/LessonPlayer";
@@ -66,7 +68,7 @@ const TABS: { key: Tab; icon: LucideIcon; label: Key }[] = [
 ];
 
 function TabBar({ joined }: { joined?: boolean }) {
-  const { tab, setTab, t, openCoach } = useApp();
+  const { tab, setTab, t, openChat } = useApp();
   const item = (x: (typeof TABS)[number]) => {
     const on = tab === x.key;
     return (
@@ -91,7 +93,7 @@ function TabBar({ joined }: { joined?: boolean }) {
       <div className="grid grid-cols-5">
         {TABS.slice(0, 2).map(item)}
         {/* the coach is an action, not a place: one filled mark, inside the bar, no label */}
-        <button type="button" onClick={() => openCoach()} aria-label={t("tab.openCoach")} title={t("tab.openCoach")} className="group flex h-14 items-center justify-center">
+        <button type="button" onClick={() => openChat()} aria-label={t("tab.openCoach")} title={t("tab.openCoach")} className="group flex h-14 items-center justify-center">
           <span className="flex h-11 w-11 items-center justify-center rounded-full bg-brand text-white transition-[transform,background-color] duration-150 group-hover:bg-brand-strong group-active:scale-95">
             <Mark size={22} />
           </span>
@@ -105,9 +107,10 @@ function TabBar({ joined }: { joined?: boolean }) {
 /* ---------------------------------------------------------------- ask bar */
 
 function AskBar() {
-  const { t, home, openCoach, minuteOn, minuteFocus } = useApp();
+  const { t, home, openCoach, minuteOn, minuteFocus, customer, lang } = useApp();
   const coach = useCoach();
-  const chips = home.data?.suggestions;
+  const starters = useStarters(customer, lang);
+  const chips = LEGACY_COACH ? home.data?.suggestions : starters?.slice(0, 4);
   return (
     <div className={cx("shrink-0 bg-surface pb-1.5", minuteOn ? "pt-1" : "border-t border-line pt-2.5")}>
       {!minuteOn && (
@@ -259,10 +262,10 @@ function PersonaSheet() {
 }
 
 function ToastHost() {
-  const { toast, hideToast, tab, coachOpen, lessonId } = useApp();
+  const { toast, hideToast, tab, coachOpen, chatOpen, lessonId } = useApp();
   const reduce = useReducedMotion();
   // on Today the ask dock sits above the tab bar: the toast clears both, so it never covers the input
-  const aboveDock = tab === "today" && !coachOpen && !lessonId;
+  const aboveDock = tab === "today" && !coachOpen && !chatOpen && !lessonId;
   return (
     <AnimatePresence>
       {toast && (
@@ -293,6 +296,43 @@ function ToastHost() {
         </motion.div>
       )}
     </AnimatePresence>
+  );
+}
+
+/* ------------------------------------------------------------------- chat */
+
+/**
+ * The chat covers the whole phone screen, tab bar too. It mounts on first open and then stays, so a closed chat keeps its
+ * conversation; another customer or language is another conversation.
+ */
+function ChatLayer() {
+  const { chatOpen, chatRequest, closeChat, customer, lang, coachOpen } = useApp();
+  const [mounted, setMounted] = useState(chatOpen);
+  const instant = useRef(chatOpen); // `/lab` opens with the chat already there
+  useEffect(() => {
+    if (chatOpen) setMounted(true);
+  }, [chatOpen]);
+  // Escape goes back, as the arrow does (the voice sheet, when it is on top, handles its own)
+  useEffect(() => {
+    if (!chatOpen || coachOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && !e.defaultPrevented) closeChat();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [chatOpen, coachOpen, closeChat]);
+  if (LEGACY_COACH || !mounted) return null;
+  return (
+    <motion.div
+      className="absolute inset-0 z-[45] bg-white"
+      initial={instant.current ? false : { opacity: 0, x: 28 }}
+      animate={chatOpen ? { opacity: 1, x: 0, visibility: "visible" } : { opacity: 0, x: 28, transitionEnd: { visibility: "hidden" } }}
+      transition={{ duration: chatOpen ? 0.3 : 0.2, ease: [0.16, 1, 0.3, 1] }}
+      inert={!chatOpen}
+      aria-hidden={!chatOpen}
+    >
+      <LabChat key={`${customer}|${lang}`} embed={{ customer, lang, request: chatRequest, onClose: closeChat }} />
+    </motion.div>
   );
 }
 
@@ -336,6 +376,7 @@ export function Shell() {
       {tab === "today" && minuteOn && <MinutePlayer />}
       {tab === "today" && <AskBar />}
       <TabBar joined={tab === "today"} />
+      <ChatLayer />
       <CardSheet />
       <PersonaSheet />
       <CoachSheet />
