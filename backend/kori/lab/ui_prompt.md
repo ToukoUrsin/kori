@@ -78,7 +78,7 @@ A grid to explore, switched between two views of the same thing:
 <script>K.on("#v","change",e=>{K.$("#week").hidden=e.detail.value!=="week";K.$("#year").hidden=e.detail.value!=="year"})</script>
 ```
 
-Toggles that add up (each swap is a `.k-swap` row; the five biggest show, the rest on request; the totals are a ledger fact minus what is switched off):
+Toggles that add up (each swap is a `.k-swap` row; the five biggest show, the rest on request; the totals are a ledger fact minus what is switched off, and a row that is switched off takes away its own `saving_month` and `saving_year`, never another column):
 ```
 <p class="k-lede">Same basket, <b id="m">{{saving_month|eur0}}</b> less every month.</p>
 <div class="k-stats"><div class="k-fig"><span id="y">{{saving_year|eur0}}</span><small>in a year</small></div><div class="k-fig"><span id="l">{{left_with_swaps|eur0}}</span><small>a usual month leaves</small></div></div>

@@ -105,7 +105,7 @@ shop.swaps(n=4, like=None)                   "can my shopping be cheaper" in one
                                              saving and saving_pct (on those receipts), month_spend (this customer's real usual month of groceries),
                                              saving_month and saving_year (the saving scaled to that month: "if a usual month looks like these
                                              receipts"), and rows[{have: {name, brand, price, size, image, url}, pick: {the same keys}, qty,
-                                             saving_each, saving, saving_month, saving_year, saving_pct}], largest saving first.
+                                             saving_each, saving_on_receipts, saving_month, saving_year, saving_pct}], largest saving first.
                                              For the view use these names exactly: table("swaps", s["rows"]) as it is (the pictures travel in
                                              have.image and pick.image), and emit saving_month, saving_year, swaps, month_spend and left_over
                                              (kori.usual_month()["left_over"]). The view adds rows up as the customer switches swaps on and off.

@@ -40,6 +40,14 @@ sold the same way, of comparable size (half to double), with a lower unit price,
 `saves` (euros for the original pack's quantity, from unit prices), `saves_pct` and `instead_of`. If nothing cheaper
 exists it returns `[]`.
 
+`swaps(receipts, month_spend=None, like=None)` is the cheaper basket in one call. For every branded product on the
+receipts it takes the first own-brand product from `cheaper_like` that passes `same_thing`: organic stays organic,
+lactose-free stays lactose-free, the same meat and cut, the same grain, the same fat level, and never dearer at the
+till. A pick must save at least 10 cents and 8 %. Each row has `have`, `pick` (both with picture), `qty`,
+`saving_each`, `saving_on_receipts` and, when `month_spend` is given (the customer's real usual month of groceries),
+`saving_month` and `saving_year`: the saving if a usual month looks like these receipts. The totals are the sums of
+the rows, so a view that switches rows off still adds up. `like="oat drink"` keeps one kind of product.
+
 ## Receipts: sample data, marked as such
 
 The bank's data stops at the merchant: item lines live in S-mobiili's "Omat ostot", which this demo does not have.

@@ -200,11 +200,11 @@ def test_swaps_are_own_brand_the_same_kind_and_never_dearer_at_the_till():
         assert have.get("by_weight") or pick["price"] <= have["price"]
         assert world.same_thing(have, pick)
         assert have["image"].startswith("https://") and pick["image"].startswith("https://")
-        assert r["saving"] == round(r["saving_each"] * r["qty"], 2) > 0
+        assert r["saving_on_receipts"] == round(r["saving_each"] * r["qty"], 2) > 0
         assert have["name"] not in seen
         seen.add(have["name"])
-    assert s["saving"] == round(sum(r["saving"] for r in s["rows"]), 2)
-    assert [r["saving"] for r in s["rows"]] == sorted((r["saving"] for r in s["rows"]), reverse=True)
+    assert s["saving"] == round(sum(r["saving_on_receipts"] for r in s["rows"]), 2)
+    assert [r["saving_on_receipts"] for r in s["rows"]] == sorted((r["saving_on_receipts"] for r in s["rows"]), reverse=True)
 
 
 def test_swaps_scale_to_a_usual_month_and_the_rows_add_up():

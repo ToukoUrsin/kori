@@ -730,7 +730,8 @@ def swaps(receipt_list: list[dict], month_spend: float | None = None, like: str 
     """The cheaper basket: for every branded product on these receipts, S Group's own-brand product of the same kind
     that passes `same_thing`, with what it saves for the quantity bought.
 
-    One row per product, largest saving first; a pick never costs more at the till than what it replaces. `saving` is on these receipts; `saving_month` scales it by
+    One row per product, largest saving first; a pick never costs more at the till than what it replaces. A row's `saving_on_receipts` is for the
+    quantity on these receipts (named so that no view mistakes it for the monthly figure); `saving_month` scales it by
     `month_spend` (the customer's real usual month of groceries) over what these receipts came to, so it reads "if a
     usual month looks like these receipts". `like` keeps only one kind of product ("oat drink", "kahvi")."""
     keep: Callable[[dict], bool] = lambda p: True
@@ -758,15 +759,15 @@ def swaps(receipt_list: list[dict], month_spend: float | None = None, like: str 
         qty = round(e["qty"], 3)
         rows.append({"have": {k: have[k] for k in _SWAP_KEYS if k in have}, "pick": {k: pick[k] for k in _SWAP_KEYS if k in pick},
                      "qty": int(qty) if qty == int(qty) else qty, "saving_each": pick["saves"], "saving_pct": pick["saves_pct"],
-                     "saving": round(pick["saves"] * qty, 2)})
-    rows.sort(key=lambda x: -x["saving"])
+                     "saving_on_receipts": round(pick["saves"] * qty, 2)})
+    rows.sort(key=lambda x: -x["saving_on_receipts"])
     spent = round(sum(float(r.get("total") or 0) for r in receipt_list or []), 2)
     scale = (float(month_spend) / spent) if month_spend and spent else None
     for row in rows:
         if scale:
-            row["saving_month"] = round(row["saving"] * scale, 2)
+            row["saving_month"] = round(row["saving_on_receipts"] * scale, 2)
             row["saving_year"] = round(row["saving_month"] * 12, 2)
-    saving = round(sum(r["saving"] for r in rows), 2)
+    saving = round(sum(r["saving_on_receipts"] for r in rows), 2)
     dates = sorted(str(r.get("date")) for r in receipt_list or [] if r.get("date"))
     out: dict[str, Any] = {
         "sample": True, "store": SKAUPAT_STORE,

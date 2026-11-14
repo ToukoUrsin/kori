@@ -1,6 +1,10 @@
 # Kori chat: a free agent, a sandbox, and UI built for each question
 
-Status: being built on 14.11.2026. This file is the contract between the parts. If you change a shape here, change it here first.
+Status: live at `/lab` since 14.11.2026. This file is the contract between the parts. If you change a shape here, change it here first.
+
+**What the customer sees.** A plain chat: one phone-width column, the question, dots while the agent works, then the answer and the view it built. No code, no sandbox wording. Adding `&dev=1` to the link shows the same chat with the work: the code of each run, each call through the door, timings and the check line. The stream can be picked up after a dropped connection (`turn` + `after`).
+
+**Every turn is kept.** One JSON line per finished turn in `STATE_DIR/lab_turns.jsonl`: question, answer, every event, the code of each run and the fragment the designer wrote.
 
 ## What it is
 
@@ -9,7 +13,7 @@ The customer types or speaks a question. An agent answers it by writing code, no
 1. **Analyst (Gemini).** Writes Python and runs it in a sandbox that holds this one customer's transactions. It can run as many cells as it needs, call the engine, search the web and shops, and hand a heavy modelling job to the larger Gemini model.
 2. **Ledger.** Every figure the answer may show is put on a ledger by the code that computed it (`emit`, `table`). Nothing else may appear as a figure.
 3. **Designer (Claude).** Gets the question, the ledger and a brief, and writes the interface for this one answer as an HTML fragment. It streams, so the customer watches it build.
-4. **Check.** Figures in the fragment are placeholders filled from the ledger. Any literal figure the designer typed is compared with the ledger and flagged if it is not there.
+4. **Check.** Figures in the fragment are placeholders filled from the ledger. Any literal figure the designer typed is compared with the ledger and flagged if it is not there. Kit elements that draw from a table (`k-each`, `k-bars`, `k-product` …) are traced to that table cell by cell, and a table the ledger does not have is flagged. In the plain chat a flagged view shows one quiet line under it ("2 figures here could not be checked against your data").
 5. **Frame.** The fragment runs in a locked iframe: no network, no access to the app, pictures only through Kori's proxy.
 
 Pitch line that is true of this design: *no number is guessed. The agent writes code that runs on your own transactions, and every figure on screen traces to a run you can open.*
@@ -95,7 +99,7 @@ Messages (all `postMessage`, all objects with a `kori` field):
 ```
 
 Units: `eur`, `eur_per_day`, `eur_per_month`, `pct`, `count`, `days`, `months`, `date`, `ratio`, `text`.
-Pictures are always proxy paths (`/api/lab/img?k=<key>`): the proxy only serves pictures that a logged `shop` or `web` call returned.
+Pictures are always proxy paths (`/api/lab/img?k=<key>`): the proxy only serves pictures that a logged `shop` or `web` call returned. It shrinks each one to at most 480 px WebP (a megabyte original becomes about 10 KB), so a view full of products loads at once on a phone.
 
 ## 4. Fragment rules (what the designer writes)
 
@@ -129,6 +133,8 @@ kori.replay()          kori.afford(amount, label="")   kori.what_if(changes)    
 kori.peers(kind=None)  kori.baskets(month=None)
                                              # the engine behind the home screen; its safe-to-spend number is the backtested one
 
+shop.swaps(n=4, like=None)                    # the cheaper basket in one call: each branded product on the receipts with the own-brand product that is the same thing
+shop.cheaper(product, n=3)                    # cheaper products like one named product
 shop.search(query, store="s-kaupat", n=8)    # real products with price, unit price and picture
 shop.receipts(n=4)                            # itemised receipts (sample data standing in for S-mobiili's "Omat ostot")
 web.search(query, n=6)                        # pages with title, url, snippet, picture
@@ -147,5 +153,5 @@ market.history(symbol, years=10)              # monthly closes of an index or fu
 | Analyst: writes and runs the code, decides what to show | `gemini-4-hydrogen` | A person is waiting |
 | Modeller: Monte Carlo, multi-year projections, loan schedules | `gemini-4-carbon` | Heavier reasoning, called when the analyst asks for a model |
 | Web researcher (`web.ask`) | `gemini-4-hydrogen` with Google Search | Grounded answers with sources |
-| Designer: writes the interface | `claude-opus-5-5` or `claude-fable-5-2` (env `KORI_UI_MODEL`), Gemini if Claude is unreachable | Best at writing interfaces |
+| Designer: writes the interface | `claude-fable-5-2` (env `KORI_UI_MODEL`; `claude-opus-5-5` also works), Gemini if Claude gives no first text within 8 s | Best at writing interfaces. Warmed at start and every 50 minutes so the first customer does not wait for it |
 | Voice | ElevenLabs Agents, Kori's server as the brain | As before |
