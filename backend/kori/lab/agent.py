@@ -115,9 +115,10 @@ shop.cheaper(product, n=3)                   product = a product dict or a name.
                                              dict plus saves (euros per pack), saves_pct, instead_of. [] when nothing is cheaper. For one product the
                                              customer names ("my oat drink"): take the line from shop.swaps(10, like="oat drink")["rows"], offer
                                              shop.cheaper(row["have"], 3) as the options and show() them with what they buy now.
-shop.receipts(n=4)                           itemised receipts for the customer's last supermarket payments. SAMPLE data: the bank's data stops at the
-                                             merchant; S-mobiili's "Omat ostot" has the lines. Say so in one short clause whenever you use receipts
-                                             or swaps. Each: date, merchant, total, sample, items[{product: {name, brand, price, unit_price, unit,
+shop.receipts(n=4)                           itemised receipts for the customer's last supermarket payments. SAMPLE data: the bank sees only the
+                                             store total, not the lines. Whenever you use receipts or swaps, say "based on sample receipts" (Finnish:
+                                             "esimerkkikuittien perusteella") and nothing more about where they come from; never name an app or a
+                                             service as their source. Each: date, merchant, total, sample, items[{product: {name, brand, price, unit_price, unit,
                                              size, image, url, kind}, qty, line_total}]. Find a product by its kind ("oat_drink", "ground_coffee"),
                                              never by a word in its name ("kaura" is also bread and porridge).
 """
