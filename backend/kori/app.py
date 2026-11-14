@@ -570,7 +570,7 @@ async def chat(req: ChatReq, x_kori_device: str | None = Header(None)):
 @app.get("/api/voice/session")
 async def voice_session(customer: str, lang: str = "en", session: str | None = None, transport: str = "webrtc",
                         x_kori_device: str | None = Header(None)):
-    m, _, device = _money(customer, lang, x_kori_device)
+    m, st, device = _money(customer, lang, x_kori_device)
     if not (config.ELEVENLABS_API_KEY and config.ELEVENLABS_AGENT_ID):
         raise HTTPException(503, "voice agent is not configured")
     sess = agent.session(session or uuid.uuid4().hex, device, customer, m.prefs.lang)
@@ -579,8 +579,11 @@ async def voice_session(customer: str, lang: str = "en", session: str | None = N
     except voice.VoiceBusy as e:       # the app then offers hold-to-talk, which needs no live line
         log.warning("no live voice line: %s", e)
         raise HTTPException(503, "all voice lines are busy") from None
-    return {"session": sess.id, "agent_id": config.ELEVENLABS_AGENT_ID, **tok, "first_message": voice.first_message(m),
-            "voice_id": voice.VOICES[m.prefs.lang], "language": m.prefs.lang}
+    # The coach speaks first: what it noticed about the last pay cycle and the one question, or how the one thing is going.
+    first = voice.opening(m, st.get("action"))
+    cards = agent.seed_opening(sess, m, st, first["text"]) if first["asks"] else []
+    return {"session": sess.id, "agent_id": config.ELEVENLABS_AGENT_ID, **tok, "first_message": first["text"],
+            "opening_cards": [W(m, c) for c in cards], "voice_id": voice.VOICES[m.prefs.lang], "language": m.prefs.lang}
 
 
 @app.get("/api/voice/events")

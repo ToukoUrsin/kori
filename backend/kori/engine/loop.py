@@ -239,6 +239,12 @@ def check_in(m: Money) -> dict:
 
 
 # -------------------------------------------------------------- one thing
+def _say(v: float, lang: str) -> str:
+    """An amount as it is said aloud."""
+    n = int(round(v))
+    return f"{n:,} euros" if lang == "en" else f"{n} euroa"
+
+
 def _round_down(v: float, step: float) -> float:
     return r2(max(step, (v // step) * step))
 
@@ -413,6 +419,10 @@ def suggest(m: Money) -> dict:
                                   f"tavallisesti {E(h['usual'])}. Oliko viime jakso poikkeus vai uusi tavallinen?"),
                         "short": L(f"Was last {w.cycle} unusual, or is this the new normal?",
                                    "Oliko viime jakso poikkeus vai uusi tavallinen?"),
+                        "spoken": L(f"Last {w.cycle} went {_say(row['over_by'], 'en')} over, mostly on {w.cat_low(h['category'])}. "
+                                    f"Was that unusual, or is this the new normal?",
+                                    f"Viime {w.cycle} meni {_say(row['over_by'], 'fi')} yli, eniten "
+                                    f"{FI_ILLATIVE.get(h['category'], w.cat_low(h['category']))}. Oliko se poikkeus vai uusi tavallinen?"),
                         "answers": [{"key": "unusual", "label": L("It was unusual", "Se oli poikkeus"), "pick": 0},
                                     {"key": "new_normal", "label": L("It is the new normal", "Se on uusi tavallinen"), "pick": 1}]}
         else:
@@ -426,6 +436,10 @@ def suggest(m: Money) -> dict:
                                   f"Syy oli {what}, {E(b['amount'])}. Tuleeko samanlainen meno uudestaan vuoden sisällä?"),
                         "short": L("Will something like it come again within a year?",
                                    "Tuleeko samanlainen meno uudestaan vuoden sisällä?"),
+                        "spoken": L(f"Last {w.cycle} went {_say(row['over_by'], 'en')} over because of one purchase: {what}, "
+                                    f"{_say(b['amount'], 'en')}. Will something like it come again within a year?",
+                                    f"Viime {w.cycle} meni {_say(row['over_by'], 'fi')} yli yhden menon takia: {what}, "
+                                    f"{_say(b['amount'], 'fi')}. Tuleeko samanlainen meno uudestaan vuoden sisällä?"),
                         "answers": [{"key": "one_off", "label": L("No, it was a one-off", "Ei, se oli kertameno"), "pick": 0},
                                     {"key": "again", "label": L("Yes, probably", "Kyllä, luultavasti"), "pick": 1}]}
     else:

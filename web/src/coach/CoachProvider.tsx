@@ -436,7 +436,7 @@ function Inner({ children }: { children: ReactNode }) {
         if (now() !== "connecting") return;
         clearTimeout(connectTimer.current);
         setPhase("live");
-        if (first) setTurns((ts) => (ts.length && ts[ts.length - 1].text === first ? ts : [...ts, { id: nid(), role: "coach", text: first, cards: [], pending: false, via: "voice", fresh: true }]));
+        if (first) setTurns((ts) => (ts.length && ts[ts.length - 1].text === first ? ts : [...ts, { id: nid(), role: "coach", text: first, cards: vs.opening_cards || [], pending: false, via: "voice", fresh: true }]));
       },
       onDisconnect: () => {
         if (now() === "live") endVoice(tRef.current("voice.ended"));

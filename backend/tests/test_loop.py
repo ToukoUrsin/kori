@@ -172,3 +172,41 @@ def test_sort_lesson_stores_score_and_consent_linking_changes_view():
         after = c.put("/api/consent", json={"customer": JARI, "other_bank": True}, headers=h).json()
         assert after["partial_view"] is False and after["scopes"][1]["granted"] is True
         c.put("/api/consent", json={"customer": JARI, "other_bank": False}, headers=h)
+
+
+# ------------------------------------------------------------------ the coach speaks first
+def test_voice_opening_asks_the_one_question_and_remembers_it():
+    from kori import voice
+    from kori.ai import agent
+
+    m = Money("CUST00092", prefs=Prefs(lang="en"))
+    first = voice.opening(m)
+    assert first["asks"] and "888 euros over" in first["text"] and first["text"].rstrip().endswith("?")
+    assert "€" not in first["text"], "spoken text has no symbols"
+
+    sess = agent.Session(id="o", device="pytest-opening", customer_id="CUST00092", lang="en")
+    cards = agent.seed_opening(sess, m, {}, first["text"])
+    assert [c["type"] for c in cards] == ["checkin", "action"]
+    assert len(sess.turns) == 1 and sess.turns[0][1].parts[0].text == first["text"]
+    assert sess.recent[-1][0]["tool"] == "check_in", "the figures in the opening line count as checked in the next answer"
+    agent.seed_opening(sess, m, {}, first["text"])
+    assert len(sess.turns) == 1, "opening voice twice does not stack two openings"
+
+
+def test_voice_opening_fits_each_situation():
+    from kori import voice
+
+    def say(cid, lang="en", action=None):
+        return voice.opening(Money(cid, prefs=Prefs(lang=lang)), action)
+
+    assert say("CUST00248")["asks"] and "one purchase" in say("CUST00248")["text"]
+    used_up = say("CUST01051")
+    assert used_up["asks"] and "used up" in used_up["text"] and "0 euros" not in used_up["text"]
+    assert not say("CUST00332")["asks"] and "held" in say("CUST00332")["text"]
+    assert not say("CUST02957")["asks"] and say("CUST02957")["text"].count("On this account") == 1
+    assert "eläke" in say("CUST00706", "fi")["text"] and "palkka" not in say("CUST00706", "fi")["text"]
+    m = Money("CUST00092", prefs=Prefs(lang="en"))
+    s = loop.suggest(m)
+    active = {**s, "cycle_start": m.cycle_start.isoformat(), "set_on": m.today.isoformat()}
+    going = voice.opening(m, active)
+    assert not going["asks"] and "groceries under 520 euros, is on track" in going["text"]

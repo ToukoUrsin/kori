@@ -112,6 +112,26 @@ def session(sid: str, device: str, customer_id: str, lang: str = "en") -> Sessio
     return s
 
 
+OPENING_NOTE = "[The user opened the voice coach."
+
+
+def seed_opening(sess: Session, m: Money, st: dict, spoken: str) -> list[dict]:
+    """The coach spoke first and asked the one question. Remember it, with the calculation behind it, so that a
+    spoken answer ("it was unusual") sets the thing without asking again. Returns the cards that go with the line."""
+    out = T.execute(m, st, "check_in", {"part": "both"})
+    note = (OPENING_NOTE + " Kori spoke first: it said what it noticed and asked the one question from check_in. The check_in "
+            "result was: " + json.dumps(out.result, ensure_ascii=False, default=str) + " If the user's next words answer that "
+            "question, call set_action at once as how_to_offer says, then say it is set. If they ask something else, answer that.]")
+    turn = [types.Content(role="user", parts=[types.Part(text=note)]), types.Content(role="model", parts=[types.Part(text=spoken)])]
+    if sess.turns and sess.turns[-1][0].parts and (sess.turns[-1][0].parts[0].text or "").startswith(OPENING_NOTE):
+        sess.turns.pop()            # voice opened twice in a row: one opening, not two
+        if sess.recent:
+            sess.recent.pop()
+    sess.turns.append(turn)
+    sess.recent = sess.recent[-CARRY_TURNS:] + [[{"tool": "check_in", "result": out.result}]]
+    return out.cards
+
+
 def get_session(sid: str) -> Session | None:
     return _sessions.get(sid)
 

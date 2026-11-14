@@ -651,6 +651,8 @@ export interface VoiceSession {
   token?: string;
   signed_url?: string;
   first_message: string;
+  /** when the coach opens with what it noticed, the cards that go with that line */
+  opening_cards?: Card[];
   voice_id: string;
   language: string;
 }

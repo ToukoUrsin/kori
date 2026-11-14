@@ -42,14 +42,69 @@ def spoken_day(d, lang: str) -> str:
     return f"{d.day}. {MONTHS_LONG['fi'][d.month - 1]}ta"
 
 
-def first_message(m: Money) -> str:
-    """Opening line of a voice session. Built from the engine, so it is grounded by construction."""
+VERDICT_SPOKEN = {"on_track": ("is on track", "on hyvässä vauhdissa"), "at_risk": ("needs attention", "vaatii huomiota"),
+                  "over": ("has gone over", "on ylittynyt"), "done": ("is done", "on tehty")}
+
+
+def _aloud(text: str, lang: str) -> str:
+    """Written money ("€520", "520 €") the way it is said."""
+    import re
+    if lang == "en":
+        return re.sub(r"€([\d,]+(?:\.\d+)?)", r"\1 euros", text)
+    return text.replace(" €", " euroa").replace("\u00a0€", " euroa")
+
+
+def opening(m: Money, action: dict | None = None) -> dict:
+    """Opening line of a voice session, built from the engine, so it is grounded by construction.
+
+    The coach speaks first. With nothing set and a last cycle that went over, it says what it noticed and asks the
+    one question (``asks`` is true: the session then remembers the question, so a spoken answer sets the thing).
+    With one thing set, it says how that is going.
+    """
+    from .engine import loop
     s, lang, name = m.safe, m.prefs.lang, name_of(m.customer_id)
-    if lang == "fi":
-        return adapt(m, f"Hei {name}, Kori tässä. Sinulla on {spoken_eur(s['amount'], 'fi')} turvallista käyttövaraa palkkapäivään asti, "
-                        f"eli noin {spoken_eur(s['per_day'], 'fi')} päivässä. Mitä katsotaan?")
-    return adapt(m, f"Hi {name}, it's Kori. You have {spoken_eur(s['amount'], 'en')} that's safe to spend until payday, "
-                    f"about {spoken_eur(s['per_day'], 'en')} a day. What shall we look at?")
+    L = lambda en, fi: en if lang == "en" else fi
+    hello = L(f"Hi {name}, it's Kori.", f"Hei {name}, Kori tässä.")
+    full = L(f"You have {spoken_eur(s['amount'], 'en')} that's safe to spend until payday, about {spoken_eur(s['per_day'], 'en')} a day.",
+             f"Sinulla on {spoken_eur(s['amount'], 'fi')} turvallista käyttövaraa palkkapäivään asti, eli noin "
+             f"{spoken_eur(s['per_day'], 'fi')} päivässä.")
+    ask = L("What shall we look at?", "Mitä katsotaan?")
+    if action:
+        p = loop.progress(m, action)
+        title = _aloud(p["title"], lang)
+        title = title[:1].lower() + title[1:]
+        v = VERDICT_SPOKEN.get(p["verdict"], VERDICT_SPOKEN["on_track"])[0 if lang == "en" else 1]
+        thing = L(f"Your one thing, {title}, {v}.", f"Yksi asiasi, {title}, {v}.")
+        return {"text": adapt(m, f"{hello} {full} {thing} {ask}"), "asks": False}
+    if m.partial_view:
+        full = L(f"On this account you have {spoken_eur(s['amount'], 'en')} free until payday, about {spoken_eur(s['per_day'], 'en')} a day.",
+                 f"Tällä tilillä sinulla on {spoken_eur(s['amount'], 'fi')} vapaana palkkapäivään asti, eli noin "
+                 f"{spoken_eur(s['per_day'], 'fi')} päivässä.")
+        return {"text": adapt(m, f"{hello} {full} {ask}"), "asks": False}
+    sug = loop.suggest(m)
+    q = sug.get("question") or {}
+    if s["amount"] <= 0 and sug["kind"] == "pause_category":
+        title = _aloud(sug["title"], lang)
+        title = title[:1].lower() + title[1:]
+        used = L(f"Your everyday money for this pay cycle is used up, with {s['days_to_payday']} days to payday.",
+                 f"Arjen rahasi tältä palkkajaksolta on käytetty, ja palkkapäivään on {s['days_to_payday']} päivää.")
+        offer = L(f"One thing to try: {title}. Shall I set it?", f"Yksi asia kokeiltavaksi: {title}. Asetanko sen?")
+        return {"text": adapt(m, f"{hello} {used} {offer}"), "asks": True}
+    if q.get("spoken"):
+        short = L(f"You have {spoken_eur(s['per_day'], 'en')} a day until payday.",
+                  f"Sinulla on {spoken_eur(s['per_day'], 'fi')} päivässä palkkapäivään asti.")
+        return {"text": adapt(m, f"{hello} {short} {q['spoken']}"), "asks": True}
+    ci = loop.check_in(m)
+    row = ci.get("cycle") or {}
+    held = ""
+    if ci.get("available") and row.get("within") and row.get("difference", 0) >= 20:
+        held = L(f" Last pay cycle held, with {spoken_eur(row['difference'], 'en')} left over.",
+                 f" Viime palkkajakso piti, ja {spoken_eur(row['difference'], 'fi')} jäi yli.")
+    return {"text": adapt(m, f"{hello} {full}{held} {ask}"), "asks": False}
+
+
+def first_message(m: Money, action: dict | None = None) -> str:
+    return opening(m, action)["text"]
 
 
 def minute_script(m: Money) -> list[dict]:
