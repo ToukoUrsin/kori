@@ -110,6 +110,8 @@ function FrameHost({ view, lang, mock, sources, onAsk, onTrace }: FrameHostProps
   const frameRef = useRef<HTMLIFrameElement>(null);
   const [ready, setReady] = useState(false);
   const [height, setHeight] = useState(154);
+  const [life, setLife] = useState(0);                                             // a new number is a new frame
+  const pulse = useRef({ seen: false, sent: 0, back: 0, revived: 0 });
   const allowUrls = useMemo(() => new Set<string>([...sources.map((s) => s.url), ...(view.data.sources || []).map((s: Source) => s.url), ...(view.data.products || []).map((p: { url?: string }) => p.url).filter(Boolean) as string[]]), [sources, view.data]);
   const post = useCallback((message: Record<string, unknown>) => { frameRef.current?.contentWindow?.postMessage({ kori: message.kori, ...message }, "*"); }, []);
   useEffect(() => {
@@ -121,11 +123,28 @@ function FrameHost({ view, lang, mock, sources, onAsk, onTrace }: FrameHostProps
     const timer = window.setTimeout(() => post({ kori: "html", html: view.html, done: view.done }), view.done ? 0 : 80);
     return () => window.clearTimeout(timer);
   }, [post, ready, view.done, view.html]);
+  // A frame lives in a process of its own and that process can die (the browser shows a blank or a sad face).
+  // Ask it now and then whether it is there; one that answered before and has gone silent is replaced, and the view is drawn again.
+  useEffect(() => {
+    if (!ready) return;
+    const p = pulse.current;
+    const ask = () => { p.sent = Date.now(); post({ kori: "ping" }); };
+    ask();
+    const timer = window.setInterval(() => {
+      if (document.hidden) { p.sent = 0; return; }
+      if (!p.sent || p.back >= p.sent) { ask(); return; }
+      if (!p.seen || p.revived >= 2) return;
+      p.revived += 1; p.seen = false; p.sent = 0;
+      setReady(false); setLife((n) => n + 1);
+    }, 3000);
+    return () => window.clearInterval(timer);
+  }, [post, ready]);
   useEffect(() => {
     const onMessage = (event: MessageEvent) => {
       if (event.source !== frameRef.current?.contentWindow) return;
       const message = event.data as { kori?: string; h?: number; text?: string; name?: string; url?: string };
       if (message.kori === "ready") { setReady(true); return; }
+      if (message.kori === "pong") { pulse.current.seen = true; pulse.current.back = Date.now(); return; }
       if (message.kori === "height" && typeof message.h === "number") { setHeight(Math.max(128, Math.min(1200, Math.round(message.h)))); return; }
       if (message.kori === "ask" && message.text) { onAsk(message.text); return; }
       if (message.kori === "trace" && message.name) { onTrace(message.name); return; }
@@ -134,7 +153,7 @@ function FrameHost({ view, lang, mock, sources, onAsk, onTrace }: FrameHostProps
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
   }, [allowUrls, onAsk, onTrace]);
-  return <div className="lab-frame-wrap" style={{ height }}><div className="lab-frame-skeleton" aria-hidden={!!view.html} style={{ display: view.html ? "none" : "block" }}><div className="lab-skel-line" /><div className="lab-skel-line" /><div className="lab-skel-line" /></div><iframe ref={frameRef} title={view.title} sandbox="allow-scripts" src={mock ? undefined : "/api/lab/frame"} srcDoc={mock ? stubFrame : undefined} style={{ height: view.html ? height : 0, opacity: view.html ? 1 : 0 }} /></div>;
+  return <div className="lab-frame-wrap" style={{ height }}><div className="lab-frame-skeleton" aria-hidden={!!view.html} style={{ display: view.html ? "none" : "block" }}><div className="lab-skel-line" /><div className="lab-skel-line" /><div className="lab-skel-line" /></div><iframe key={life} ref={frameRef} title={view.title} sandbox="allow-scripts" src={mock ? undefined : "/api/lab/frame"} srcDoc={mock ? stubFrame : undefined} style={{ height: view.html ? height : 0, opacity: view.html ? 1 : 0 }} /></div>;
 }
 
 function Status({ status, pending, text }: { status?: { text: string; kind: string }; pending: boolean; text: string }) {

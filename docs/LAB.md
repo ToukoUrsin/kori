@@ -14,7 +14,7 @@ The customer types or speaks a question. An agent answers it by writing code, no
 2. **Ledger.** Every figure the answer may show is put on a ledger by the code that computed it (`emit`, `table`). Nothing else may appear as a figure.
 3. **Designer (Claude).** Gets the question, the ledger and a brief, and writes the interface for this one answer as an HTML fragment. It streams, so the customer watches it build.
 4. **Check.** Figures in the fragment are placeholders filled from the ledger. Any literal figure the designer typed is compared with the ledger and flagged if it is not there. Kit elements that draw from a table (`k-each`, `k-bars`, `k-product` …) are traced to that table cell by cell, and a table the ledger does not have is flagged. In the plain chat a flagged view shows one quiet line under it ("2 figures here could not be checked against your data").
-5. **Frame.** The fragment runs in a locked iframe: no network, no access to the app, pictures only through Kori's proxy.
+5. **Frame.** The fragment runs in a locked iframe: no network, no access to the app, pictures only through Kori's proxy. The chat asks the frame every 3 s whether it is alive; a frame that answered before and has gone silent (its process died) is replaced and the view drawn again, at most twice.
 
 Speed: the customer reads the answer when the code has run, not when the view is done. The cell that computes the figures also writes the sentence (`say`, with money through `eur`), the same check runs on it, and the designer starts on the view at that moment. If the sentence has a figure that is not on the ledger it is dropped and the analyst writes the answer in a second round. Two analyst attempts start together and the first to finish is used.
 
@@ -135,6 +135,7 @@ eur(x, cents=False)                          # money the way this customer reads
 kori.safe_to_spend()   kori.usual_month()   kori.forecast(pace="safe"|"usual")   kori.bills()
 kori.replay()          kori.afford(amount, label="")   kori.what_if(changes)      kori.goal(amount, months=None, by=None)
 kori.peers(kind=None)  kori.baskets(month=None)
+kori.afford_range()    # the limits behind "what can I afford?": comfortable_up_to, tight_up_to, possible_up_to (the engine's own verdicts)
                                              # the engine behind the home screen; its safe-to-spend number is the backtested one
 
 shop.swaps(n=4, like=None)                    # the cheaper basket in one call: each branded product on the receipts with the own-brand product that is the same thing

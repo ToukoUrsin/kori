@@ -50,3 +50,15 @@ def test_a_said_answer_passes_only_when_its_figures_are_on_the_ledger():
     assert check.answer("You could save **€69** a month, or €828 a year.", ok, "en") == []
     assert check.answer("Voit säästää 69 € kuussa eli 828 € vuodessa.", ok, "fi") == []
     assert check.answer("You could save €75 a month.", ok, "en")
+
+
+def test_what_can_i_afford_has_limits_and_they_are_the_engines():
+    from kori.engine.afford import afford
+    from kori.engine.core import Money
+    from kori.lab.door import afford_range
+    m = Money("CUST01885")
+    r = afford_range(m)
+    assert 0 < r["comfortable_up_to"] < r["tight_up_to"] < r["possible_up_to"] <= r["safe_to_spend"]
+    assert afford(m, float(r["comfortable_up_to"]))["verdict"] == "yes" and afford(m, float(r["comfortable_up_to"] + 1))["verdict"] == "tight"
+    assert afford(m, float(r["tight_up_to"]))["status"]["after"] == "tight" and afford(m, float(r["tight_up_to"] + 1))["status"]["after"] == "very_tight"
+    assert afford(m, float(r["possible_up_to"]))["verdict"] == "tight" and afford(m, float(r["possible_up_to"] + 1))["verdict"] == "no"

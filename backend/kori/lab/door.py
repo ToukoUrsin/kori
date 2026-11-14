@@ -56,6 +56,30 @@ def _json(v: Any) -> Any:
     return json.loads(json.dumps(v, ensure_ascii=False, default=str))
 
 
+def afford_range(m: Money) -> dict:
+    """The limits behind "what can I afford?", found with the engine's own check so that every answer names the same ones:
+    the largest price that leaves the days until payday at the usual pace or better (verdict "yes"), the largest that leaves
+    them tight but liveable (verdict "tight", pace still at least 60 % of usual), and the ceiling: all of safe to spend,
+    with nothing left for the days."""
+    from ..engine.afford import afford
+
+    def top(ok) -> int:
+        lo, hi = 0, 1
+        while hi < 200_000 and ok(afford(m, float(hi))):
+            lo, hi = hi, hi * 2
+        while hi - lo > 1:
+            mid = (lo + hi) // 2
+            lo, hi = (mid, hi) if ok(afford(m, float(mid))) else (lo, mid)
+        return lo
+
+    a = afford(m, 1.0)
+    return {"comfortable_up_to": top(lambda r: r["verdict"] == "yes"),
+            "tight_up_to": top(lambda r: r["verdict"] != "no" and r["status"]["after"] in ("comfortable", "tight")),
+            "possible_up_to": top(lambda r: r["verdict"] != "no"),
+            "safe_to_spend": a["safe"]["before"], "per_day_now": a["per_day"]["before"], "usual_per_day": a["usual_per_day"],
+            "days_to_payday": a["days_to_payday"], "next_payday": a["next_payday"]}
+
+
 def _strip(v: Any) -> Any:
     if isinstance(v, dict):
         return {k: _strip(x) for k, x in v.items() if k not in DROP}
@@ -157,9 +181,11 @@ class Door:
             return b() if callable(b) else b
         if fn == "replay":
             return trackrecord.story(m)
+        if fn == "afford_range":
+            return afford_range(m)
         if fn == "help":
             return {k: {"calculation": v[0], "arguments": v[1]} for k, v in ENGINE.items()} | {
-                "usual_month": {}, "bills": {}, "replay": {}}
+                "usual_month": {}, "bills": {}, "replay": {}, "afford_range": {}}
         if fn not in ENGINE:
             raise PermissionError(f"engine.{fn} is not on the list; engine.help() lists what is")
         tool, names = ENGINE[fn]

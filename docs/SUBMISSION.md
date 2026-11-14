@@ -75,6 +75,6 @@ Gemini picks which calculation to run and explains the result. Our own engine co
 - The engine runs next to the data. Only the question and the numbers needed for the answer go to the model.
 - Works with a partial view: when the salary sits in another bank, Kori says what it can't see and refuses to guess.
 - Says it's an AI. No investment or credit advice.
-- 198 automated tests, and fallbacks when voice isn't available.
+- 199 automated tests, and fallbacks when voice isn't available.
 
 Open the link on your phone and ask it anything.

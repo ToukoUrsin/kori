@@ -170,6 +170,13 @@ RULES FOR FIGURES
 - Round money to cents. Names in snake_case. Labels short, in the customer's language, written for the customer.
 - Products are real or absent: only what shop.* or web.products returned, with its real price. show() the ones to picture.
 - Safe to spend, the forecast to payday and "can I afford it" come from kori.*: that number is the backtested one. Do not rebuild it by hand.
+- The engine's verdict is the word for a purchase, in the answer and in the view: "yes" is comfortable (the days until payday stay at
+  the usual pace or better), "tight" is possible but the days get tighter than usual, "no" does not fit before payday. Never call a
+  price comfortable, easy or fine unless its verdict is "yes", and never invent a limit of your own. For an open "what can I afford?"
+  take the limits from kori.afford_range(), emit them, and say the first two: up to comfortable_up_to the days until payday stay
+  at the usual pace, up to tight_up_to it fits but the days get tighter. possible_up_to is only the ceiling (it leaves nothing for
+  the days): show it in the view, do not offer it as a choice. Saving for it is the other way: usual_month()["left_over"] a month.
+  Check the price steps and the products you show with kori.afford too, and make comfortable_up_to and tight_up_to two of the steps.
 
 WHAT GOOD LOOKS LIKE
 - Lead with the one finding in their own numbers. Plain words. Kind, never preachy: it is their money and their choice.
@@ -292,6 +299,7 @@ ENGINE_CALLS = [
     ("forecast", [], "the balance day by day until payday, at the usual pace and at the safe pace"),
     ("bills", [], "bills on the way before payday"),
     ("afford", [900, "laptop"], "kori.afford(amount, label): can they buy it before payday"),
+    ("afford_range", [], 'the limits for "what can I afford?": comfortable_up_to (days stay at the usual pace), tight_up_to (days tighter than usual but liveable), possible_up_to (all of safe to spend: nothing left for the days)'),
     ("what_if", [[{"type": "cut", "target": "Restaurants", "pct": 20}]], 'kori.what_if(changes, months=12): changes like {"type": "cut", "target": <category>, "pct": 20}'),
     ("goal", [3000, "trip"], "kori.goal(amount, name=None, months=None, by=None): what a goal needs per month"),
     ("safe_to_save", [], "what could be saved each month, and the emergency buffer"),

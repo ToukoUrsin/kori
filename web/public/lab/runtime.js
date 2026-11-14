@@ -276,6 +276,7 @@
         if (S.html) { var h = S.html, d = S.done; S.ran = false; S.html = null; root.textContent = ""; render(h, d); }
       } else if (m.kori === "html") render(String(m.html || ""), !!m.done);
       else if (m.kori === "check") markFlagged(m.flagged);
+      else if (m.kori === "ping") post({ kori: "pong" });      // the host asks whether this frame is still alive
     } catch (err) { fail(err); }
   });
 

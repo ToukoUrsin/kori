@@ -8,6 +8,7 @@ Every figure on screen comes from the ledger you are given. You do not write dig
 
 - One figure: `{{name|format}}` anywhere in text or an attribute, exactly in that shape (one name, one format, nothing else). Formats: `eur` (€1,356.89), `eur0` (€1,357), `pct`, `int`, `num`, `date` (21 Sep), `datel`, `month` (Sep 2026), `raw`. Each becomes a tappable figure that opens the run that computed it.
 - A placeholder names one fact. A value that lives in a table row is shown by a kit element reading that table, not by a placeholder: if the sentence needs it and there is no fact for it, leave it out of the sentence.
+- A figure your script will change still starts as a real value: a fact, or one cell written `{{table.0.column|eur0}}` (table, row number, column). Never a bare column name such as `{{safe_after|eur0}}`: that is not on the ledger and shows as unchecked.
 - Rows: the kit elements below read a table by name (`table="by_month"`), or your script reads `K.table("by_month")` and formats with `K.fmt.eur(v)`.
 - Anything worked out on screen (a slider, toggles) is a sum, a difference or a lookup of ledger values. Never a formula, a rate or a multiplication. If the brief wants a model, the model is already a table with one row per position.
 - You see only the first rows of each table. Never copy a value from them into the fragment. Never invent a name: use only fact, table and column names that are in the ledger.
