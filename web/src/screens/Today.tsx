@@ -1,13 +1,16 @@
-import { ArrowUpRight, BookOpen, ChevronDown, ChevronRight, Info, Pin, Play, Square } from "lucide-react";
+import { BookOpen, ChevronDown, ChevronRight, Info, Pin, Play, Square } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { BasketBar, vsUsualText } from "../components/cards/bodies";
 import { CardView } from "../components/cards/CardView";
-import { NoticeRow, StatusChip } from "../components/cards/parts";
+import { NoticeRow } from "../components/cards/parts";
 import { OneThing } from "../components/loop/OneThing";
+import { ReplaySheet } from "../components/replay/ReplaySheet";
+import { ReplayStrip } from "../components/replay/ReplayStrip";
 import { ForecastChart, ForecastLegend } from "../components/charts/ForecastChart";
 import { SpokenBar } from "../components/charts/SpokenBar";
 import { BigMoney, Collapse, Dot, ErrorInline, LangToggle, SectionHead, Skel } from "../components/ui/bits";
 import { day, longDate, money, weekday } from "../lib/format";
+import { api } from "../lib/api";
 import { useApp } from "../lib/store";
 import type { Card, Home } from "../lib/types";
 import { AvatarButton } from "../shell/Shell";
@@ -43,31 +46,18 @@ function Header({ d }: { d?: Home }) {
 }
 
 function Hero({ d }: { d: Home }) {
-  const { lang, t, minuteFocus, openCoach } = useApp();
+  const { lang, t, minuteFocus } = useApp();
   const s = d.safe;
   const empty = s.status === "empty";
   const date = day(s.next_payday, lang);
   const payWord = lang === "fi" ? `${d.pay_word || "palkkapäivä"}än` : d.pay_word || "payday";
-  const partialAsk = d.notices.find((n) => n.id === "partial_view")?.ask;
   return (
     <section data-focus-key="safe" data-on={minuteFocus === "safe" ? "true" : undefined} className="focus-ring -mx-2.5 rounded-card px-2.5 py-2">
-      <div className="flex items-start justify-between gap-3">
-        <p className="min-w-0 text-[14px] leading-5 text-ink-2">{s.partial_view ? t("today.safePartialLabel") : t("today.safeLabel", { word: payWord })}</p>
-        {s.partial_view && (
-          <button
-            type="button"
-            onClick={() => (partialAsk ? openCoach({ ask: partialAsk }) : openCoach())}
-            className="relative -mr-1 inline-flex h-7 shrink-0 items-center gap-0.5 rounded-md px-1 text-[12px] font-semibold leading-4 text-brand after:absolute after:-inset-y-2 after:inset-x-0 hover:text-brand-strong"
-          >
-            {t("loop.link")}
-            <ArrowUpRight size={14} strokeWidth={2} aria-hidden />
-          </button>
-        )}
-      </div>
-      <p className="mt-0.5">
+      <p className="sr-only">{s.partial_view ? t("today.safePartialLabel") : t("today.safeLabel", { word: payWord })}</p>
+      <p>
         <BigMoney value={s.amount} lang={lang} countUp className="text-[56px] font-semibold leading-[62px] tracking-[-0.04em] text-ink" />
       </p>
-      <p className="num mt-1 text-[15px] leading-[22px] text-ink-2">
+      <p className="num mt-1 text-[14px] leading-5 text-ink-2">
         {!empty && (
           <>
             <span className="font-medium text-ink">{money(s.per_day, lang, { cents: true })}</span> {t("common.aDay")} ·{" "}
@@ -75,26 +65,23 @@ function Hero({ d }: { d: Home }) {
         )}
         {s.days_to_payday === 1 ? t("today.dayTo", { word: payWord, date }) : t("today.daysTo", { n: s.days_to_payday, word: payWord, date })}
       </p>
-      {/* chip and line flow as one paragraph, so a long line wraps under the chip instead of hanging beside it */}
-      <p className="mt-3 text-[14px] leading-[26px] text-ink-2">
-        {s.partial_view ? (
-          <span className="mr-2 inline-flex h-6 items-center rounded-full bg-sunk px-2.5 text-[12px] font-semibold text-ink-2 align-[1px]">{s.status_label || t("today.partialStatus")}</span>
-        ) : (
-          <StatusChip status={s.status} className="mr-2 align-[1px]" />
-        )}
-        {s.status_line || t(`status.${s.status}.line`)}
-      </p>
-      {empty && (
-        <p className="mt-1.5 text-[14px] leading-[21px] text-ink-2">
-          {s.limit === "budget"
-            ? t("today.emptyBudget", {
-                budget: money(s.budget.everyday_budget, lang),
-                spent: money(s.budget.everyday_spent, lang),
-                free: money(s.cash.free, lang),
-              })
-            : t("today.emptyCash")}
-        </p>
-      )}
+      <p className="mt-3 max-w-[34ch] text-[15px] leading-[21px] text-ink-2">{d.hero?.sentence}</p>
+    </section>
+  );
+}
+
+function SaveRow({ d }: { d: Home }) {
+  const { lang, t } = useApp();
+  return (
+    <section className="mt-4 rounded-card border border-line bg-surface px-4 py-3">
+      <div className="flex items-baseline justify-between gap-3">
+        <span className="text-[14px] font-semibold leading-5 text-ink">{t("today.safeSave")}</span>
+        <span className="num text-[14px] font-semibold text-brand-strong">{money(d.save.extra_monthly, lang)}</span>
+      </div>
+      <div className="mt-1 flex items-baseline justify-between gap-3 text-[12px] leading-4 text-ink-3">
+        <span>{t("today.safeSaveCapacity", { v: money(d.save.monthly_capacity, lang) })}</span>
+        <span className="num shrink-0">{t("today.safeSaveBuffer", { n: d.save.buffer.months_covered })}</span>
+      </div>
     </section>
   );
 }
@@ -119,10 +106,30 @@ function Skeleton() {
 }
 
 export function Today() {
-  const { home, lang, t, pins, setOverlay, setTab, openCoach, openLesson, minuteOn, setMinuteOn, minuteFocus } = useApp();
+  const { home, customer, lang, t, pins, setOverlay, setTab, openCoach, openLesson, minuteOn, setMinuteOn, minuteFocus } = useApp();
   const d = home.data;
   const [allNotices, setAllNotices] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
+  const [replay, setReplay] = useState<Home["replay"]>(d?.replay ?? null);
+  const [replayLoading, setReplayLoading] = useState(false);
+  const [replayOpen, setReplayOpen] = useState(false);
+
+  useEffect(() => {
+    if (!d) return;
+    if (d.replay) {
+      setReplay(d.replay);
+      return;
+    }
+    let alive = true;
+    setReplayLoading(true);
+    api.replay(customer, lang)
+      .then((value) => alive && setReplay(value))
+      .catch(() => undefined)
+      .finally(() => alive && setReplayLoading(false));
+    return () => {
+      alive = false;
+    };
+  }, [d, customer, lang]);
 
   const partial = d?.notices.find((n) => n.id === "partial_view");
   const notices = useMemo(() => (d ? d.notices.filter((n) => n.id !== "partial_view") : []), [d]);
@@ -136,7 +143,7 @@ export function Today() {
     if (!minuteFocus || minuteFocus === "ask") return;
     if (minuteFocus.startsWith("notice:")) {
       const noticeIndex = notices.findIndex((n) => `notice:${n.id}` === minuteFocus);
-      if (noticeIndex >= 1) setMoreOpen(true);
+      setMoreOpen(true);
       if (noticeIndex >= VISIBLE) setAllNotices(true);
     }
     const id = requestAnimationFrame(() => {
@@ -170,7 +177,20 @@ export function Today() {
       <Header d={d} />
       <div className="px-5 pb-8">
         <Hero d={d} />
+        <ReplayStrip story={replay || null} loading={replayLoading} onOpen={() => setReplayOpen(true)} />
+        <ReplaySheet story={replay || null} open={replayOpen} onClose={() => setReplayOpen(false)} />
+        <button
+          type="button"
+          aria-expanded={moreOpen}
+          onClick={() => setMoreOpen((v) => !v)}
+          className="mt-3 flex min-h-11 w-full items-center justify-between gap-3 rounded-[10px] bg-sunk px-4 py-2.5 text-left text-[14px] font-semibold leading-5 text-ink transition-colors duration-150 hover:bg-line"
+        >
+          <span>{moreOpen ? t("today.less") : t("today.more")}</span>
+          <ChevronDown size={17} strokeWidth={2} className={moreOpen ? "rotate-180 text-ink-2 transition-transform" : "text-ink-2 transition-transform"} aria-hidden />
+        </button>
 
+        <Collapse open={moreOpen}>
+        <SaveRow d={d} />
         {primaryNotice && primaryNotice.id === "partial_view" && (
           <button
             type="button"
@@ -193,18 +213,6 @@ export function Today() {
         )}
 
         {d.loop && <OneThing variant="today" />}
-
-        <button
-          type="button"
-          aria-expanded={moreOpen}
-          onClick={() => setMoreOpen((v) => !v)}
-          className="mt-3 flex min-h-11 w-full items-center justify-between gap-3 rounded-[10px] bg-sunk px-4 py-2.5 text-left text-[14px] font-semibold leading-5 text-ink transition-colors duration-150 hover:bg-line"
-        >
-          <span>{moreOpen ? t("today.less") : t("today.more")}</span>
-          <ChevronDown size={17} strokeWidth={2} className={moreOpen ? "rotate-180 text-ink-2 transition-transform" : "text-ink-2 transition-transform"} aria-hidden />
-        </button>
-
-        <Collapse open={moreOpen}>
         <section className="relative mt-5 rounded-card border border-line bg-surface px-4 py-3.5 transition-colors duration-150 hover:border-line-strong">
           <h2 className="mb-3 flex items-start gap-2">
             <button

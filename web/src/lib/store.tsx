@@ -167,6 +167,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, []);
   const bump = useCallback(() => setVersion((v) => v + 1), []);
 
+  // Film links can request a clean demo without adding another visible control to the shell.
+  useEffect(() => {
+    const q = new URLSearchParams(location.search);
+    if (q.get("reset") !== "1") return;
+    q.delete("reset");
+    history.replaceState(null, "", `${location.pathname}${q.toString() ? `?${q.toString()}` : ""}${location.hash}`);
+    void api.reset(customer).then(() => {
+      invalidate();
+      // A reload also clears the in-memory coach conversation, as the picker reset does.
+      location.reload();
+    }).catch(() => {
+      invalidate();
+      bump();
+    });
+  }, [customer, bump]);
+
   const home = useQuery<Home>(`home|${customer}|${lang}|${version}`, customer, () => api.home(customer, lang));
   const pins = useQuery<Card[]>(`pins|${customer}|${lang}|${version}`, customer, () => api.pins(customer, lang));
   const personasQ = useQuery<Persona[]>(`personas|${lang}|${version}`, "all", () => api.personas(lang));

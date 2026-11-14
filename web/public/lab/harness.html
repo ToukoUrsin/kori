@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Kori lab frame: reference host</title>
+    <style>
+      /* A plain host for one generated view. It is the reference for the React chat (web/src/lab) and what the gallery screenshots.
+         Open /lab/harness.html?demo=1, or drive it from a script through window.KoriHost. */
+      @font-face { font-family: "Geist Variable"; font-weight: 100 900; font-display: swap; src: url("vendor/geist-latin-wght-normal.woff2") format("woff2"); }
+      html, body { margin: 0; background: #fdfdfb; }
+      body { font: 15px/22px "Geist Variable", system-ui, -apple-system, "Segoe UI", sans-serif; color: #17251f; -webkit-font-smoothing: antialiased; }
+      #chat { max-width: 430px; margin: 0 auto; padding: 14px 0 28px; }
+      .q { margin: 0 20px 14px auto; width: fit-content; max-width: 78%; padding: 9px 14px; border-radius: 18px 18px 6px 18px; background: #ecebe6; }
+      .a { margin: 0 20px 12px; }
+      .a b { font-weight: 620; }
+      /* the frame is edge to edge: the runtime owns the 20 px gutter, so full-bleed views (slides) can use the whole width */
+      iframe { display: block; width: 100%; border: 0; height: 0; transition: height 260ms cubic-bezier(0.16, 1, 0.3, 1); }
+      #log { margin: 12px 20px 0; font: 12px/17px ui-monospace, monospace; color: #6b756f; white-space: pre-wrap; }
+    </style>
+  </head>
+  <body>
+    <div id="chat">
+      <div class="q" id="q" hidden></div>
+      <div class="a" id="a" hidden></div>
+      <div id="views"></div>
+      <div id="log"></div>
+    </div>
+    <script>
+      (function () {
+        var params = new URLSearchParams(location.search);
+        var FRAME = params.get("frame") || "/api/lab/frame";
+        var logEl = document.getElementById("log");
+        function log(s) { if (params.get("log")) logEl.textContent += s + "\n"; }
+
+        // One generated view. Exactly section 2 of docs/LAB.md.
+        function mount(opts) {
+          var iframe = document.createElement("iframe");
+          iframe.setAttribute("sandbox", "allow-scripts");          // no same-origin, no forms, no popups
+          iframe.setAttribute("title", opts.title || "Kori view");
+          iframe.src = FRAME;
+          (opts.into || document.getElementById("views")).appendChild(iframe);
+          var ready = false, latest = null, sent = null, timer = 0, events = [], allowed = {};
+          (opts.data.products || []).concat(opts.data.sources || []).forEach(function (p) { if (p.url) allowed[p.url] = 1; });
+
+          function send(m) { iframe.contentWindow.postMessage(m, "*"); }
+          function flush() {
+            timer = 0;
+            if (!ready || !latest || latest === sent) return;
+            sent = latest; send({ kori: "html", html: latest.html, done: latest.done });
+          }
+          function onMessage(e) {
+            if (e.source !== iframe.contentWindow) return;           // an opaque origin: identify the frame by its window
+            var m = e.data; if (!m || !m.kori) return;
+            events.push(m);
+            if (m.kori === "ready") { ready = true; send({ kori: "init", lang: opts.lang || "en", data: opts.data, width: iframe.clientWidth }); flush(); }
+            else if (m.kori === "height") iframe.style.height = m.h + "px";
+            else if (m.kori === "ask") { log("ask: " + m.text); opts.onAsk && opts.onAsk(m.text); }
+            else if (m.kori === "trace") { log("trace: " + m.name); opts.onTrace && opts.onTrace(m.name); }
+            else if (m.kori === "open") { if (allowed[m.url]) { log("open: " + m.url); opts.onOpen ? opts.onOpen(m.url) : window.open(m.url, "_blank", "noopener"); } else log("refused to open " + m.url); }
+            else if (m.kori === "error") log("view error: " + m.message);
+          }
+          addEventListener("message", onMessage);
+          return {
+            iframe: iframe, events: events,
+            // the whole fragment so far, not a delta; throttled to one message per 80 ms while it streams
+            html: function (html, done) { latest = { html: html, done: !!done }; if (done) { clearTimeout(timer); flush(); } else if (!timer) timer = setTimeout(flush, 80); },
+            check: function (flagged) { send({ kori: "check", flagged: flagged || [] }); },
+            destroy: function () { removeEventListener("message", onMessage); iframe.remove(); },
+          };
+        }
+
+        function say(question, answer) {
+          var q = document.getElementById("q"), a = document.getElementById("a");
+          q.hidden = !question; q.textContent = question || "";
+          a.hidden = !answer; a.innerHTML = (answer || "").replace(/[&<>]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]; }).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>");
+        }
+
+        // Replay a recorded stream: chunks = [[ms, text], ...] in the order the designer sent them.
+        function replay(view, chunks, speed) {
+          return new Promise(function (resolve) {
+            var text = "", i = 0, t0 = performance.now();
+            (function step() {
+              var now = (performance.now() - t0) * (speed || 1);
+              while (i < chunks.length && chunks[i][0] <= now) text += chunks[i++][1];
+              if (i >= chunks.length) { view.html(text, true); resolve(); return; }
+              view.html(text, false); setTimeout(step, 30);
+            })();
+          });
+        }
+
+        window.KoriHost = { mount: mount, say: say, replay: replay };
+
+        var DEMO = {
+          data: { today: "2026-09-21", lang: "en", customer: { name: "Elli", age: 25 },
+            facts: { safe: { v: 1356.89, unit: "eur", label: "Safe to spend until payday", run: "r1" }, per_day: { v: 56.54, unit: "eur_per_day", label: "Safe pace per day", run: "r1" }, days: { v: 24, unit: "days", label: "Days to payday", run: "r1" } },
+            tables: { week: { columns: ["weekday", "total"], rows: [{ weekday: "Mon", total: 31 }, { weekday: "Tue", total: 44 }, { weekday: "Wed", total: 38 }, { weekday: "Thu", total: 52 }, { weekday: "Fri", total: 96 }, { weekday: "Sat", total: 121 }, { weekday: "Sun", total: 40 }], label: "Demo numbers", run: "r1" } },
+            products: [], sources: [] },
+          html: '<p class="k-lede">You can spend <b>{{safe|eur0}}</b> before payday. That is {{per_day|eur}} a day for {{days|int}} days.</p>\n<k-bars table="week" x="weekday" y="total" xfmt="wd" readout="**{weekday|wdl}** · {total|eur0}"></k-bars>\n<div class="k-chips"><button class="k-chip" data-ask="What bills are coming before payday?">What bills are coming?</button></div>',
+        };
+        if (params.get("demo")) {
+          say("How much can I spend?", "");
+          var v = mount({ data: DEMO.data, lang: params.get("lang") || "en" });
+          var chunks = []; for (var i = 0, t = 300; i < DEMO.html.length; i += 12, t += 40) chunks.push([t, DEMO.html.slice(i, i + 12)]);
+          replay(v, chunks, 1);
+        }
+      })();
+    </script>
+  </body>
+</html>

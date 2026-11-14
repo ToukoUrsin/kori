@@ -8,6 +8,8 @@ COPY web/ ./
 RUN pnpm build
 
 FROM python:3.12-slim
+# bubblewrap: the jail the chat's sandbox runs in (backend/kori/lab/kernel.py)
+RUN apt-get update && apt-get install -y --no-install-recommends bubblewrap && rm -rf /var/lib/apt/lists/*
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 WORKDIR /app/backend
 COPY backend/pyproject.toml backend/uv.lock ./

@@ -21,6 +21,7 @@ import type {
 } from "../../lib/types";
 import { MonthsMeter, Radar, RangeStrip, TrendBars, TwoLine } from "../charts/Charts";
 import { ForecastChart, ForecastLegend } from "../charts/ForecastChart";
+import { ReplayCells, ReplayMissBlock } from "../replay/ReplayStrip";
 import { SpokenBar } from "../charts/SpokenBar";
 import { BASKET_BG, BASKET_VAR, BigMoney, Button, CatIcon, Collapse, Dot, cx } from "../ui/bits";
 import { ForecastSums } from "./Brief";
@@ -754,6 +755,21 @@ export function LessonBody({ d }: { d: LessonCardData }) {
 
 export function TrackBody({ d }: { d: TrackData }) {
   const { lang, t } = useApp();
+  if (d.story) {
+    return (
+      <div>
+        <p className="text-[13px] leading-[18px] text-ink-2">{d.story.short}</p>
+        <div className="mt-3"><ReplayCells story={d.story} /></div>
+        <div className="mt-2.5 flex flex-wrap gap-x-4 gap-y-1 text-[12px] leading-4 text-ink-2">
+          <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-[3px] bg-brand" aria-hidden /> {t("track.held")} <span className="num font-semibold text-ink">{d.story.held}</span></span>
+          {d.story.missed > 0 && <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-[3px] border border-neg bg-neg-soft" aria-hidden /> {t("track.missed")} <span className="num font-semibold text-ink">{d.story.missed}</span></span>}
+        </div>
+        <ReplayMissBlock story={d.story} compact />
+        <p className="mt-3 text-[12px] leading-[17px] text-ink-3">{d.story.everyone}</p>
+        {d.story.method && <p className="mt-2 text-[12px] leading-4 text-ink-3">{d.story.method}</p>}
+      </div>
+    );
+  }
   const cap = (s: string) => s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
   const misses = d.items.filter((x) => x.counted && !x.held && x.why);
   const skipped = d.items.some((x) => !x.counted);

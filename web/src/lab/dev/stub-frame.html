@@ -1,0 +1,8 @@
+<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1"><style>:root{font-family:ui-sans-serif,system-ui,sans-serif}*{box-sizing:border-box}body{margin:0;padding:16px;background:#fffdf9;color:#17352b}#root{max-width:390px}button{font:inherit} </style><div id="root"></div><script>
+(function(){
+  var root=document.getElementById('root'), data={}, done=false;
+  function fmt(v,unit){if(unit==='eur_per_month'||unit==='eur')return new Intl.NumberFormat(document.documentElement.lang==='fi'?'fi-FI':'en-IE',{style:'currency',currency:'EUR',maximumFractionDigits:0}).format(v);return String(v)}
+  function render(html){var s=html.replace(/\{\{([\w-]+)\|([\w-]+)\}\}/g,function(_,k,u){var f=data.facts&&data.facts[k];return f?fmt(f.v,f.unit):'—'});root.innerHTML=s;if(done){Array.prototype.forEach.call(root.querySelectorAll('script'),function(x){try{new Function(x.textContent||'')()}catch(e){parent.postMessage({kori:'error',message:e.message},'*')}})}; root.querySelectorAll('[data-trace]').forEach(function(x){x.addEventListener('click',function(){parent.postMessage({kori:'trace',name:x.getAttribute('data-trace')},'*')})});parent.postMessage({kori:'height',h:Math.max(116,root.scrollHeight+32)},'*')}
+  window.addEventListener('message',function(e){var m=e.data||{};if(m.kori==='init'){data=m.data||{};document.documentElement.lang=m.lang||'en';parent.postMessage({kori:'ready'},'*')}if(m.kori==='html'){done=!!m.done;render(m.html||'')}}); parent.postMessage({kori:'ready'},'*');
+})();
+</script>

@@ -392,6 +392,19 @@ def execute(m: Money, state: dict, name: str, args: dict, allowed: set[float] | 
                                 "say": "No payments under that name in this period (shop names in this demo data are made up). Name the one or two "
                                        "places where that kind of money did go; do not offer to cut or compare a zero."},
                                [alt])
+        if (not has_answer and (args.get("kinds") or args.get("categories")) and not args.get("merchant")
+                and (args.get("flow") or "spend") == "spend" and not args.get("group_by")):
+            # Nothing of that kind in the period: the honest zero, plus the last twelve months so the answer still says something.
+            wide = {k: v for k, v in args.items() if k in C.QUERY_KEYS and k not in ("period", "date_from", "date_to", "group_by", "compare", "sort")}
+            year = C.query_card(m, wide | {"period": "last_12_months", "group_by": "month"})
+            yd = year["data"]
+            if yd.get("count"):
+                last = next((g for g in reversed(yd.get("groups") or []) if g.get("count")), None)
+                return ToolOut({"nothing_in": c["subtitle"], "what": c["title"], "total_there": 0, "payments_there": 0,
+                                "last_12_full_months": {"total": yd["total"], "payments": yd["count"],
+                                                        "most_recent_month_with_any": {"month": last["label"], "total": last["total"]} if last else None},
+                                "say": "Say plainly that there was nothing in that period, then the last-12-months total and number of payments "
+                                       "and the most recent month with any. Do not offer to cut or compare a zero."}, [year])
         return ToolOut(_slim_query(copy.deepcopy(c["data"])) | {"shown_as": c["title"] + ", " + (c["subtitle"] or "")}, [c] if has_answer else [])
     if name == "small_purchases":
         c = C.slips_card(m)

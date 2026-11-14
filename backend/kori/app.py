@@ -85,6 +85,27 @@ SUGGEST = {
 }
 
 
+# The brief's own first question is about taxis. When this customer took none last month, the chip asks about
+# something they did pay for, so the first tap never answers "nothing".
+_FIRST_ASK = [("taxi", "How much did I spend on taxis last month?", "Paljonko käytin takseihin viime kuussa?"),
+              ("restaurant", "How much did I spend on restaurants last month?", "Paljonko käytin ravintoloihin viime kuussa?"),
+              ("fast_food", "How much did I spend on cafés and fast food last month?", "Paljonko käytin kahviloihin ja pikaruokaan viime kuussa?"),
+              ("supermarket", "How much did I spend on groceries last month?", "Paljonko käytin ruokakauppoihin viime kuussa?")]
+
+
+def _suggest(m: Money) -> list[str]:
+    lang = m.prefs.lang
+    out = list(SUGGEST[lang])
+    try:
+        paid = {g["key"] for g in query(m, period="last_month", group_by="kind")["groups"] if g.get("count")}
+        first = next((x for x in _FIRST_ASK if x[0] in paid), None)
+        if first:
+            out[0] = first[1 if lang == "en" else 2]
+    except Exception:   # noqa: BLE001 - the fixed list is fine
+        pass
+    return out
+
+
 def _goal(m: Money) -> dict | None:
     g = m.prefs.goal
     if not g:
@@ -111,7 +132,7 @@ def home(customer: str, lang: str = "en", x_kori_device: str | None = Header(Non
         "hero": {"sentence": insights.hero_line(m)}, "replay": trackrecord.story(m) if trackrecord.ready(m) else None,
         "notices": insights.notices(m, 5, st.get("action")), "save": m.safe_to_save,
         "profile": {"archetype": prof["archetype"], "fitness": prof["fitness"], "shape": prof["shape"]},
-        "suggestions": SUGGEST[m.prefs.lang], "goal": _goal(m),
+        "suggestions": _suggest(m), "goal": _goal(m),
         "lessons_total": len(ls),
         "lessons": {"done": sum(1 for x in ls if done.get(x["id"], {}).get("done")), "total": len(ls), "lessons_total": len(ls),
                     "next": {"id": nxt["id"], "title": nxt["title"], "minutes": nxt["minutes"], "concept": nxt["concept"]} if nxt else None},
@@ -790,6 +811,18 @@ def _warm() -> None:
         log.info("warm-up done in %.1fs", time.time() - t0)
 
     threading.Thread(target=run, daemon=True, name="kori-warm").start()
+
+
+# ------------------------------------------------- the chat: sandbox, generated views
+from .lab import routes as lab_routes  # noqa: E402
+
+app.include_router(lab_routes.router)
+
+
+@app.on_event("shutdown")
+async def _close_sandboxes() -> None:
+    from .lab import kernel
+    await kernel.close_all()
 
 
 # ---------------------------------------------------------------- static app

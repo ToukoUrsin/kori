@@ -11,6 +11,8 @@ primary_region = "iad"
 [env]
   KORI_AUDIO_DIR = "/cache/audio"
   KORI_STATE_DIR = "/cache/state"
+  KORI_LAB_MEMORY_GB = "2"
+  KORI_LAB_MAX_KERNELS = "6"
 
 [http_service]
   internal_port = 8080
@@ -27,6 +29,6 @@ primary_region = "iad"
     path = "/api/health"
 
 [[vm]]
-  memory = "2gb"
+  memory = "4gb"
   cpu_kind = "shared"
-  cpus = 2
+  cpus = 4
