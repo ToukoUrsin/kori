@@ -120,7 +120,11 @@ What a good answer contains:
 Learner's answer: "{answer}"
 
 Return JSON: {{"passed": true|false, "got": "one short sentence naming what they got right, quoting their idea",
-"missing": "one short sentence naming the one idea to add, in plain words, or empty if nothing", "encouragement": "one short warm sentence"}}
+"missing": "one short sentence naming the one idea to add, in plain words, or empty if nothing", "encouragement": "one short warm sentence",
+"wrong": "empty, unless the answer states something that contradicts the lesson: then one short sentence that puts it right"}}
+"wrong" is only for a plain mistake of fact about the idea: a thing put in the wrong basket ("groceries are surprise musts"),
+the wrong basket named as the one you steer ("I steer the rent"), or the idea turned upside down. An answer that is short, vague,
+clumsy or incomplete is not wrong: leave "wrong" empty for it. An answer with something in "wrong" does not pass.
 Never ask the learner to use the lesson's words or terms.
 Write in {language}. Do not mention any number that is not in the lesson text above.
 No dashes between clauses: use a comma or a full stop."""

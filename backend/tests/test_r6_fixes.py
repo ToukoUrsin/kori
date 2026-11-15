@@ -135,3 +135,43 @@ def test_home_api_carries_the_cycle_note(client=None):
     assert r["loop"]["check_in"]["period_title"] == "Last full pay cycle"
     assert "still running" in r["loop"]["check_in"]["period_note"]
     assert "all of it is spoken for" not in r["hero"]["sentence"]
+
+
+# The right words around a wrong idea: every keyword is there, and the idea is upside down.
+SWAPPED = {"en": "Rent is fixed, groceries are surprise musts, and coffee is everyday. I steer the rent.",
+           "fi": "Vuokra on kiinteä, ruokaostokset ovat yllättäviä ja kahvi on arkea. Ohjaan vuokraa."}
+
+
+@pytest.mark.parametrize("lang", ["en", "fi"])
+def test_swapped_baskets_do_not_pass_offline_or_with_a_generous_model(monkeypatch, lang):
+    le = lessons.get(Money("CUST00092"), "baskets")
+    _offline(monkeypatch)
+    out = asyncio.run(agent.grade_teachback(lang, le, SWAPPED[lang]))
+    assert not out["passed"] and out["grade"] == "partly" and out["missing"]
+    _model_says(monkeypatch, True)
+    out = asyncio.run(agent.grade_teachback(lang, le, SWAPPED[lang]))
+    assert not out["passed"] and out["missing"]
+
+
+def test_a_mistake_the_model_names_does_not_pass_and_is_put_right(monkeypatch):
+    class R:
+        text = json.dumps({"passed": False, "got": "", "missing": "", "encouragement": "",
+                           "wrong": "Bills are taken off the balance, not added to it."})
+
+    async def fake(*args, **kwargs):
+        return R()
+    monkeypatch.setattr(agent, "_generate", fake)
+    le = lessons.get(Money("CUST00092"), "safe")
+    out = asyncio.run(agent.grade_teachback("en", le, "Safe to spend is my balance plus the bills, so it lasts until payday."))
+    assert not out["passed"] and out["missing"] == "Bills are taken off the balance, not added to it."
+
+
+@pytest.mark.parametrize("answer", [
+    "I can't steer the rent but I can steer my coffee, and repairs come whenever.",
+    "Rent is not everyday, it is the same each month. Repairs are random. Coffee I control.",
+    "Fixed musts like rent stay the same, unlike groceries which I control. A dentist bill I can't time.",
+])
+def test_a_right_answer_that_names_what_it_is_not_still_passes(monkeypatch, answer):
+    _offline(monkeypatch)
+    le = lessons.get(Money("CUST00092"), "baskets")
+    assert asyncio.run(agent.grade_teachback("en", le, answer))["passed"], answer

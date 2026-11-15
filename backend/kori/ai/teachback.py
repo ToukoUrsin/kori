@@ -160,6 +160,31 @@ MISCONCEPTIONS: dict[str, tuple[tuple[str, ...], str, str]] = {
 }
 
 
+# The right words in the wrong places: an example put in another basket, or the wrong basket named as the one you steer.
+# (pattern, correction en, correction fi). Only plain "X is Y" and "I steer X" forms: a doubt is left to the model.
+_EVERYDAY = r"(?:groceries|grocery shopping|food|coffees?|eating out|restaurants?|lunch(?:es)?|ruokaostokset|ruoka|kahvit?|ravintolat|lounaat?)"
+_FIXED = r"(?:rent|bills|subscriptions?|vuokra|laskut|tilaukset)"
+_SURPRISE = r"(?:repairs?|a repair|the dentist|dentist bills?|korjaukset|korjaus|hammaslääkäri)"
+_IS = r"(?: is| are| go(?:es)? in(?:to)?| belongs? (?:in|to)| counts? as| on| ovat| kuuluu| kuuluvat)(?: an?| the| my)?"
+_STEER = r"(?:steer|control|adjust|ohjaan|ohjata|säädän|säätää)(?: the| my)?"
+MIXED_UP: dict[str, list[tuple[str, str, str]]] = {
+    "baskets": [
+        (_EVERYDAY + _IS + r" (?:surprise|fixed|yllätt|kiinte)",
+         "Food and coffee are everyday spending: small amounts, many times. Say it once more with each thing in its own basket.",
+         "Ruoka ja kahvit ovat arjen menoja: pieniä summia, monta kertaa. Sano se vielä niin, että jokainen on omassa korissaan."),
+        (_FIXED + _IS + r" (?:surprise|everyday|yllätt|arjen|arki)",
+         "Rent and bills are fixed musts: the same amount at the same time. Say it once more with each thing in its own basket.",
+         "Vuokra ja laskut ovat kiinteitä pakollisia: sama summa samaan aikaan. Sano se vielä niin, että jokainen on omassa korissaan."),
+        (_SURPRISE + _IS + r" (?:fixed|everyday|kiinte|arjen|arki)",
+         "A repair is a surprise must: you have to pay it, but you can't time it. Say it once more with each thing in its own basket.",
+         "Korjaus on yllättävä pakollinen: se on pakko maksaa, mutta ajankohtaa et tiedä. Sano se vielä niin, että jokainen on omassa korissaan."),
+        (_STEER + r" (?:" + _FIXED[3:-1] + "|" + _SURPRISE[3:-1] + r"|fixed|surprise)",
+         "The basket you steer day to day is the everyday one, not the rent or a repair. Say which one you steer.",
+         "Päivittäin ohjaat arjen menojen koria, et vuokraa tai korjausta. Kerro, mitä koria ohjaat."),
+    ],
+}
+
+
 def _norm(text: str) -> str:
     t = (text or "").lower().replace("’", "'").replace("‘", "'")
     t = t.replace("käyttövar", "käyttö_")      # "turvallinen käyttövara" is the lesson's name, not a reserve
@@ -201,4 +226,10 @@ def check(lesson_id: str, answer: str, lang: str) -> dict | None:
         grade = "got_it" if not missing and words >= 4 else "partly" if found and words >= 3 else "not_yet"
         hint = missing[0][1] if missing else "" if grade == "got_it" else (
             "Say it as a full sentence." if not fi else "Sano se kokonaisena lauseena.")
-    return {"grade": grade, "found": found, "missing": hint, "misconception": misconception, "words": words}
+    mixed = ""
+    for pat, cen, cfi in MIXED_UP.get(lesson_id, []):
+        hit = re.search(r"(?<![a-zåäö])" + pat, text)
+        if hit and not re.search(r"(?:\bnot|\bcannot|n't|\bnever|\bno|\ben|\bei|\bet)(?: \w+)? ?$", text[:hit.start()]):   # "I can't steer the rent" is right
+            mixed = cfi if fi else cen
+            break
+    return {"grade": grade, "found": found, "missing": hint, "misconception": misconception, "words": words, "mixed_up": mixed}

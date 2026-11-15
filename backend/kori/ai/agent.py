@@ -404,8 +404,9 @@ async def grade_teachback(lang: str, lesson: dict, answer: str) -> dict:
                                       rubric="\n".join("- " + r for r in lesson["teach_back"]["rubric"]),
                                       answer=answer.replace('"', "'")[:800], language="Finnish" if lang == "fi" else "English")
     schema = {"type": "object", "properties": {"passed": {"type": "boolean"}, "got": {"type": "string"},
-                                               "missing": {"type": "string"}, "encouragement": {"type": "string"}},
-              "required": ["passed", "got", "missing", "encouragement"]}
+                                               "missing": {"type": "string"}, "encouragement": {"type": "string"},
+                                               "wrong": {"type": "string"}},
+              "required": ["passed", "got", "missing", "encouragement", "wrong"]}
     cfg = types.GenerateContentConfig(response_mime_type="application/json", response_json_schema=schema,
                                       thinking_config=types.ThinkingConfig(thinking_level="low"))
     model = None
@@ -425,10 +426,13 @@ async def grade_teachback(lang: str, lesson: dict, answer: str) -> dict:
     else:
         # The deterministic check passes a correct idea in plain words on its own; the model can also pass an
         # answer the word lists missed, as long as it touches at least one idea. A misconception never passes.
-        passed = not det["misconception"] and (det["grade"] == "got_it" or (model_passed and det["grade"] == "partly"))
-        grade = "got_it" if passed else det["grade"]
-        missing = "" if passed else det["missing"]
-    got = (model or {}).get("got", "")
+        # The right words around a wrong idea ("groceries are surprise musts, I steer the rent") do not pass either: the
+        # model names a plain mistake of fact in "wrong", and the word check knows the commonest swaps.
+        wrong = str((model or {}).get("wrong") or "").strip() or det.get("mixed_up", "")
+        passed = not det["misconception"] and not wrong and (det["grade"] == "got_it" or (model_passed and det["grade"] == "partly"))
+        grade = "got_it" if passed else "partly" if wrong and det["grade"] == "got_it" else det["grade"]
+        missing = "" if passed else wrong or det["missing"]
+    got = (model or {}).get("got", "") if not (det and not passed and det.get("grade") == "got_it") else ""
     encouragement = (model or {}).get("encouragement", "") if passed and model_passed else ""
     if passed:
         encouragement = encouragement or W("That's it, in your own words.", "Juuri noin, omin sanoin.")
