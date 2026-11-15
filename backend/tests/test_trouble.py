@@ -115,6 +115,9 @@ def test_before_my_salary_is_before_payday(q, name):
     ("en", "how confident are you in this number", "track-record"),
     ("en", "has the number ever been wrong", "track-record"),
     ("fi", "Kuinka varma olet tästä luvusta?", "track-record"),
+    ("fi", "Oliko tämä luku oikein ennen?", "track-record"),          # the button in the Finnish replay sheet
+    ("fi", "onko tämä luku ollut oikein aiemmin", "track-record"),
+    ("fi", "laskitko vuokran oikein", None),
     ("en", "What is left out of my safe to spend number?", "balance"),
     ("en", "what's held back from my safe to spend", "balance"),
     ("en", "how much is safe to spend", "safe-week"),

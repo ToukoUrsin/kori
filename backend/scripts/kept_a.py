@@ -646,7 +646,7 @@ M = {
                         "was it right before", "can i rely on the safe to spend figure", "How sure are you about my safe to spend number?",
                         "how confident are you in this number", "has the number ever been wrong", "can this number be wrong"]),
         "fi": dict(also=[Q["track-record2"][1]],
-                   match=[["luot", "pitänyt", "pitäny", "pitik", "pitää paikkansa", "paikkansa", "osunut", "osuuko", "osui", "testat", "toiminut", "toimiko",
+                   match=[["luot", "pitänyt", "pitäny", "pitik", "oikein ennen", "oikein aiemmin", "oikein aikaisemmin", "oikein aikaisemminkin", "luku oikein", "pitää paikkansa", "paikkansa", "osunut", "osuuko", "osui", "testat", "toiminut", "toimiko",
                            "kuinka varma", "miten varma", "oletko varma", "ollut väärässä", "olla väärässä"],
                           ["luku", "luvu", "luvun", "turvall", "käyttövar", "tähän", "tämä", "tätä", "tää", "sinuun", "suhun", "siihen", "kori", "arvio"]],
                    unless=["bitcoin", "krypto", "osake", "rahasto", "sijoit", "pankki"] + TOPIC_FI + DIGITS,

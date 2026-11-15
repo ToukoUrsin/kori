@@ -96,12 +96,16 @@ rows are measured on those.
 |---|---|
 | Spend exactly the safe amount: balance stays at or above zero | **95.9%** of cases |
 | Treat the balance as the budget instead | 28.6% |
+| Spend the balance minus the bills already known instead (the fairer rival) | 61.5% ¹ |
 | When pay arrived on the predicted day | 98.4% |
 | When pay arrived late | 87.0% |
 | People who really stayed within the number went below zero | 2.8% |
 | People who really spent more than the number went below zero | 25.9% |
 | Predicted payday exactly right | 73.8% |
 | Median error of predicted bills | €42 (5.6%) |
+
+¹ Added on 15 Nov in a second run of the same script (85,220 replays from 4,610 customers; the first two rows came out
+the same in it, 95.9% and 28.6%). Nobody plans to spend the whole balance, so this is the rival that counts.
 
 The backtest also found a bug in our own bill forecast (a skipped rent month made next month's rent vanish). It is
 fixed and covered by a test. The same replay runs per person in the app, so a user can ask "was this number right
@@ -178,7 +182,7 @@ before?" and see the months it held, the months it did not, and the reason for e
 - **What is not real yet?** Receipt lines are sample data (S-mobiili has the real ones in Omat ostot), the other-bank
   link is simulated, and the customers are S-Pankki's synthetic set. The calculations, the shop prices, the fund and
   its fee, and the Statistics Finland figures are real.
-- **How is it tested?** 1,295 automated cases, and a replay of the safe-to-spend number on 106,553 past days of
+- **How is it tested?** 1,301 automated cases, and a replay of the safe-to-spend number on 106,553 past days of
   4,850 customers (above, under "Why the numbers can be trusted").
 
 ## Architecture
@@ -211,7 +215,7 @@ PYTHONPATH=. uv run uvicorn kori.app:app --port 8811
 cd ../web && pnpm install && pnpm dev      # http://localhost:8812
 ```
 
-Tests (1,295 cases from 210 test functions: engine arithmetic, the approved answers and their wordings, number check, API, the sandbox, the shop and swap rules, the demo customers in both languages):
+Tests (1,301 cases from 212 test functions: engine arithmetic, the approved answers and their wordings, number check, API, the sandbox, the shop and swap rules, the demo customers in both languages):
 
 ```bash
 cd backend && PYTHONPATH=. uv run pytest -q

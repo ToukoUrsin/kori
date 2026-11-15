@@ -6,6 +6,7 @@ transactions visible then, and check it against what really happened until the n
   held      the customer spends exactly the safe daily amount on everyday things, the real bills and the real
             surprise costs land when they really did, pay arrives when it really did. Did the balance stay at or above zero?
   naive     same, but the customer treats the balance as the budget (spends balance / days-to-payday per day).
+  bills     same, but the customer spends the balance minus the bills already known: the fairer rival.
   payday    did we predict the right salary date?
   bills     how far was the predicted fixed total from the real one?
   status    how often did people really dip below zero after each status word (comfortable .. empty)?
@@ -81,6 +82,7 @@ def summarise(rows: list[dict]) -> dict:
             "safe_held_when_pay_on_time_pct": pct(sum(r["held"] for r in pos if r["pay_exact"]), sum(r["pay_exact"] for r in pos)),
             "safe_held_when_pay_late_pct": pct(sum(r["held"] for r in pos if r["pay_diff"] > 0), sum(r["pay_diff"] > 0 for r in pos)),
             "balance_as_budget_held_pct": pct(sum(r["naive_held"] for r in pos), len(pos)),
+            "balance_minus_known_bills_held_pct": pct(sum(r["bills_held"] for r in pos), len(pos)),     # the fairer rival
         },
         "real_life": {
             "stayed_within_safe": {"cases": len(within), "went_below_zero_pct": pct(sum(r["real_negative"] for r in within), len(within))},

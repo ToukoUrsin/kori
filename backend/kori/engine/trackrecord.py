@@ -46,6 +46,7 @@ def replay(m: Money, later: pd.DataFrame) -> dict | None:
         return low
 
     naive_day = max(0.0, s["balance"]) / s["days_to_payday"]
+    bills_day = max(0.0, s["balance"] - s["cash"]["fixed_due"]) / s["days_to_payday"]     # the fairer rival: the balance minus the bills already known
     return {
         "t": today.isoformat(), "status": s["status"], "limit": s["limit"],
         "safe": s["amount"], "per_day": s["per_day"], "balance": s["balance"],
@@ -55,7 +56,7 @@ def replay(m: Money, later: pd.DataFrame) -> dict | None:
         "surprise_pred": s["cash"]["surprise_reserve"], "surprise_real": r2(win.loc[b == SURPRISE, "spend"].sum()),
         "everyday_real": r2(everyday_real), "days_real": days_real,
         "lowest_if_followed": r2(lowest(s["per_day"])),
-        "held": lowest(s["per_day"]) >= 0, "naive_held": lowest(naive_day) >= 0,
+        "held": lowest(s["per_day"]) >= 0, "naive_held": lowest(naive_day) >= 0, "bills_held": lowest(bills_day) >= 0,
         "start_ok": s["balance"] >= 0,
         "real_lowest": r2(win["balance"].min()) if len(win) else s["balance"],
         "real_negative": bool(len(win) and float(win["balance"].min()) < 0),
@@ -274,6 +275,10 @@ def story(m: Money, months: int = MONTHS_BACK) -> dict:
         summary = L(f"It missed {len(misses)} times: " + ", ".join(bits) + ".", f"Se petti {len(misses)} kertaa: " + ", ".join(bits) + ".")
     else:
         summary = ""
+    empty = len(cells) - n      # the dashed months of the strip: said in words too, so no gap is left unexplained
+    if n and empty:
+        summary = (summary + " " + L(f"{empty} month{'s are' if empty > 1 else ' is'} left empty: nothing was safe to spend on that day, so there was no number to test.",
+                                     f"{empty} {'kuukautta' if empty > 1 else 'kuukausi'} on jätetty tyhjäksi: sinä päivänä mikään ei ollut turvallista käyttää, joten testattavaa lukua ei ollut.")).strip()
     versus = (L(f"Treating the balance as the budget would have held {naive} of {n}.", f"Saldo budjettina olisi pitänyt {naive} kerralla {n}:stä.")
               if n else "")
     pop = tr["population"]

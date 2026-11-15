@@ -72,6 +72,27 @@ def test_track_record_has_named_counts_and_population():
     assert out["population"]["held_pct"] == 95.9
 
 
+@pytest.mark.parametrize("lang,empty", [("en", "2 months are left empty: nothing was safe to spend"), ("fi", "2 kuukautta on jätetty tyhjäksi")])
+def test_the_replay_explains_its_empty_months(lang, empty):
+    """A judge saw two dashed months in "18 paydays" with no word about them."""
+    from kori.engine import trackrecord
+    st = trackrecord.story(Money("CUST01885", prefs=Prefs(lang=lang)))
+    assert sum(c["state"] == "skipped" for c in st["cells"]) == 2 and empty in st["summary"]
+    for cid in ("CUST00092", "CUST00248"):
+        other = trackrecord.story(Money(cid, prefs=Prefs(lang=lang)))
+        said = "empty" in other["summary"] or "tyhjäksi" in other["summary"]
+        assert said == any(c["state"] == "skipped" for c in other["cells"])
+
+
+def test_the_fairer_rival_is_counted_in_every_replay():
+    """"Balance as the budget" alone is a strawman: the replay also tries the balance minus the bills already known."""
+    from kori.engine import trackrecord
+    m = Money("CUST01885")
+    rows = trackrecord._rows(m.customer_id, m.today, trackrecord.MONTHS_BACK)
+    assert rows and all(isinstance(r["bills_held"], bool) for r in rows)
+    assert all(r["bills_held"] for r in rows if r["naive_held"])        # spending less never does worse
+
+
 @pytest.mark.parametrize(
     ("lang", "answer", "grade", "passed"),
     [

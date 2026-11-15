@@ -35,7 +35,9 @@
     "safe_held_pct": 95.9,
     "safe_held_when_pay_on_time_pct": 98.4,
     "safe_held_when_pay_late_pct": 87.0,
-    "balance_as_budget_held_pct": 28.6
+    "balance_as_budget_held_pct": 28.6,
+    "balance_minus_known_bills_held_pct": 61.5,
+    "balance_minus_known_bills_note": "second run on 15 Nov 2026: 85,220 replays from 4,610 customers; safe_held_pct 95.9 and balance_as_budget_held_pct 28.6 came out the same in it"
   },
   "real_life": {
     "stayed_within_safe": {
