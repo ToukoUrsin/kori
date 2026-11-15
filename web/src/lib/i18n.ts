@@ -39,6 +39,8 @@ const D = {
   "common.perMonthShort": ["/mo", "/kk"],
   "plan.oneoffApart": ["Your slider changes are not part of this test: it uses your account as it is today.", "Liukusäätimien muutokset eivät ole mukana tässä testissä: se käyttää tiliäsi sellaisena kuin se on nyt."],
   "plan.safeBefore": ["Was {v}", "Oli {v}"],
+  "plan.safeSameUp": ["Unchanged: the cushion took it from the money kept as savings.", "Ennallaan: pohjavara otti sen säästöön jäävästä rahasta."],
+  "plan.safeSameDown": ["Unchanged: the difference stays on the account as savings.", "Ennallaan: erotus jää tilille säästöön."],
   "plan.yearRow": ["Your last 12 months, as they went", "Viimeiset 12 kuukauttasi toteutuneina"],
   "plan.chartIf": ["If every month ahead is a typical one. Your last 12 ended at {net}.", "Jos jokainen tuleva kuukausi on tavallinen. Viimeisten 12 kuukautesi tulos oli {net}."],
   "common.showMore": ["Show {n} more", "Näytä {n} lisää"],

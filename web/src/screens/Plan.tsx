@@ -578,6 +578,7 @@ function Setters({ q }: { q: Query<PlanResponse> }) {
   const [busy, setBusy] = useState(false);
   // safe to spend as it stood before the first tap here, so the line below can say what the taps changed
   const [before, setBefore] = useState<number | null>(null);
+  const [cushionBefore, setCushionBefore] = useState<number | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const pending = useRef<Partial<PlanPut>>({});
   const dirty = useRef(false);
@@ -630,7 +631,10 @@ function Setters({ q }: { q: Query<PlanResponse> }) {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const push = (body: Partial<PlanPut>) => {
-    if (before == null && !dirty.current) setBefore(d.safe.amount);
+    if (before == null && !dirty.current) {
+      setBefore(d.safe.amount);
+      setCushionBefore(d.cushion);
+    }
     pending.current = { ...pending.current, ...body };
     dirty.current = true;
     setBusy(true); // from the first tap the number below is plainly being worked out
@@ -693,6 +697,12 @@ function Setters({ q }: { q: Query<PlanResponse> }) {
             <Money value={d.safe.amount} className="text-[22px] font-semibold leading-7 tracking-[-0.02em] text-ink" />
           </span>
         </div>
+        {/* a bigger cushion that leaves the number where it was is not a dead control: it says where the money came from */}
+        {!busy && before != null && cushionBefore != null && Math.round(before) === Math.round(d.safe.amount) && d.cushion !== cushionBefore && (
+          <p className="-mt-1 pb-3 text-pretty text-[13px] leading-[18px] text-ink-2" aria-live="polite">
+            {t(d.cushion > cushionBefore ? "plan.safeSameUp" : "plan.safeSameDown")}
+          </p>
+        )}
       </div>
     </section>
   );
