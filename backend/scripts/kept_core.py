@@ -106,6 +106,8 @@ wd_rows = [{"day": SHORT[i], "weekday": DAYS[i], "spend": round(float(by_wd.loc[
 top = int(by_wd["sum"].idxmax()) if len(df) else 5
 total = float(df["spend"].sum())
 fri_sun_pct = int(round(100.0 * float(df[df["wd"] >= 4]["spend"].sum()) / total)) if total > 0 else 0
+eating_year = round(total, 2)                       # the same 12 months the charts show: a usual month is only the last six of them
+groceries_year = round(float(tx[tx["is_spend"] & (tx["category"] == "Groceries") & tx["month"].isin(months)]["spend"].sum()), 2)
 
 by_m = df.groupby("month")["spend"].sum().reindex(months, fill_value=0.0)
 m_rows = [{"short": MON[int(m[5:]) - 1], "label": MON[int(m[5:]) - 1] + " " + m[:4], "spend": round(float(v), 2)} for m, v in by_m.items()]
@@ -126,6 +128,8 @@ emit("left_over_usual", left_over_usual, "eur_per_month", "«l_left»")
 emit("avg_visit", avg_visit, "eur", "«l_avg»")
 emit("visits_per_month", visits_per_month, "count", "«l_visits»")
 emit("months", len(months), "months", "«l_months»")
+emit("eating_year", eating_year, "eur", "«l_eat_year»")
+emit("groceries_year", groceries_year, "eur", "«l_groc_year»")
 table("by_weekday", wd_rows, "«l_t_wd»")
 table("by_month", m_rows, "«l_t_m»")
 table("what_if", what_if, "«l_t_if»")
@@ -133,6 +137,8 @@ table("what_if", what_if, "«l_t_if»")
 if visits >= 6:                          # too little eating out to say anything: no kept answer, the question is worked out fresh
     text = f"«say»"
     text += f" «say_more»" if eating_usual > groceries_usual else f" «say_plain»"
+    if eating_usual > groceries_usual and groceries_year > eating_year:      # two windows that disagree: name both
+        text += f" «say_year»"
     say(text)
 '''
 E_HTML = '''
@@ -140,6 +146,7 @@ E_HTML = '''
 <div class="k-stats"><div class="k-fig"><span>{{eating_usual|eur0}}</span><small>«s_usual»</small></div><div class="k-fig"><span>{{avg_visit|eur0}}</span><small>«s_avg»</small></div><div class="k-fig"><span>{{visits_per_month|num}}</span><small>«s_visits»</small></div></div>
 <div class="k-stack"><p class="k-h">«h_wd_a» {{months|int}} «h_wd_b»</p><k-bars table="by_weekday" x="day" y="spend" fmt="eur0" pick="max" readout="**{weekday}** · {spend|eur0}, {visits|int} «visits_word»"></k-bars></div>
 <div class="k-stack"><p class="k-h">«h_m»</p><k-bars table="by_month" x="short" y="spend" fmt="eur0" pick="max" readout="**{label}** · {spend|eur0}"></k-bars></div>
+<p class="k-note">«win_a» {{months|int}} «win_b» {{eating_year|eur0}}«win_c»</p>
 <div class="k-card k-stack"><p class="k-h">«h_if»</p>
 <p>«if_a» <b id="n">{{what_if.0.fewer_visits|int}}</b> «if_b»</p>
 <input type="range" id="s" min="0" max="1" step="1" value="0" aria-label="«h_if»">
@@ -159,6 +166,9 @@ E = {
         say="You eat out most on **{TOPW}**, and {fri_sun_pct}% of it lands Friday to Sunday.",
         say_more="In a usual month it is {eur(eating_usual)}, more than your groceries ({eur(groceries_usual)}).",
         say_plain="In a usual month it is {eur(eating_usual)}.",
+        say_year="That is your last six months. Over the full 12, groceries came to more: {eur(groceries_year)} against {eur(eating_year)}.",
+        l_eat_year="Eating out in the last 12 full months", l_groc_year="Groceries in the last 12 full months",
+        win_a="A usual month is counted from your last six months. The charts show the last", win_b="months:", win_c=" in all.",
         lede_a="takes the most, and", lede_b="of your eating out lands Friday to Sunday.",
         s_usual="a usual month", s_avg="an average visit", s_visits="visits a month",
         h_wd_a="By weekday, last", h_wd_b="months", visits_word="visits", h_m="By month", h_if="What would change it",
@@ -176,6 +186,9 @@ E = {
         say="Syöt ulkona eniten **{TOPW}**, ja {fri_sun_pct} % siitä osuu perjantaista sunnuntaihin.",
         say_more="Tavallisena kuukautena siihen menee {eur(eating_usual)}, enemmän kuin ruokaostoksiin ({eur(groceries_usual)}).",
         say_plain="Tavallisena kuukautena siihen menee {eur(eating_usual)}.",
+        say_year="Näin on ollut viimeiset kuusi kuukautta. Koko 12 kuukauden aikana ruokaostoksiin meni enemmän: {eur(groceries_year)}, ulkona syömiseen {eur(eating_year)}.",
+        l_eat_year="Ulkona syöminen viimeisten 12 täyden kuukauden aikana", l_groc_year="Ruokaostokset viimeisten 12 täyden kuukauden aikana",
+        win_a="Tavallinen kuukausi lasketaan viimeisistä kuudesta kuukaudestasi. Kaaviot näyttävät viimeiset", win_b="kuukautta: yhteensä", win_c=".",
         lede_a="vie eniten, ja", lede_b="ulkona syömisestäsi osuu perjantaista sunnuntaihin.",
         s_usual="tavallinen kuukausi", s_avg="kerta keskimäärin", s_visits="kertaa kuussa",
         h_wd_a="Viikonpäivittäin, viimeiset", h_wd_b="kuukautta", visits_word="kertaa", h_m="Kuukausittain", h_if="Mikä muuttaisi sitä",

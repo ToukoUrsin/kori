@@ -354,8 +354,8 @@ function ConsentSheet({ lang, onAllow, onClose }: { lang: Lang; onAllow: () => v
           <span>
             {text(
               lang,
-              "Numbers are computed inside the bank. Only your question and the few figures needed for an answer go to the language model.",
-              "Luvut lasketaan pankin sisällä. Kielimallille lähetetään vain kysymys ja vastaukseen tarvittavat luvut.",
+              "Your numbers are worked out by code that runs on your payments, not by the language model. Only your question and the few figures needed for an answer go to the model.",
+              "Lukusi laskee koodi, joka ajetaan maksuistasi, ei kielimalli. Mallille lähetetään vain kysymys ja vastaukseen tarvittavat luvut.",
             )}
           </span>
         </li>
@@ -726,7 +726,7 @@ export function HostDemo() {
     const question = text(
       lang,
       `Tell me about this payment: ${merchant}, ${money(Math.abs(tx.amount), lang, { cents: true })} on ${day(tx.date, lang)}. I have already paid it.`,
-      `Kerro tästä maksusta: ${merchant}, ${money(Math.abs(tx.amount), lang, { cents: true })}, ${day(tx.date, lang)}. Olen jo maksanut sen.`,
+      `Kerro tästä maksusta: ${merchant}, ${money(Math.abs(tx.amount), lang, { cents: true })}, ${day(tx.date, lang)} Olen jo maksanut sen.`,
     );
     setPendingQuestion(question);
     chooseTab("coach");

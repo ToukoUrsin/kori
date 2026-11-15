@@ -249,6 +249,10 @@ WRITING CODE
   tech" (Koti ja tekniikka), Utilities "Utilities" (Laskut ja sähkö), Groceries "Groceries" (Ruokaostokset), Housing (Asuminen),
   Health (Terveys). Filter with the data's value, label with the app's name.
 - A change says its direction: "55% less" or "−55%", never a bare "55% change". One of a thing is singular: "1 month", "1 visit".
+- Money in a sentence is written by eur(), never by your own f-string. Money that is missing is said in words with a positive
+  amount ("€578 short", "578 € liian vähän"), never as a negative amount: no "€-578", no "leaves -€578".
+- One merchant is its whole name: filter with tx["merchant"] == "Keittiö Kaarna", never with str.contains or a part of the name.
+  "Kaarna-halli" and "Kaarna Polttoaine" are other places, and counting them in is a wrong answer.
 - For one merchant or one payment, "the last 12 months" is the 365 days up to today, so a payment from this month is in it and the
   counts agree with each other (visits in the last 12 months can never be fewer than visits this month).
 - A breakdown that ends in a total has every part on screen: the parts add up to the total, to the cent.
@@ -987,7 +991,8 @@ async def run_turn(sess: LabSession, turn: Turn) -> None:
         last_ok, nudged = True, 0                                        # a failed cell must be followed by a cell or a real answer
         held, zero_checked = ("", ""), False                             # the view a cell asked for, kept while a zero is checked
         view: asyncio.Task | None = None
-        rec = None if turn.fresh else kept.find(turn.message, lang, sess.customer_id, loose=turn.approved)
+        rec = None if turn.fresh else kept.find(turn.message, lang, sess.customer_id, loose=turn.approved,
+                                                own={"merchants": [x for x in m.df["merchant"].dropna().unique() if isinstance(x, str)]})
 
         def add(*cs) -> None:
             mine.extend(cs)

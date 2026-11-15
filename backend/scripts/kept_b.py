@@ -568,6 +568,89 @@ BIG = {
                lede="Se oli <b>{{top_share|pct}}</b> {{month_gen_lc|raw}} menoistasi, jotka olivat yhteensä {{month_spend|eur0}}.", h_list="{{month_gen|raw}} suurimmat ostokset", note="Vain kortti- ja kauppaostokset: vuokraa ja laskuja ei lasketa."),
 }
 
+# ================================================================================================================ a tapped payment
+# Not a question someone types: the bank's own payment list sends it when a payment is tapped. The merchant is one of the customer's
+# own (kept._fill, `own`), matched by its whole name, so "Keittiö Kaarna" never counts "Kaarna-halli" in.
+PAY_CODE = """
+MERCHANT = §MERCHANT§
+AMOUNT = §AMOUNT§
+MON = «months»
+LBL = «labels»
+BAS = «baskets»
+ONE = «one»
+WHY = «why»
+d = tx[tx["is_spend"] & (tx["merchant"] == MERCHANT)].sort_values("ts")           # the whole name, nothing that only shares a word
+hit = d[(d["spend"] - AMOUNT).abs() < 0.005]
+p = hit.iloc[-1]                                                                    # the payment that was tapped: this amount there (none: not this view's question)
+y = d[d["date"] > today - datetime.timedelta(days=365)]                             # the last 12 months, up to today
+if not len(y):
+    y = d.tail(1)
+n, total = int(len(y)), round(float(y["spend"].sum()), 2)
+each = round(total / n, 2)
+c = tx[tx["is_spend"] & (tx["category"] == p.category) & (tx["month"] == today.strftime("%Y-%m"))]
+cat_usual = round(float(kori.usual_month()["categories"].get(p.category, 0.0)), 2)
+s = kori.safe_to_spend()
+paid = round(float(p.spend), 2)
+when = «when»
+emit("merchant", MERCHANT, "text", "«l_merchant»")
+emit("amount", paid, "eur", "«l_amount»")
+emit("category", LBL.get(p.category, p.category), "text", "«l_cat»")
+emit("basket", BAS.get(p.basket, p.basket), "text", "«l_basket»")
+emit("times", n, "count", "«l_times»")
+emit("total", total, "eur", "«l_total»")
+emit("each", each, "eur", "«l_each»")
+emit("cat_month", round(float(c["spend"].sum()), 2), "eur", "«l_cat_month»")
+emit("cat_usual", cat_usual, "eur_per_month", "«l_cat_usual»")
+emit("safe", s["amount"], "eur", "«l_safe»")
+table("payments", [{"date": str(r.date), "amount": round(float(r.spend), 2), "mark": "«this»" if r.Index == p.name else ""}
+                   for r in y.sort_values("ts", ascending=False).head(8).itertuples()], "«l_table»")
+say(f"«say»" + (f" «say_many»" if n > 1 else " «say_one»") + f" «say_paid»")
+"""
+PAY_HTML = """
+<p class="k-lede">«lede»</p>
+<div class="k-stats" id="st"><div class="k-fig"><span>{{times|int}}</span><small>«s_times»</small></div><div class="k-fig"><span>{{total|eur0}}</span><small>«s_total»</small></div><div class="k-fig"><span>{{each|eur0}}</span><small>«s_each»</small></div></div>
+<div class="k-stack"><p class="k-h">«h_list»</p><div class="k-rows"><k-each table="payments"><template><div class="k-row"><div><span class="k-ellip">{date|date}</span><small>{mark}</small></div><b>{amount|eur}</b></div></template></k-each></div></div>
+<p class="k-note">«note»</p>
+«chips»
+<script>K.$("#st").hidden=K.fact("times")<2</script>
+"""
+PAY = {
+    "en": dict(one='{"fixed": "a fixed must", "surprise": "a surprise must", "everyday": "everyday spending"}',
+               why='{"fixed": "a cost that comes back, decided once", "surprise": "a cost you could not plan, which the surprise reserve is for", '
+                   '"everyday": "the basket you steer day to day"}',
+               when='f"{p.date.day} {MON[p.date.month - 1]}"', this="this payment",
+               l_merchant="Where", l_amount="This payment", l_cat="Category", l_basket="Basket", l_times="Payments there in the last 12 months",
+               l_total="Paid there in the last 12 months", l_each="A payment there on average", l_cat_month="This category so far this month",
+               l_cat_usual="This category in a usual month", l_safe="Safe to spend now", l_table="Your latest payments there",
+               say="**{eur(paid, True)}** at {MERCHANT} on {when} counts as {ONE[p.basket]}: {WHY[p.basket]}.",
+               say_many="You have paid there {n} times in the last 12 months, {eur(total, True)} in all.",
+               say_one="It is your only payment there in the last 12 months.",
+               say_paid="It has already left your balance, so safe to spend ({eur(s['amount'])}) already counts it.",
+               lede="<b>{{category|raw}}</b> so far this month: <b>{{cat_month|eur0}}</b>. A usual month is {{cat_usual|eur0}}.",
+               s_times="payments in 12 months", s_total="in all", s_each="a payment on average", h_list="Your latest payments there",
+               note="Counted under {{basket|raw}}, {{category|raw}}. The bank sees the place and the amount, not what you bought."),
+    "fi": dict(one='{"fixed": "kiinteisiin pakollisiin menoihin", "surprise": "yllättäviin pakollisiin menoihin", "everyday": "arjen menoihin"}',
+               why='{"fixed": "toistuviin menoihin, joista päätetään kerralla", "surprise": "menoihin, joita ei voi ennakoida ja joita varten yllätysvara on", '
+                   '"everyday": "siihen koriin, jota ohjaat päivittäin"}',
+               when='f"{p.date.day}.{p.date.month}."', this="tämä maksu",
+               l_merchant="Missä", l_amount="Tämä maksu", l_cat="Luokka", l_basket="Kori", l_times="Maksuja sinne viimeisen 12 kuukauden aikana",
+               l_total="Maksettu sinne viimeisen 12 kuukauden aikana", l_each="Maksu sinne keskimäärin", l_cat_month="Tämä luokka tässä kuussa tähän mennessä",
+               l_cat_usual="Tämä luokka tavallisena kuukautena", l_safe="Turvallista käyttää nyt", l_table="Viimeisimmät maksusi sinne",
+               say="**{eur(paid, True)}** ({MERCHANT}, {when}) kuuluu {ONE[p.basket]}: {WHY[p.basket]}.",
+               say_many="Olet maksanut sinne {n} kertaa viimeisen 12 kuukauden aikana, yhteensä {eur(total, True)}.",
+               say_one="Se on ainoa maksusi sinne viimeisen 12 kuukauden aikana.",
+               say_paid="Se on jo lähtenyt saldostasi, joten turvallinen käyttövarasi ({eur(s['amount'])}) ottaa sen jo huomioon.",
+               lede="<b>{{category|raw}}</b> tässä kuussa tähän mennessä: <b>{{cat_month|eur0}}</b>. Tavallinen kuukausi on {{cat_usual|eur0}}.",
+               s_times="maksua 12 kuukaudessa", s_total="yhteensä", s_each="maksu keskimäärin", h_list="Viimeisimmät maksusi sinne",
+               note="Kori: {{basket|raw}}, {{category|raw}}. Pankki näkee paikan ja summan, ei sitä, mitä ostit."),
+}
+PAY_W = {"en": ("Tell me about this payment", "This payment", "The payment you tapped and the others at the same place"),
+         "fi": ("Kerro tästä maksusta", "Tämä maksu", "Napauttamasi maksu ja muut maksut samaan paikkaan")}
+# the sentence the bank's payment list sends (web/src/host/HostDemo.tsx), after kept.norm: the amount with its cents
+PAY_PARAM = {"en": {"token": "§AMOUNT§", "pattern": r"tell me about this payment .*?€((?:\d{1,3} )*?\d{1,3}) (\d\d) on ", "cents": True, "min": 0.01, "max": 1000000},
+             "fi": {"token": "§AMOUNT§", "pattern": r"kerro tästä maksusta .*? ((?:\d{1,3} )*?\d{1,3}) (\d\d) € ", "cents": True, "min": 0.01, "max": 1000000}}
+PAY_CHIPS = [("biggest", {"en": "Biggest purchase", "fi": "Suurin ostos"}), ("usual", {"en": "A usual month", "fi": "Tavallinen kuukausi"})]
+
 # ================================================================================================================ wordings
 def stems(pairs):
     return [k for k, _ in pairs]
@@ -716,6 +799,10 @@ def build():
             if params:
                 extra["params"] = params
             write(name, lang, q, title, cell, code, html, t, **extra)
+        q, title, cell = PAY_W[lang]
+        t = dict(common) | dict(PAY[lang]) | {"chips": chips(*[(ASK[lang][k], lb[lang]) for k, lb in PAY_CHIPS])}
+        write("payment", lang, q, title, cell, PAY_CODE, PAY_HTML, t, tap=True, param=PAY_PARAM[lang],
+              params=[{"token": "§MERCHANT§", "own": "merchants"}])
     print("written", sorted(p.name for p in OUT.glob("*.json")))
 
 

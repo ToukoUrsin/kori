@@ -282,6 +282,7 @@ const D = {
   "plan.preset.dentist": ["Dentist", "Hammaslääkäri"],
   "plan.preset.custom": ["Other amount", "Muu summa"],
   "plan.customAmount": ["Amount in euros", "Summa euroina"],
+  "plan.customBad": ["Type an amount in euros, from 1 to 1,000,000.", "Kirjoita summa euroina, 1–1 000 000."],
   "plan.test": ["Test it", "Kokeile"],
   "plan.testing": ["Testing {amount} against your account…", "Kokeilen {amount} tiliäsi vasten…"],
   "plan.covered": ["Your account covers it", "Tilisi kattaa sen"],

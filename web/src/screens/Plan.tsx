@@ -383,6 +383,11 @@ function OneOff() {
           </Button>
         </form>
       )}
+      {custom && raw.trim() !== "" && !valid && (
+        <p role="alert" className="mt-1.5 px-1 text-[13px] leading-[18px] text-ink-2">
+          {t("plan.customBad")}
+        </p>
+      )}
 
       {pick && (
         <div className="mt-3 rounded-card border border-line bg-surface px-4 pb-3 pt-3.5">

@@ -105,6 +105,8 @@ def test_wordings_reach_their_view(name, lang, q, loose):
 
 def test_every_kept_question_reaches_its_own_view():
     for (lang, _), rec in kept.records().items():
+        if rec.get("tap"):                               # a tapped payment is found by the customer's own merchant (tests/test_tap_payment.py)
+            continue
         for q in [rec["question"], *(rec.get("also") or [])]:
             got = kept.find(q, lang, C, False)
             assert got and got["file"] == rec["file"], (q, got and got["file"], rec["file"])

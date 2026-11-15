@@ -1,0 +1,33 @@
+{
+ "question": "Kerro tästä maksusta",
+ "lang": "fi",
+ "kept": "2026-11-14",
+ "by": {
+  "analyst": "kept view",
+  "designer": "kept view"
+ },
+ "title": "Tämä maksu",
+ "chips": [],
+ "cells": [
+  {
+   "title": "Napauttamasi maksu ja muut maksut samaan paikkaan",
+   "by": "kept view",
+   "code": "MERCHANT = §MERCHANT§\nAMOUNT = §AMOUNT§\nMON = [\"tammikuu\", \"helmikuu\", \"maaliskuu\", \"huhtikuu\", \"toukokuu\", \"kesäkuu\", \"heinäkuu\", \"elokuu\", \"syyskuu\", \"lokakuu\", \"marraskuu\", \"joulukuu\"]\nLBL = {\"Housing\": \"Asuminen\", \"Restaurants\": \"Ravintolat\", \"Groceries\": \"Ruokaostokset\", \"Home & Tech\": \"Koti ja tekniikka\", \"Transportation\": \"Liikkuminen\", \"Entertainment\": \"Huvit\", \"Lifestyle\": \"Ostokset\", \"Utilities\": \"Laskut ja sähkö\", \"Health\": \"Terveys\", \"Travel\": \"Matkat\"}\nBAS = {\"fixed\": \"Kiinteät pakolliset\", \"surprise\": \"Yllättävät pakolliset\", \"everyday\": \"Arjen menot\"}\nONE = {\"fixed\": \"kiinteisiin pakollisiin menoihin\", \"surprise\": \"yllättäviin pakollisiin menoihin\", \"everyday\": \"arjen menoihin\"}\nWHY = {\"fixed\": \"toistuviin menoihin, joista päätetään kerralla\", \"surprise\": \"menoihin, joita ei voi ennakoida ja joita varten yllätysvara on\", \"everyday\": \"siihen koriin, jota ohjaat päivittäin\"}\nd = tx[tx[\"is_spend\"] & (tx[\"merchant\"] == MERCHANT)].sort_values(\"ts\")           # the whole name, nothing that only shares a word\nhit = d[(d[\"spend\"] - AMOUNT).abs() < 0.005]\np = hit.iloc[-1]                                                                    # the payment that was tapped: this amount there (none: not this view's question)\ny = d[d[\"date\"] > today - datetime.timedelta(days=365)]                             # the last 12 months, up to today\nif not len(y):\n    y = d.tail(1)\nn, total = int(len(y)), round(float(y[\"spend\"].sum()), 2)\neach = round(total / n, 2)\nc = tx[tx[\"is_spend\"] & (tx[\"category\"] == p.category) & (tx[\"month\"] == today.strftime(\"%Y-%m\"))]\ncat_usual = round(float(kori.usual_month()[\"categories\"].get(p.category, 0.0)), 2)\ns = kori.safe_to_spend()\npaid = round(float(p.spend), 2)\nwhen = f\"{p.date.day}.{p.date.month}.\"\nemit(\"merchant\", MERCHANT, \"text\", \"Missä\")\nemit(\"amount\", paid, \"eur\", \"Tämä maksu\")\nemit(\"category\", LBL.get(p.category, p.category), \"text\", \"Luokka\")\nemit(\"basket\", BAS.get(p.basket, p.basket), \"text\", \"Kori\")\nemit(\"times\", n, \"count\", \"Maksuja sinne viimeisen 12 kuukauden aikana\")\nemit(\"total\", total, \"eur\", \"Maksettu sinne viimeisen 12 kuukauden aikana\")\nemit(\"each\", each, \"eur\", \"Maksu sinne keskimäärin\")\nemit(\"cat_month\", round(float(c[\"spend\"].sum()), 2), \"eur\", \"Tämä luokka tässä kuussa tähän mennessä\")\nemit(\"cat_usual\", cat_usual, \"eur_per_month\", \"Tämä luokka tavallisena kuukautena\")\nemit(\"safe\", s[\"amount\"], \"eur\", \"Turvallista käyttää nyt\")\ntable(\"payments\", [{\"date\": str(r.date), \"amount\": round(float(r.spend), 2), \"mark\": \"tämä maksu\" if r.Index == p.name else \"\"}\n                   for r in y.sort_values(\"ts\", ascending=False).head(8).itertuples()], \"Viimeisimmät maksusi sinne\")\nsay(f\"**{eur(paid, True)}** ({MERCHANT}, {when}) kuuluu {ONE[p.basket]}: {WHY[p.basket]}.\" + (f\" Olet maksanut sinne {n} kertaa viimeisen 12 kuukauden aikana, yhteensä {eur(total, True)}.\" if n > 1 else \" Se on ainoa maksusi sinne viimeisen 12 kuukauden aikana.\") + f\" Se on jo lähtenyt saldostasi, joten turvallinen käyttövarasi ({eur(s['amount'])}) ottaa sen jo huomioon.\")\n"
+  }
+ ],
+ "html": "<p class=\"k-lede\"><b>{{category|raw}}</b> tässä kuussa tähän mennessä: <b>{{cat_month|eur0}}</b>. Tavallinen kuukausi on {{cat_usual|eur0}}.</p>\n<div class=\"k-stats\" id=\"st\"><div class=\"k-fig\"><span>{{times|int}}</span><small>maksua 12 kuukaudessa</small></div><div class=\"k-fig\"><span>{{total|eur0}}</span><small>yhteensä</small></div><div class=\"k-fig\"><span>{{each|eur0}}</span><small>maksu keskimäärin</small></div></div>\n<div class=\"k-stack\"><p class=\"k-h\">Viimeisimmät maksusi sinne</p><div class=\"k-rows\"><k-each table=\"payments\"><template><div class=\"k-row\"><div><span class=\"k-ellip\">{date|date}</span><small>{mark}</small></div><b>{amount|eur}</b></div></template></k-each></div></div>\n<p class=\"k-note\">Kori: {{basket|raw}}, {{category|raw}}. Pankki näkee paikan ja summan, ei sitä, mitä ostit.</p>\n<div class=\"k-chips\"><button class=\"k-chip\" data-ask=\"Mikä oli suurin ostokseni viime kuussa?\">Suurin ostos</button><button class=\"k-chip\" data-ask=\"Mihin rahani menevät tavallisena kuukautena?\">Tavallinen kuukausi</button></div>\n<script>K.$(\"#st\").hidden=K.fact(\"times\")<2</script>",
+ "tap": true,
+ "param": {
+  "token": "§AMOUNT§",
+  "pattern": "kerro tästä maksusta .*? ((?:\\d{1,3} )*?\\d{1,3}) (\\d\\d) € ",
+  "cents": true,
+  "min": 0.01,
+  "max": 1000000
+ },
+ "params": [
+  {
+   "token": "§MERCHANT§",
+   "own": "merchants"
+  }
+ ]
+}

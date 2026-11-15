@@ -186,7 +186,7 @@ function CoachTurn({ turn, last }: { turn: Turn; last: boolean }) {
 function UserTurn({ turn }: { turn: Turn }) {
   return (
     <div className="flex justify-end pl-10" data-turn="user">
-      <p className="max-w-full whitespace-pre-wrap break-words rounded-[20px] rounded-br-[6px] bg-bubble px-3.5 py-2 text-[16px] leading-6 text-ink">
+      <p className="min-w-0 max-w-full whitespace-pre-wrap break-words [overflow-wrap:anywhere] rounded-[20px] rounded-br-[6px] bg-bubble px-3.5 py-2 text-[16px] leading-6 text-ink">
         {turn.via === "voice" && <Mic size={13} strokeWidth={2.25} className="mr-1.5 inline-block -translate-y-px text-ink-2" aria-hidden />}
         {turn.text}
       </p>

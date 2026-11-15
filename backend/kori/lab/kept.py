@@ -73,21 +73,28 @@ def _means(rec: dict, q: str, loose: bool) -> bool:
     return all(any(_hit(t, q, words) for t in g) for g in groups)
 
 
-def _fill(rec: dict, q: str) -> dict | None:
-    """Put the question's own number or thing into the reviewed code. A number is digits within the view's limits and a
-    thing is one of the view's own listed values, so nothing the customer typed is ever run as code."""
+def _fill(rec: dict, q: str, own: dict | None = None) -> dict | None:
+    """Put the question's own number or thing into the reviewed code. A number is digits within the view's limits, a
+    thing is one of the view's own listed values, and a name is one of this customer's own (`own`: the merchants on their
+    account, matched by the whole name and never by a part of it), so nothing the customer typed is ever run as code."""
     pars = ([rec["param"]] if rec.get("param") else []) + list(rec.get("params") or [])
     if not pars:
         return rec
     cells = rec["cells"]
     for par in pars:
-        if "choices" in par:
+        if "own" in par:                                # the longest of their own names that the question holds whole
+            names = sorted((own or {}).get(par["own"]) or [], key=lambda n: -len(norm(n)))
+            name = next((n for n in names if norm(n) and (" " + norm(n) + " ") in (" " + q + " ")), None)
+            value = None if name is None else json.dumps(name, ensure_ascii=False)
+        elif "choices" in par:
             value = next((v for k, v in par["choices"].items() if _hit(k, q, q.split())), par.get("default"))
         else:
             qn = re.sub(r"(?<!\d)(\d{1,3}) (\d{3})(?!\d)", r"\1\2", q)          # "€3,000" and "3 000 €" are 3000
             m = re.match(par["pattern"], q) if par.get("pattern") else None
             m = m or (re.search(par["find"], qn) if par.get("find") else None)
             value = m.group(1) if m else par.get("default")
+            if m and par.get("cents"):                  # "€1,042.04" and "1 042,04 €": euros, then two digits of cents
+                value = m.group(1).replace(" ", "") + "." + m.group(2)
             if value is not None and not (par.get("min", 0) <= float(value) <= par.get("max", 1e9)):
                 return None
         if value is None:
@@ -96,12 +103,13 @@ def _fill(rec: dict, q: str) -> dict | None:
     return {**rec, "cells": cells}
 
 
-def find(message: str, lang: str, customer: str | None = None, loose: bool = False) -> dict | None:
+def find(message: str, lang: str, customer: str | None = None, loose: bool = False, own: dict | None = None) -> dict | None:
     """The kept view for this question, or None.
 
     Three ways in, most exact first: the question as written (or one of its `also` wordings); a `param` pattern, for a
     family of questions that differ by one number ("What if I save €99 a month for ten years?"); and `match`, the same
-    question in the customer's own words. `loose` is the bank's approved-only mode, where a kept view is the only answer."""
+    question in the customer's own words. `loose` is the bank's approved-only mode, where a kept view is the only answer.
+    `own` holds this customer's own names (their merchants), for a view about one payment they tapped."""
     q = norm(message)
     mine = [r for (lg, _), r in records().items() if lg == lang and not (r.get("only") and customer not in r["only"])]
     rec = records().get((lang, q))
@@ -111,14 +119,14 @@ def find(message: str, lang: str, customer: str | None = None, loose: bool = Fal
         rec = next((r for r in mine if r.get("param") and r["param"].get("pattern") and re.match(r["param"]["pattern"], q)), None)
     if rec is None:
         rec = next((r for r in mine if _means(r, q, loose)), None)
-    return _fill(rec, q) if rec else None
+    return _fill(rec, q, own) if rec else None
 
 
 def questions(lang: str, customer: str | None = None) -> list[str]:
     """The questions that have a kept view in this language, as the customer would ask them."""
     seen: dict[str, None] = {}
     for (lg, _), r in records().items():
-        if lg == lang and not (r.get("only") and customer not in r["only"]):
+        if lg == lang and not r.get("tap") and not (r.get("only") and customer not in r["only"]):   # a tapped payment is not a question to suggest
             seen.setdefault(r["question"])
     return list(seen)
 
@@ -130,7 +138,7 @@ def nearest(message: str, lang: str, customer: str | None = None, n: int = 3) ->
     words = q.split()
     scored: dict[str, int] = {}
     for (lg, _), r in records().items():
-        if lg != lang or (r.get("only") and customer not in r["only"]):
+        if lg != lang or r.get("tap") or (r.get("only") and customer not in r["only"]):
             continue
         hits = sum((2 if i == 0 else 1) for i, g in enumerate(r.get("match") or []) if any(_hit(t, q, words) for t in g))   # the first group is the subject
         scored[r["question"]] = max(scored.get(r["question"], 0), hits)
