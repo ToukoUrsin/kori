@@ -6,6 +6,7 @@ import functools
 import inspect
 import json
 import logging
+import threading
 import time
 import uuid
 from datetime import date
@@ -71,7 +72,8 @@ def _persona(m: Money) -> dict:
 
 
 _FIRST: dict[tuple, tuple[float, bytes]] = {}     # a screen as a customer who has changed nothing sees it
-_FIRST_TTL = 600.0
+_FIRST_TTL = 3600.0       # the demo's "today" is fixed, so a first view does not go stale
+_FIRST_BUSY: dict[tuple, threading.Lock] = {}     # one calculation per screen when many people ask for it at once
 
 
 def first_view(keep=None):
@@ -99,11 +101,15 @@ def first_view(keep=None):
             hit = _FIRST.get(key)
             if hit and time.time() - hit[0] < _FIRST_TTL:
                 return Response(content=hit[1], media_type="application/json")
-            out = fn(*a, **kw)
-            if keep is None or keep(out):
-                if len(_FIRST) > 2000:
-                    _FIRST.clear()
-                _FIRST[key] = (time.time(), JSONResponse(content=jsonable_encoder(out)).body)
+            with _FIRST_BUSY.setdefault(key, threading.Lock()):
+                hit = _FIRST.get(key)       # someone else worked it out while this request waited
+                if hit and time.time() - hit[0] < _FIRST_TTL:
+                    return Response(content=hit[1], media_type="application/json")
+                out = fn(*a, **kw)
+                if keep is None or keep(out):
+                    if len(_FIRST) > 2000:
+                        _FIRST.clear()
+                    _FIRST[key] = (time.time(), JSONResponse(content=jsonable_encoder(out)).body)
             return out
         return inner
     return wrap
@@ -907,6 +913,13 @@ def _warm() -> None:
                 personas(lang)
             except Exception:   # noqa: BLE001
                 log.exception("customer list warm-up failed")
+        for p in S.PERSONAS:                # the four questions the chat opens with, then the other tabs
+            for lang in ("en", "fi"):
+                for view in (lab_routes.starters, replay, baskets, plan, lessons_list):
+                    try:
+                        view(customer=p["id"], lang=lang) if view is lab_routes.starters else view(customer=p["id"], lang=lang, x_kori_device="warm")
+                    except Exception:   # noqa: BLE001
+                        log.exception("%s warm-up failed for %s", view.__name__, p["id"])
         log.info("warm-up done in %.1fs", time.time() - t0)
 
     threading.Thread(target=run, daemon=True, name="kori-warm").start()

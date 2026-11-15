@@ -256,13 +256,23 @@ async def session_reset(req: ResetReq):
     return {"ok": True}
 
 
+_STARTERS: dict[tuple[str, str, bool, bool], tuple[float, dict]] = {}     # the same for every visitor: worked out once
+
+
 @router.get("/api/lab/starters")
 def starters(customer: str, lang: str = "en"):
     from . import agent
+    from .door import products_ready
     lang = "fi" if lang.lower().startswith("fi") else "en"
     if customer not in S.PERSONA_BY_ID:
         raise HTTPException(404, "unknown customer")
-    return {"items": agent.starters(S.money("starters", customer, lang)[0])}
+    key = (customer, lang, products_ready("shop"), products_ready("web"))      # the list changes once the shop shelves are in
+    hit = _STARTERS.get(key)
+    if hit and time.time() - hit[0] < 3600:
+        return hit[1]
+    out = {"items": agent.starters(S.money("starters", customer, lang)[0])}
+    _STARTERS[key] = (time.time(), out)
+    return out
 
 
 @router.get("/api/lab/approved")
