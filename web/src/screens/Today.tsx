@@ -382,6 +382,18 @@ export function Today() {
               <ChevronRight size={16} strokeWidth={2} aria-hidden />
             </button>
           )}
+          {/* on a phone there is no side panel: the bank view is offered here in words too */}
+          {!isEmbedMode() && (
+            <a
+              href="/host"
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex min-h-11 items-center gap-1 rounded-full px-3 text-[14px] font-medium leading-5 text-brand-strong transition-colors duration-150 hover:bg-sunk"
+            >
+              {t("judge.bankApp")}
+              <ChevronRight size={16} strokeWidth={2} aria-hidden />
+            </a>
+          )}
         </div>
       </div>
     </>

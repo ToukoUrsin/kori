@@ -218,6 +218,12 @@ export function BasketBar({ baskets }: { baskets: BasketsData["baskets"] }) {
   );
 }
 
+/** Left over in whole euros that add up with the sums beside it: the rounded parts, not the rounded total. */
+export function basketsLeft(d: Pick<BasketsData, "income" | "spend" | "saved" | "left_over">): number {
+  const sum = Math.round(d.income) - Math.round(d.spend) - Math.round(d.saved > 0.5 ? d.saved : 0);
+  return Math.abs(sum - d.left_over) < 1.5 ? sum : d.left_over;
+}
+
 export function BasketsBody({ d }: { d: BasketsData }) {
   const { lang, t } = useApp();
   return (
@@ -225,8 +231,10 @@ export function BasketsBody({ d }: { d: BasketsData }) {
       <Cells>
         <Cell label={t("baskets.income")}>{money(d.income, lang)}</Cell>
         <Cell label={t("baskets.spent")}>{money(d.spend, lang)}</Cell>
+        {/* the same sums as the Baskets tab: money moved to savings is shown, and the whole euros add up on screen */}
+        {d.saved > 0.5 && <Cell label={t("baskets.saved")}>{money(d.saved, lang)}</Cell>}
         <Cell label={t("baskets.leftOver")}>
-          <span className={d.left_over < 0 ? "text-neg" : undefined}>{money(d.left_over, lang)}</span>
+          <span className={d.left_over < 0 ? "text-neg" : undefined}>{money(basketsLeft(d), lang)}</span>
         </Cell>
       </Cells>
       <div className="mt-4">

@@ -1,6 +1,6 @@
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { useMemo, useState, type ReactNode } from "react";
-import { BasketBar, basketShort } from "../components/cards/bodies";
+import { BasketBar, basketShort, basketsLeft } from "../components/cards/bodies";
 import { Cell, Cells, TxList } from "../components/cards/parts";
 import { HistoryStrip } from "../components/charts/Charts";
 import { Button, CatIcon, Collapse, cx, Dot, ErrorInline, FoldRow, IconButton, LinkedNote, LinkedTag, Money, SectionHead, Segmented, Skel, Slow, useLast } from "../components/ui/bits";
@@ -283,7 +283,7 @@ export function Baskets() {
             )}
             <Cell label={t("baskets.leftOver")}>
               {/* whole euros that add up on screen: the rounded parts, not the rounded total */}
-              <Money value={Math.abs(Math.round(c.income) - Math.round(c.spend) - Math.round(c.saved > 0.5 ? c.saved : 0) - c.left_over) < 1.5 ? Math.round(c.income) - Math.round(c.spend) - Math.round(c.saved > 0.5 ? c.saved : 0) : c.left_over} />
+              <Money value={basketsLeft(c)} />
             </Cell>
           </Cells>
           <div className="mt-3.5">

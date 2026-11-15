@@ -281,8 +281,10 @@ amt, n = round(float(by.loc[last, "sum"]), 2), int(by.loc[last, "count"])
 um = kori.usual_month()
 if COL == "category":                                   # the same usual month the Plan tab shows for this category
     usual = round(float(um["categories"].get(VALS[0], 0.0)), 2)
-else:                                                   # a part of a category: the same window, the last six full months
+    USUAL, UW = f"«u_cat»", "«s_usual»"
+else:                                                   # a part of a category: the same window, the last six full months, and called an average
     usual = round(float(by.loc[list(last6), "sum"].mean()), 2)
+    USUAL, UW = f"«u_part»", "«s_avg6»"
 year_total = round(float(by["sum"].sum()), 2)
 mname = MON[int(last[5:]) - 1]
 LBL = «labels»
@@ -292,7 +294,8 @@ rows = [{"what": str(r.merchant) if isinstance(r.merchant, str) and r.merchant e
 emit("month_name", «mcap», "text", "«l_month»")
 emit("last_month", amt, "eur", "«l_last»")
 emit("payments", n, "count", "«l_n»")
-emit("usual", usual, "eur_per_month", "«l_usual»")
+emit("usual", usual, "eur_per_month", "«l_usual»" if COL == "category" else "«l_avg6»")
+emit("usual_word", UW, "text", "«l_usual_word»")
 emit("year_total", year_total, "eur", "«l_year»")
 table("by_month", [{"short": MON[int(m[5:]) - 1][:3], "label": MON[int(m[5:]) - 1] + " " + m[:4], "spend": round(float(by.loc[m, "sum"]), 2),
                     "count": int(by.loc[m, "count"])} for m in months], "«l_t_month»")
@@ -307,7 +310,7 @@ else:
 '''
 SPENT_HTML = '''
 <p class="k-lede" hidden>«lede_a» <b>{{year_total|eur0}}</b>«lede_b»</p>
-<div class="k-stats"><div class="k-fig"><span>{{last_month|eur}}</span><small>{{month_name|raw}}</small></div><div class="k-fig"><span>{{payments|int}}</span><small>«s_pay»</small></div><div class="k-fig"><span>{{usual|eur0}}</span><small>«s_usual»</small></div></div>
+<div class="k-stats"><div class="k-fig"><span>{{last_month|eur}}</span><small>{{month_name|raw}}</small></div><div class="k-fig"><span>{{payments|int}}</span><small>«s_pay»</small></div><div class="k-fig"><span>{{usual|eur0}}</span><small>{{usual_word|raw}}</small></div></div>
 <div class="k-stack"><p class="k-h">«h_month»: {{year_total|eur0}}</p><k-bars table="by_month" x="short" y="spend" fmt="eur0" pick="last" readout="**{label}** · {spend|eur}, {count|int} «payments_word»"></k-bars></div>
 <div class="k-stack" id="pl" hidden><p class="k-h">«h_pay»</p><div class="k-rows"><k-each table="payments_list"><template><div class="k-row"><div><span class="k-ellip">{what}</span><small>{date|date}</small></div><b>{amount|eur}</b></div></template></k-each></div></div>
 «chips»
@@ -333,9 +336,11 @@ SPENT = {
                   '"was about the same as a usual month." if abs(amt - usual) < max(10, 0.05 * usual) else '
                   '"was " + eur(amt - usual) + " above a usual month." if amt > usual else "was " + eur(usual - amt) + " below a usual month.")',
                l_t_month="By month, the last 12 full months", l_t_pay="The biggest payments in the last full month",
-               say="You spent **{eur(amt, True)}** on {NAME} in {mname}, in {n} payment{'' if n == 1 else 's'}. A usual month is {eur(usual)}.",
-               say_zero="**None** on {NAME} in {mname}. A usual month is {eur(usual)}, and the last 12 months came to {eur(year_total)}.",
-               say_none="**None** on {NAME} in {mname}, and none in the 12 months before it either.",
+               say="You spent **{eur(amt, True)}** on {NAME} in {mname}, in {n} payment{'' if n == 1 else 's'}. {USUAL}.",
+               say_zero="You spent **nothing** on {NAME} in {mname}. {USUAL}, and the last 12 months came to {eur(year_total)}.",
+               say_none="You spent **nothing** on {NAME} in {mname}, and nothing in the 12 months before it either.",
+               u_cat="A usual month is {eur(usual)}", u_part="The last six months averaged {eur(usual)} a month", s_avg6="a month on average",
+               l_avg6="The average of the last six full months", l_usual_word="What the monthly figure is",
                s_usual="a usual month", s_pay="payments", lede_a="The last 12 full months came to", lede_b=".", h_month="The last 12 full months", payments_word="payments", h_pay="The biggest payments"),
     "fi": dict(mcap="mname.capitalize()", l_month="Viimeisin täysi kuukausi", l_last="Viimeisimpänä täytenä kuukautena", l_n="Maksuja viimeisimpänä täytenä kuukautena",
                l_usual="Tavallinen kuukausi", l_year="Viimeiset 12 täyttä kuukautta yhteensä", l_vs="Viimeisin täysi kuukausi tavalliseen verrattuna",
@@ -343,8 +348,10 @@ SPENT = {
                   '"oli suunnilleen tavallinen kuukausi." if abs(amt - usual) < max(10, 0.05 * usual) else '
                   '"oli " + eur(amt - usual) + " tavallista kuukautta enemmän." if amt > usual else "oli " + eur(usual - amt) + " tavallista kuukautta vähemmän.")',
                l_t_month="Kuukausittain, viimeiset 12 täyttä kuukautta", l_t_pay="Suurimmat maksut viimeisimpänä täytenä kuukautena",
-               say="{NAME.capitalize()} meni {mname}ssa **{eur(amt, True)}**, {n} maks{'u' if n == 1 else 'ua'}. Tavallisena kuukautena {eur(usual)}.",
-               say_zero="{NAME.capitalize()} ei mennyt {mname}ssa **mitään**. Tavallisena kuukautena {eur(usual)}, viimeisten 12 kuukauden aikana yhteensä {eur(year_total)}.",
+               say="{NAME.capitalize()} meni {mname}ssa **{eur(amt, True)}**, {n} maks{'u' if n == 1 else 'ua'}. {USUAL}.",
+               say_zero="{NAME.capitalize()} ei mennyt {mname}ssa **mitään**. {USUAL}, viimeisten 12 kuukauden aikana yhteensä {eur(year_total)}.",
+               u_cat="Tavallisena kuukautena {eur(usual)}", u_part="Viimeisen kuuden kuukauden keskiarvo on {eur(usual)} kuussa", s_avg6="keskimäärin kuussa",
+               l_avg6="Viimeisen kuuden täyden kuukauden keskiarvo", l_usual_word="Mitä kuukausiluku tarkoittaa",
                say_none="{NAME.capitalize()} ei mennyt {mname}ssa **mitään**, eikä sitä edeltävien 12 kuukauden aikana.",
                s_usual="tavallinen kuukausi", s_pay="maksua", lede_a="Viimeisten 12 täyden kuukauden aikana yhteensä", lede_b=".", h_month="Viimeiset 12 täyttä kuukautta", payments_word="maksua", h_pay="Suurimmat maksut"),
 }
