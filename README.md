@@ -156,6 +156,30 @@ before?" and see the months it held, the months it did not, and the reason for e
 - **Benchmarks.** Statistics Finland open data (CC BY 4.0) for population comparisons; peer groups never smaller
   than 30 customers.
 
+## What a bank would ask first
+
+- **What can the code Gemini writes do?** Read one customer's transactions and nothing else. It runs in a bubblewrap
+  jail (`backend/kori/lab/kernel.py`): no network, a read-only system, an empty environment, one file under `/data`,
+  capped memory and file size, and 25 seconds per run. Its only way out is a fixed list of calls in
+  `backend/kori/lab/door.py`: the engine's own calculations, the shop catalogue and the fund model.
+- **What if the model gets it wrong?** A figure reaches the screen or the sentence only if the run produced it
+  (`check.py`); a run that fails shows no number, and a zero is worked out a second time. The check proves where a
+  figure came from, not that the code asked the right thing. That is what the approved answers are for, and why every
+  turn is kept with its question, code, result and screen (`lab_turns.jsonl`) for a person to review.
+- **What leaves the bank?** The question, a summary of the account's shape (category totals, row counts), what the
+  code printed, and the answer. The model is never handed the transactions themselves, only what the code printed
+  for that answer, and with approved answers only, nothing is sent at all.
+- **How long and how many model calls?** An approved answer: about a second, no model call. A fresh one: two to four
+  calls (the code, sometimes a second go, the screen), 7 to 9 seconds for a simple question and 17 to 27 for a hard
+  one. Forty people opening the link at once get the first screen in under two seconds (measured on the live demo).
+- **How many vendors?** One is enough. Without the Claude key Gemini draws the screens too, and without ElevenLabs
+  everything but voice works.
+- **What is not real yet?** Receipt lines are sample data (S-mobiili has the real ones in Omat ostot), the other-bank
+  link is simulated, and the customers are S-Pankki's synthetic set. The calculations, the shop prices, the fund and
+  its fee, and the Statistics Finland figures are real.
+- **How is it tested?** 1,137 automated cases, and a replay of the safe-to-spend number on 106,553 past days of
+  4,850 customers (above, under "Why the numbers can be trusted").
+
 ## Architecture
 
 ```

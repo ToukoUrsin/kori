@@ -123,6 +123,22 @@ def questions(lang: str, customer: str | None = None) -> list[str]:
     return list(seen)
 
 
+def nearest(message: str, lang: str, customer: str | None = None, n: int = 3) -> list[str]:
+    """The approved questions closest to this one, for the "not on the approved list" reply: the ones that share its
+    subject come first, so "how much do I blow on restaurants" is offered the eating-out answer and not the first three."""
+    q = norm(message)
+    words = q.split()
+    scored: dict[str, int] = {}
+    for (lg, _), r in records().items():
+        if lg != lang or (r.get("only") and customer not in r["only"]):
+            continue
+        hits = sum((2 if i == 0 else 1) for i, g in enumerate(r.get("match") or []) if any(_hit(t, q, words) for t in g))   # the first group is the subject
+        scored[r["question"]] = max(scored.get(r["question"], 0), hits)
+    order = list(scored)
+    close = sorted((k for k in order if scored[k] > 0), key=lambda k: (-scored[k], order.index(k)))
+    return (close + [k for k in order if scored[k] == 0])[:n]
+
+
 def approved(lang: str) -> list[dict]:
     """What the bank has reviewed, for its own list: the question, when it was approved and which file holds the code."""
     out: dict[str, dict] = {}

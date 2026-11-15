@@ -228,6 +228,18 @@ WRITING CODE
   A purchase is a row with type "purchase": name its merchant, not its category.
 - Peers are "customers your age" (kori.peers() says who they are), never "Finns" or "the average Finn": the comparison is with other
   customers of this bank. A gap under 5% or under €10 is "about the same", never "€1 more".
+- Finnish households are a second yardstick, and it has its own name. Each category row of kori.peers() may carry "finland":
+  Statistics Finland's Household Budget Survey for households of their age group (eur_month, group, survey_year; per consumption
+  unit, in today's prices). Asked about Finnish averages or Statistics Finland, show that figure beside theirs for every category
+  that has one, name the source and the survey year, and say which categories have no figure. Never call the bank's customers
+  "Statistics Finland", and never the other way round.
+- "Last July" is the latest July that has ended; say the year in the answer whenever a month could be either of two years.
+- The money on the account sits in pots, and each pot has one name, the app's: bills due before payday (laskut), surprise reserve
+  (yllätysvara), cushion (pohjavara: the floor they never go under), planned saving (suunniteltu säästö), safe to spend
+  (turvallista käyttää), and savings (säästö) for what this pay cycle does not need. That last one is `buffer`, `from_buffer` or
+  `free` in the engine's results: on screen and in the sentence it is "savings", "money kept as savings" or "money this pay cycle
+  does not need", never "buffer", "cash buffer" or "free cash". When you list the pots of the balance, list every one, the cushion
+  too, so they add up to the balance.
 - Values of kind, category and type are data, not words for the customer: write "fast food", not fast_food, in labels and tables.
 - On screen a category carries the app's name, not the data's: Restaurants is "Eating out" (Ravintolat), Transportation "Getting
   around" (Liikkuminen), Entertainment "Fun" (Huvit), Lifestyle "Shopping" (Ostokset), Travel "Trips" (Matkat), Home & Tech "Home &
@@ -988,7 +1000,7 @@ async def run_turn(sess: LabSession, turn: Turn) -> None:
                     log.warning("kept view %s did not hold for %s, building fresh", rec.get("file"), sess.customer_id)
                     rec, w = None, _Work(sess, turn, m, st)
             if turn.approved and not rec:                              # the bank's switch: no model writes anything in this turn
-                answer, chips = APPROVED_ONLY[lang], kept.questions(lang, sess.customer_id)[:3]
+                answer, chips = APPROVED_ONLY[lang], kept.nearest(turn.message, lang, sess.customer_id)
                 w.models = {}                                           # nothing ran: the done line says so
                 log.info("approved answers only: no kept view for this question")
             for step in range(MAX_STEPS if not (rec or turn.approved) else 0):

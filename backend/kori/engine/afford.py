@@ -16,6 +16,7 @@ from .query import fmt_day
 BASKET_WORDS = {"surprise": SURPRISE, "surprise_must": SURPRISE, "surprise_musts": SURPRISE, "must": SURPRISE,
                 "everyday": EVERYDAY, "want": EVERYDAY, "fixed": FIXED, "fixed_must": FIXED, "fixed_musts": FIXED}
 MAX_SPREAD_MONTHS = 24
+SPREAD_FROM = 100.0            # euros: below this "set aside for two months, then buy it" is not advice anyone needs
 
 
 def _status(per_day: float, usual_day: float, amount: float) -> str:
@@ -103,14 +104,16 @@ def afford(m: Money, amount: float, label: str | None = None, basket: str | None
         monthly = r2(amount / n)
         fits = bool(room >= monthly)
         per_day_trim = r2(monthly / DAYS_PER_MONTH)
-        options.append({
+        spread = {
             "key": "spread", "months": n, "monthly": monthly, "fits_in_left_over": fits,
             "left_over_monthly": room, "per_day": per_day_trim,
             "text": (L(f"Set aside {E(monthly)} a month for {n} months, then buy it. A usual month leaves you {E(room)}, so it fits without changing anything else.",
                        f"Laita sivuun {E(monthly)} kuussa {n} kuukauden ajan ja osta se sitten. Tavallisesta kuukaudestasi jää {E(room)}, joten se mahtuu muuttamatta muuta.")
                      if fits else
                      L(f"Set aside {E(monthly)} a month for {n} months, then buy it. That is about {E(per_day_trim, True)} a day less on everyday spending.",
-                       f"Laita sivuun {E(monthly)} kuussa {n} kuukauden ajan ja osta se sitten. Se on noin {E(per_day_trim, True)} päivässä vähemmän arjen menoihin."))})
+                       f"Laita sivuun {E(monthly)} kuussa {n} kuukauden ajan ja osta se sitten. Se on noin {E(per_day_trim, True)} päivässä vähemmän arjen menoihin."))}
+        if amount >= SPREAD_FROM:                                  # nobody saves up two months for a dinner
+            options.append(spread)
     if reserve and reserve["beyond_reserve"] > 0.005 and not m.partial_view:
         back = reserve["beyond_reserve"]
         n = int(min(MAX_SPREAD_MONTHS, max(1, math.ceil(back / cap))))
