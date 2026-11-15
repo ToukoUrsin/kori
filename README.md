@@ -178,7 +178,7 @@ before?" and see the months it held, the months it did not, and the reason for e
 - **What is not real yet?** Receipt lines are sample data (S-mobiili has the real ones in Omat ostot), the other-bank
   link is simulated, and the customers are S-Pankki's synthetic set. The calculations, the shop prices, the fund and
   its fee, and the Statistics Finland figures are real.
-- **How is it tested?** 1,256 automated cases, and a replay of the safe-to-spend number on 106,553 past days of
+- **How is it tested?** 1,262 automated cases, and a replay of the safe-to-spend number on 106,553 past days of
   4,850 customers (above, under "Why the numbers can be trusted").
 
 ## Architecture
@@ -211,7 +211,7 @@ PYTHONPATH=. uv run uvicorn kori.app:app --port 8811
 cd ../web && pnpm install && pnpm dev      # http://localhost:8812
 ```
 
-Tests (1,256 cases from 206 test functions: engine arithmetic, the approved answers and their wordings, number check, API, the sandbox, the shop and swap rules, the demo customers in both languages):
+Tests (1,262 cases from 207 test functions: engine arithmetic, the approved answers and their wordings, number check, API, the sandbox, the shop and swap rules, the demo customers in both languages):
 
 ```bash
 cd backend && PYTHONPATH=. uv run pytest -q

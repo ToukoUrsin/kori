@@ -275,8 +275,15 @@ export function Baskets() {
             <Cell label={t("baskets.spent")}>
               <Money value={c.spend} />
             </Cell>
+            {/* money moved to savings is shown, so the three sums beside it add up to what is left */}
+            {c.saved > 0.5 && (
+              <Cell label={t("baskets.saved")}>
+                <Money value={c.saved} />
+              </Cell>
+            )}
             <Cell label={t("baskets.leftOver")}>
-              <Money value={c.left_over} />
+              {/* whole euros that add up on screen: the rounded parts, not the rounded total */}
+              <Money value={Math.abs(Math.round(c.income) - Math.round(c.spend) - Math.round(c.saved > 0.5 ? c.saved : 0) - c.left_over) < 1.5 ? Math.round(c.income) - Math.round(c.spend) - Math.round(c.saved > 0.5 ? c.saved : 0) : c.left_over} />
             </Cell>
           </Cells>
           <div className="mt-3.5">

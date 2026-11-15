@@ -94,3 +94,17 @@ def test_the_answer_adds_up_and_passes_the_check(lang, customer):
     ok = check.allowed(ledger, q)
     assert check.answer(w.said, ok, lang) == []
     assert check.fragment(rec["html"], ledger, ok, lang)["flagged"] == []
+
+
+@pytest.mark.parametrize("q,name", [
+    ("how much is okay to blow before my salary comes", "safe-week"),
+    ("what can i spend before my next salary", "safe-week"),
+    ("what bills are due before my salary comes", "bills"),
+    ("when does my salary come in", None),
+    ("what is my salary", None),
+    ("did my salary come in this week", None),
+])
+def test_before_my_salary_is_before_payday(q, name):
+    """A judge with AI off asked "how much is okay to blow before my salary comes" and was told it is not on the list."""
+    rec = kept.find(q, "en", "CUST01885", loose=True)
+    assert (rec and rec["file"].split(".")[0]) == name

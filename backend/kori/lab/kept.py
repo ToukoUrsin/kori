@@ -112,6 +112,16 @@ def _fill(rec: dict, q: str, own: dict | None = None) -> dict | None:
     return {**rec, "cells": cells}
 
 
+# "Before my salary comes" is "before payday": said that way it would trip over the words that keep salary questions out.
+_SAME = [(re.compile(r"\b(before|until|till|til) (?:my |the )?(?:next )?(?:salary|wages?|pay ?check|paycheque)(?: comes in| comes| arrives| lands| is paid| gets paid)?(?= |$)"), r"\1 payday")]
+
+
+def _same(q: str) -> str:
+    for pat, to in _SAME:
+        q = pat.sub(to, q)
+    return q
+
+
 def find(message: str, lang: str, customer: str | None = None, loose: bool = False, own: dict | None = None) -> dict | None:
     """The kept view for this question, or None.
 
@@ -126,11 +136,12 @@ def find(message: str, lang: str, customer: str | None = None, loose: bool = Fal
         rec = None
     if rec is None:
         rec = next((r for r in mine if r.get("param") and r["param"].get("pattern") and re.match(r["param"]["pattern"], q)), None)
+    qm = _same(q)
     if rec is None:
-        rec = next((r for r in mine if _means(r, q, loose)), None)
+        rec = next((r for r in mine if _means(r, qm, loose)), None)
     urgent = [r for r in mine if r.get("first")]         # "I can't pay my bills" is never the plain bills answer, in any wording
-    if rec is not None and not rec.get("first") and any(_subject(r, q) for r in urgent):
-        rec = next((r for r in urgent if _means(r, q, loose)), None)
+    if rec is not None and not rec.get("first") and any(_subject(r, qm) for r in urgent):
+        rec = next((r for r in urgent if _means(r, qm, loose)), None)
     return _fill(rec, q, own) if rec else None
 
 

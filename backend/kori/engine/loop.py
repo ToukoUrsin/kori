@@ -220,8 +220,8 @@ def check_in(m: Money) -> dict:
                                 f"Suurin osa oli yksi iso meno: {what} {when}, {E(b['amount'])}. Ilman sitäkin jakso olisi mennyt "
                                 f"{E(wo['difference'])} yli.")
         else:
-            driver_line = L(f"{w.cat(drv['category'])} did most of it: {E(drv['spent'])} against your usual {E(drv['usual'])}.",
-                            f"Eniten vaikuttivat {w.cat_low(drv['category'])}: {E(drv['spent'])}, kun tavallisesti {E(drv['usual'])}.")
+            driver_line = L(f"{w.cat(drv['category'])} did most of it: {E(drv['spent'])} against your usual {E(drv['usual'])} for a {w.cycle}.",
+                            f"Eniten vaikuttivat {w.cat_low(drv['category'])}: {E(drv['spent'])}, kun tavallisesti jaksossa {E(drv['usual'])}.")
             if row["within"]:
                 driver_line = L(f"{w.cat(drv['category'])} ran above your usual: {E(drv['spent'])} against {E(drv['usual'])}.",
                                 f"{w.cat(drv['category'])} ylittivät tavallisen: {E(drv['spent'])}, kun tavallisesti {E(drv['usual'])}.")
@@ -308,8 +308,8 @@ def _make(m: Money, kind: str, target: str | None, cap: float | None = None, amo
 
     if kind == "cap_category":
         if cat:
-            a["why"] = L(f"Last {w.cycle} {w.cat_low(target)} came to {E(cat['spent'])}. Your usual is {E(cat['usual'])}.",
-                         f"Viime {w.cycle_on} {FI_ILLATIVE.get(target, w.cat_low(target))} meni {E(cat['spent'])}. Tavallisesti "
+            a["why"] = L(f"Last {w.cycle} {w.cat_low(target)} came to {E(cat['spent'])}. Your usual is {E(cat['usual'])} for a {w.cycle}.",
+                         f"Viime {w.cycle_on} {FI_ILLATIVE.get(target, w.cat_low(target))} meni {E(cat['spent'])}. Tavallisesti jaksossa "
                          f"{E(cat['usual'])}.")
             back = r2(max(0.0, cat["spent"] - float(cap or 0)))
             if back > 0:
@@ -423,10 +423,10 @@ def suggest(m: Money) -> dict:
         if habits and not (wo and wo["within"]):
             h = habits[0]
             options = [cap_for(h), cap_for(h, gentle=True), pace]
-            question = {"text": L(f"{w.cat(h['category'])} came to {E(h['spent'])} against your usual {E(h['usual'])}. Was last "
+            question = {"text": L(f"{w.cat(h['category'])} came to {E(h['spent'])} against your usual {E(h['usual'])} for a {w.cycle}. Was last "
                                   f"{w.cycle} unusual, or is this the new normal?",
                                   f"{FI_ILLATIVE.get(h['category'], w.cat_low(h['category'])).capitalize()} meni {E(h['spent'])}, kun "
-                                  f"tavallisesti {E(h['usual'])}. Oliko viime jakso poikkeus vai uusi tavallinen?"),
+                                  f"tavallisesti jaksossa {E(h['usual'])}. Oliko viime jakso poikkeus vai uusi tavallinen?"),
                         "short": L(f"Was last {w.cycle} unusual, or is this the new normal?",
                                    "Oliko viime jakso poikkeus vai uusi tavallinen?"),
                         "spoken": L(f"Last {w.cycle} went {_say(row['over_by'], 'en')} over, mostly on {w.cat_low(h['category'])}. "
