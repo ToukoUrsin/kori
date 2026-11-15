@@ -153,6 +153,35 @@ def test_swapped_baskets_do_not_pass_offline_or_with_a_generous_model(monkeypatc
     assert not out["passed"] and out["missing"]
 
 
+WRONG_BASKET_STEERED = [
+    ("en", "There are fixed bills, surprise bills and everyday money, and the one I can steer day to day is the fixed bills like rent."),
+    ("en", "Three baskets: fixed, surprise and everyday. The surprise one is what I steer every day."),
+    ("fi", "On kiinteät laskut, yllättävät menot ja arki, ja se jota voin ohjata päivittäin on kiinteät laskut kuten vuokra."),
+]
+RIGHT_BASKET_STEERED = [
+    ("en", "I steer the everyday basket and the other two are fixed and surprise musts."),
+    ("en", "Everyday is what I steer, fixed is what I decide once, surprise is what I reserve for."),
+    ("en", "The one I steer daily is everyday spending. Rent is fixed. A repair is a surprise."),
+    ("fi", "Arki on se kori, jota ohjaan päivittäin. Kiinteät päätetään kerran ja yllättäviin varaudutaan."),
+]
+
+
+@pytest.mark.parametrize("lang,answer", WRONG_BASKET_STEERED)
+def test_steering_the_wrong_basket_does_not_pass(monkeypatch, lang, answer):
+    """A judge wrote "the one I can steer day to day is the fixed bills like rent" and got "That's it"."""
+    le = lessons.get(Money("CUST00092"), "baskets")
+    for generous in (None, True):
+        _offline(monkeypatch) if generous is None else _model_says(monkeypatch, True)
+        out = asyncio.run(agent.grade_teachback(lang, le, answer))
+        assert not out["passed"] and "everyday" in out["missing"].lower() or "arjen" in out["missing"].lower(), out
+
+
+@pytest.mark.parametrize("lang,answer", RIGHT_BASKET_STEERED)
+def test_steering_the_everyday_basket_is_not_called_a_mix_up(lang, answer):
+    from kori.ai import teachback
+    assert not teachback.check("baskets", answer, lang)["mixed_up"]
+
+
 def test_a_mistake_the_model_names_does_not_pass_and_is_put_right(monkeypatch):
     class R:
         text = json.dumps({"passed": False, "got": "", "missing": "", "encouragement": "",

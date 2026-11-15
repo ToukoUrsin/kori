@@ -181,6 +181,14 @@ MIXED_UP: dict[str, list[tuple[str, str, str]]] = {
         (_STEER + r" (?:" + _FIXED[3:-1] + "|" + _SURPRISE[3:-1] + r"|fixed|surprise)",
          "The basket you steer day to day is the everyday one, not the rent or a repair. Say which one you steer.",
          "Päivittäin ohjaat arjen menojen koria, et vuokraa tai korjausta. Kerro, mitä koria ohjaat."),
+        # "the one I can steer day to day is the fixed bills": the steering is attached to the wrong basket
+        (r"(?:steer|control|adjust|ohjata|ohjaan|säätää|säädän)(?:(?! and | but | while | ja | mutta |everyday|arki|arje|coffee|food|kahvi|ruoka)[^.,;:]){0,40}?"
+         r"(?: is| are| on| ovat)(?: the| my)? (?:fixed|surprise|kiinte|yllätt)",
+         "The basket you steer day to day is the everyday one. Fixed and surprise musts are decided or reserved for, not steered. Say which one you steer.",
+         "Päivittäin ohjaat arjen menojen koria. Kiinteistä ja yllättävistä pakollisista päätetään tai niihin varaudutaan, niitä ei ohjata. Kerro, mitä koria ohjaat."),
+        (r"(?:fixed|surprise|kiinte[a-zåäö]*|yllätt[a-zåäö]*)(?: (?!and|but|ja|mutta)[a-zåäö]+){0,2} (?:is|are|on|ovat) (?:what|the one|the basket|se|ne|kori)[^.,;:]{0,24}?(?:steer|control|ohja|säädä|säätä)",
+         "The basket you steer day to day is the everyday one. Fixed and surprise musts are decided or reserved for, not steered. Say which one you steer.",
+         "Päivittäin ohjaat arjen menojen koria. Kiinteistä ja yllättävistä pakollisista päätetään tai niihin varaudutaan, niitä ei ohjata. Kerro, mitä koria ohjaat."),
     ],
 }
 
@@ -229,7 +237,8 @@ def check(lesson_id: str, answer: str, lang: str) -> dict | None:
     mixed = ""
     for pat, cen, cfi in MIXED_UP.get(lesson_id, []):
         hit = re.search(r"(?<![a-zåäö])" + pat, text)
-        if hit and not re.search(r"(?:\bnot|\bcannot|n't|\bnever|\bno|\ben|\bei|\bet)(?: \w+)? ?$", text[:hit.start()]):   # "I can't steer the rent" is right
+        if (hit and not re.search(r"(?:\bnot|\bcannot|n't|\bnever|\bno|\ben|\bei|\bet)(?: \w+)? ?$", text[:hit.start()])     # "I can't steer the rent" is right
+                and not re.search(r"\bnot\b|\bcannot\b|n't|\bnever\b|\ben\b|\bei\b|\bet\b", hit.group(0))):
             mixed = cfi if fi else cen
             break
     return {"grade": grade, "found": found, "missing": hint, "misconception": misconception, "words": words, "mixed_up": mixed}

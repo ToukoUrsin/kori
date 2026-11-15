@@ -167,7 +167,7 @@ UM = {
 # ================================================================================================================ cut
 CUT_CATS = {   # what the customer says -> the category; specific phrases first
     "en": [("eating out", "Restaurants"), ("dining", "Restaurants"), ("restaurant", "Restaurants"), ("takeaway", "Restaurants"), ("take away", "Restaurants"),
-           ("eat out", "Restaurants"), ("food out", "Restaurants"), ("grocer", "Groceries"), ("food shopping", "Groceries"), ("supermarket", "Groceries"),
+           ("eat out", "Restaurants"), ("ate out", "Restaurants"), ("food out", "Restaurants"), ("grocer", "Groceries"), ("food shopping", "Groceries"), ("supermarket", "Groceries"),
            ("getting around", "Transportation"), ("transport", "Transportation"), ("travel", "Travel"), ("trips", "Travel"), ("holiday", "Travel"),
            ("entertainment", "Entertainment"), ("fun", "Entertainment"), ("shopping", "Lifestyle")],
     "fi": [("ulkona syö", "Restaurants"), ("ulkona syöm", "Restaurants"), ("syömistä ulkona", "Restaurants"), ("ravintol", "Restaurants"), ("ulkona", "Restaurants"),
@@ -590,7 +590,7 @@ W["usual-month"] = {
     "en": ("Where does my money go in a usual month?", "A usual month", "The three baskets of a usual month",
            [["where", "breakdown", "what", "split"], ["money", "spend", "spending", "income", "salary", "pay"],
             ["go", "goes", "went", "going", "usual month", "typical month", "normal month", "average month", "a month", "each month", "every month",
-             "per month", "monthly", "breakdown", "split", "spend on", "disappear"]],
+             "per month", "monthly", "breakdown", "split", "spend my money on", "spend it on", "spend it all on", "spend most on", "disappear"]],
            ["last month", "this month", "previous month", "today", "week", "year", "compare", "others", "peers", "save", "saving", "cut", "reduce",
             "biggest", "largest", "goal", "spender", "what if"] + OTHER_EN + stems(SPENT_WORDS["en"]),
            ["Where does my money go?", "Where does my money go each month?"]),
@@ -662,12 +662,12 @@ W["goal"] = {
 W["biggest"] = {
     "en": ("What was my biggest purchase last month?", "The biggest purchase", "The biggest purchases of the last full month",
            [["biggest", "largest", "most expensive", "priciest", "top", "big", "cost the most", "costed the most"], ["purchase", "buy", "bought", "spend", "spending", "expense", "payment", "transaction"]],
-           ["category", "categories", "basket", "this month", "this year", "year", "week", "today", "ever", "201", "202", "compare", "others", "save", "cut"] + OTHER_EN,
+           ["category", "categories", "basket", "this month", "this year", "year", "week", "today", "ever", "201", "202", "compare", "others", "save", "cut", "spender", "saver", "am i"] + OTHER_EN,
            ["What was my biggest purchase?", "Biggest purchase last month?"]),
     "fi": ("Mikä oli suurin ostokseni viime kuussa?", "Suurin ostos", "Viimeisimmän täyden kuukauden suurimmat ostokset",
            [["suurin", "suurimma", "isoin", "isoimma", "kallein", "kalleimma", "isompi"], ["osto", "hankin", "ostin", "meno", "maksu", "kulu", "tapahtum"]],
            ["luoka", "luokka", "kategor", "kori", "tässä kuussa", "vuonna", "vuoden", "vuodessa", "viiko", "tänään", "kaikkien aikojen", "201", "202",
-            "vert", "muihin", "säästä", "leikka"] + OTHER_FI,
+            "vert", "muihin", "säästä", "leikka", "kuluttaja", "olenko", "oonko"] + OTHER_FI,
            ["Mikä oli suurin ostokseni?", "Mikä oli mun isoin ostos viime kuussa?"]),
 }
 
