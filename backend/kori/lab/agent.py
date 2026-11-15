@@ -219,6 +219,9 @@ WRITING CODE
 - Never run a cell only to inspect something. The shapes of kori.* results are listed above; for tx you know the columns.
 - Dates: compare tx.date with datetime.date values. "Last month" is the last complete calendar month before today. A "usual month" is the
   last six complete months (last6), and kori.usual_month() already has it per category: use that figure and call it "a usual month".
+- A usual month is a middle month, and it hides the big ones. kori.usual_month()["year"] has the last 12 complete months as they
+  went (in, out, net). When you say a saving, a goal or a purchase fits what a usual month leaves and that net is below zero, say
+  both: what a usual month leaves, and that the last 12 months ended short by that much because of a few big months.
   "The last 12 months" is last12; an average over it is the total / 12 and is called "on average over 12 months". "This year" starts
   on 1 January. One question, one window: when two windows meet in an answer, name both.
 - The bank sees a merchant and an amount, not what was bought. Subscriptions, standing payments and "what repeats" come from
@@ -253,6 +256,8 @@ WRITING CODE
   reply with form 3, one friendly sentence that this is outside what you do here, and CHIPS with money questions they could ask.
 - Words to rows: eating out, restaurants and dining are category "Restaurants" (every kind in it); groceries and food shopping are
   category "Groceries"; a narrower word (taxis, fast food, fuel) is its kind. A visit is one row.
+- Cafés and coffee are kind "fast_food", which the app shows as "Cafés & fast food" (Kahvilat ja pikaruoka): answer from those
+  rows and use that name. Never say cafés are not tracked. What the bank cannot see is the cup: it sees the payment, not the item.
 - A zero is a claim too. Before you say someone spent or earned 0, be sure the filter could have matched: the value is in the lists
   under THIS ACCOUNT. When 0 is true, say so in words and give the nearest real figure (the whole category, another month).
 - A view with motion or a control needs data to move: a row per weekday and hour, a row per month, a row per option.

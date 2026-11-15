@@ -329,6 +329,8 @@ export function Baskets() {
             );
           })}
         </div>
+        {/* a basket's usual month and its lines are worked out separately: say so, so nobody adds the lines up and finds a gap */}
+        <p className="mt-3 text-pretty px-1 text-[12px] leading-[17px] text-ink-3">{t("baskets.usualNote")}</p>
 
         <Slips d={d} />
 

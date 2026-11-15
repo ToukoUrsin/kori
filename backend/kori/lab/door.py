@@ -21,6 +21,7 @@ from urllib.parse import urlparse
 
 from .. import config
 from ..ai import tools as T
+from ..engine.core import year_as_it_went
 from ..engine import trackrecord
 from ..engine.core import Money, r2
 
@@ -243,7 +244,7 @@ class Door:
     def _engine(self, _ns: str, fn: str, args: list, kwargs: dict) -> Any:
         m = self.m
         if fn == "usual_month":
-            return m.usual
+            return {**m.usual, "year": year_as_it_went(m)}      # the year as it really went, beside the middle month
         if fn == "bills":
             b = m.bills_on_the_way
             return b() if callable(b) else b

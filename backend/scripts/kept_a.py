@@ -84,8 +84,9 @@ emit("days_to_payday", s["days_to_payday"], "days", "«l_days»")
 emit("next_payday", s["next_payday"], "date", "«l_next»")
 emit("usual_per_day", s["usual_per_day"], "eur_per_day", "«l_usual»")
 emit("status_line", s["status_line"], "text", "«l_status»")
+SCOPE = "§SCOPE§"                                  # what the question asked about: this week, one day, or (no time named) until payday
 if s["amount"] > 0 and s["this_week"] > 0:        # nothing safe to spend: no kept answer, the question is worked out fresh
-    say(f"«say»")
+    say(f"«say_pay»" if SCOPE == "payday" else f"«say_day»" if SCOPE == "day" else f"«say»")
 ''', '''
 <p class="k-lede">«lede»</p>
 <div class="k-stats"><div class="k-fig"><span>{{per_day|eur}}</span><small>«s_day»</small></div><div class="k-fig"><span>{{week_days|int}}</span><small>«s_wdays»</small></div><div class="k-fig"><span>{{usual_per_day|eur}}</span><small>«s_usual»</small></div></div>
@@ -96,11 +97,15 @@ if s["amount"] > 0 and s["this_week"] > 0:        # nothing safe to spend: no ke
     "en": dict(l_week="Safe to spend this week", l_wdays="Days counted in this week", l_day="Safe a day until payday", l_safe="Safe to spend until payday",
                l_days="Days to payday", l_next="Next payday", l_usual="Your usual day", l_status="How the pace looks",
                say="This week **{eur(s['this_week'], True)}** is safe to spend: {eur(s['per_day'], True)} a day for {s['week_days']} days, the pace that lasts until {PAY} on {day(s['next_payday'])}.",
+               say_pay="**{eur(s['amount'], True)}** is safe to spend until {PAY} on {day(s['next_payday'])}: {eur(s['per_day'], True)} a day for {s['days_to_payday']} days. This week that is {eur(s['this_week'], True)}.",
+               say_day="Today **{eur(s['per_day'], True)}** is safe to spend, and the same every day until {PAY} on {day(s['next_payday'])}: {eur(s['amount'], True)} over {s['days_to_payday']} days.",
                lede="A day at a time, the same pace carries you to <b>{{pay_word|raw}}</b>.", s_day="a day", s_wdays="days this week", s_usual="your usual day",
                r_week="This week", r_until="Until", payfact="pay_word", r_until_b="", r_in="in", r_days="days"),
     "fi": dict(l_week="Turvallista käyttää tällä viikolla", l_wdays="Tämän viikon päivät", l_day="Turvallista päivässä palkkapäivään asti", l_safe="Turvallista käyttää palkkapäivään asti",
                l_days="Päiviä palkkapäivään", l_next="Seuraava palkkapäivä", l_usual="Tavallinen päiväsi", l_status="Miltä tahti näyttää",
                say="Tällä viikolla voit käyttää turvallisesti **{eur(s['this_week'], True)}**: {eur(s['per_day'], True)} päivässä {s['week_days']} päivän ajan. Samalla tahdilla rahat riittävät {PAY_TO} {day(s['next_payday'])} asti.",
+               say_pay="Voit käyttää turvallisesti **{eur(s['amount'], True)}** {PAY_TO} {day(s['next_payday'])} asti: {eur(s['per_day'], True)} päivässä {s['days_to_payday']} päivän ajan. Tällä viikolla se on {eur(s['this_week'], True)}.",
+               say_day="Tänään voit käyttää turvallisesti **{eur(s['per_day'], True)}**, ja saman verran joka päivä {PAY_TO} {day(s['next_payday'])} asti: yhteensä {eur(s['amount'], True)} {s['days_to_payday']} päivässä.",
                lede="Päivä kerrallaan sama tahti kantaa <b>{{pay_to|raw}}</b> asti.", s_day="päivässä", s_wdays="päivää tällä viikolla", s_usual="tavallinen päiväsi",
                r_week="Tällä viikolla", r_until="Yhteensä", payfact="pay_to", r_until_b="asti", r_in="", r_days="päivän päästä"),
 }, ("Safe this week", "Turvallista tällä viikolla"), ("Safe to spend, this week and until payday", "Turvallista käyttää, tällä viikolla ja palkkapäivään"))
@@ -315,6 +320,8 @@ if ok:                                            # it does not fit, or only par
     emit("has_plan", 1 if opt else 0, "count", "«l_hasplan»")
     table("parts", parts, "«l_parts»")
     text = f"«say_a»"
+    if res["from_buffer"] > 0.005:                 # every pot that pays is named, so the sentence adds up to the price
+        text += f" «say_buf»"
     text += f" «say_down»" if res["from_safe_to_spend"] > 0.005 else f" «say_stays»"
     say(text)
 ''', '''
@@ -330,7 +337,8 @@ if ok:                                            # it does not fit, or only par
                l_sa="Safe to spend after it", l_pda="Safe a day after it", l_next="Next payday", l_plan="The plan to put it back", l_hasplan="A plan to put it back",
                l_parts="Where the money comes from, in this order",
                say_a="Yes, you can cover {eur(k['amount'])} for {ITEM}: {eur(res['used'], True)} comes from your surprise reserve, set aside for this.",
-               say_down="The rest lowers safe to spend to **{eur(k['safe']['after'], True)}** until {PAY} on {day(k['next_payday'])}.",
+               say_buf="Another {eur(res['from_buffer'], True)} comes from money this {CYCLE} does not need.",
+               say_down="The last {eur(res['from_safe_to_spend'], True)} lowers safe to spend to **{eur(k['safe']['after'], True)}** until {PAY} on {day(k['next_payday'])}.",
                say_stays="Safe to spend stays at **{eur(k['safe']['after'], True)}** until {PAY} on {day(k['next_payday'])}.",
                lede="A must comes out of the money set aside for it first, and from spending money last.", r_total="In all",
                s_before="safe to spend now", s_after="after it", s_day="a day after it"),
@@ -338,7 +346,8 @@ if ok:                                            # it does not fit, or only par
                l_sa="Turvallista käyttää sen jälkeen", l_pda="Turvallista päivässä sen jälkeen", l_next="Seuraava palkkapäivä", l_plan="Suunnitelma rahan palauttamiseen", l_hasplan="Palautussuunnitelma",
                l_parts="Mistä raha tulee, tässä järjestyksessä",
                say_a="Kyllä, {eur(k['amount'])}:n {ITEM} onnistuu: {eur(res['used'], True)} tulee yllätysvarastasi, joka on juuri tätä varten.",
-               say_down="Loput pienentävät turvallista käyttövaraasi, ja sitä jää **{eur(k['safe']['after'], True)}** {PAY_TO} {day(k['next_payday'])} asti.",
+               say_buf="Lisäksi {eur(res['from_buffer'], True)} tulee rahasta, jota tämä {CYCLE} ei tarvitse.",
+               say_down="Loput {eur(res['from_safe_to_spend'], True)} pienentävät turvallista käyttövaraasi, ja sitä jää **{eur(k['safe']['after'], True)}** {PAY_TO} {day(k['next_payday'])} asti.",
                say_stays="Turvallista käyttövaraa jää edelleen **{eur(k['safe']['after'], True)}** {PAY_TO} {day(k['next_payday'])} asti.",
                lede="Pakollinen meno maksetaan ensin sitä varten pidetystä rahasta ja vasta viimeisenä käyttörahasta.", r_total="Yhteensä",
                s_before="turvallista nyt", s_after="sen jälkeen", s_day="päivässä sen jälkeen"),
@@ -455,21 +464,48 @@ ITEMS_WANT = {
             "mekko": "mekko", "huonekal": "huonekalu"}, "ostos"),
 }
 
+# "Until payday" and "a day" are the same answer as "this week": one pace, three ways to ask for it.
+UNTIL_PAY_EN = ["until pay", "till pay", "til pay", "before pay", "to payday", "until my pay", "before my pay", "until next pay", "before next pay",
+                "until my next pay", "before my next pay", "until the next pay", "until pension", "before pension", "till pension", "until my pension",
+                "until i get paid", "before i get paid", "till i get paid", "rest of the month"]
+A_DAY_EN = ["today", "right now", "a day", "per day", "each day", "every day", "daily"]
+UNTIL_PAY_FI = ["palkkapäivään", "eläkepäivään", "ennen palkka", "ennen eläke", "seuraavaan palkka", "ennen seuraavaa palkka", "palkkaan asti",
+                "eläkkeeseen asti", "loppukuu"]
+A_DAY_FI = ["tänään", "juuri nyt", "päivässä", "per päivä", "joka päivä", "päiväbudjet"]
+SCOPE = {
+    "en": {"token": "§SCOPE§", "default": "payday",
+           "choices": {"week": "week", "wk": "week", "next 7": "week", "next seven": "week"} | {k: "payday" for k in UNTIL_PAY_EN} | {k: "day" for k in A_DAY_EN}},
+    "fi": {"token": "§SCOPE§", "default": "payday",
+           "choices": {"viiko": "week", "viikk": "week", "vk": "week"} | {k: "payday" for k in UNTIL_PAY_FI} | {k: "day" for k in A_DAY_FI}},
+}
+
 M = {
     "safe-week": {
-        "en": dict(match=[["week", "wk", "next 7 days", "next seven days"], ["safe", "spend", "budget", "afford", "use", "left", "allowed", "money", "blow", "have"]],
+        "en": dict(match=[["week", "wk", "next 7 days", "next seven days"] + UNTIL_PAY_EN + A_DAY_EN + ["safe to spend"],
+                          ["safe", "spend", "budget", "afford", "use", "left", "allowed", "money", "blow", "have"]],
                    unless=["weekend", "last week", "next week", "per week", "every week", "each week", "a week on", "spent", "did i", "usually", "average",
-                           "save", "saving", "invest", "a week", "spend less", "cut", "less"] + TOPIC_EN,
+                           "save", "saving", "invest", "a week", "spend less", "cut", "less", "do i spend", "am i spending", "bill", "due", "trust",
+                           "accurate", "reliable", "rely", "held", "hold", "right before", "been right", "why", "mean", "explain", "how is", "how do you",
+                           "how does", "calculat", "balance", "on payday", "after payday", "when", "will", "comes in", "come in", "salary", "wage",
+                           "income", "earn", "yesterday", "tomorrow"] + TOPIC_EN + NOT_BOUGHT + SOMEONE_EN + [d for d in DIGITS if d != "7"],
                    say=["What is safe for me to spend this week?", "safe this week?", "how much can I spend this week", "what's my budget this week",
                         "budget for the week", "how much money do I have for this week", "what can I afford this week", "spending money this week",
-                        "how much is left for this week", "can i spend much this week", "how much am i allowed to spend this week", "weekly budget?"]),
-        "fi": dict(match=[["viiko", "viikk", "vk"], ["käyt", "varaa", "turvall", "kulut", "kuluttaa", "budjet", "rahaa", "tuhla", "törsä", "jäljellä", "jää", "saan", "voin"]],
+                        "how much is left for this week", "can i spend much this week", "how much am i allowed to spend this week", "weekly budget?",
+                        "How much can I spend until payday?", "how much is safe to spend", "what can i spend today", "how much can i spend a day",
+                        "safe to spend?", "how much can i use before payday", "whats my daily budget", "how much money is left until pension day"]),
+        "fi": dict(match=[["viiko", "viikk", "vk"] + UNTIL_PAY_FI + A_DAY_FI + ["turvallinen käyttövara", "turvallista käyttää"],
+                          ["käyt", "varaa", "turvall", "kulut", "kuluttaa", "budjet", "päiväbudjet", "rahaa", "tuhla", "törsä", "jäljellä", "jää", "saan", "voin"]],
                    unless=["viikonlop", "viime viiko", "viime viikk", "ensi viiko", "ensi viikk", "joka viikko", "viikossa", "käytin", "kulutin", "meni",
-                           "tavallisesti", "keskimäärin", "säästä", "sijoit"] + TOPIC_FI,
+                           "tavallisesti", "keskimäärin", "yleensä", "säästä", "sijoit", "kulutan", "käytän", "lasku", "erään", "maksettav", "maksu",
+                           "luot", "pitän", "pitik", "pitää paikkansa", "osu", "testat", "miksi", "miks", "tarkoit", "selitä", "miten", "lasket",
+                           "saldo", "palkkapäivänä", "eläkepäivänä", "jälkeen", "milloin", "koska", "tulee", "palkkaa saan", "tulo", "tienaa",
+                           "eilen", "huomenna"] + TOPIC_FI + NOT_BOUGHT + SOMEONE_FI + [d for d in DIGITS if d != "7"],
                    say=["Paljonko voin turvallisesti käyttää tällä viikolla?", "paljon mul on varaa käyttää tällä viikolla", "paljonko voin käyttää tällä viikolla",
                         "mikä on mun budjetti tälle viikolle", "paljonko rahaa tälle viikolle", "paljon mä voin tuhlata tällä viikolla",
                         "viikon budjetti?", "paljonko on turvallista käyttää tällä viikolla", "kuinka paljon voin kuluttaa tällä viikolla",
-                        "paljon mulla on rahaa käytettävissä tällä viikolla"]),
+                        "paljon mulla on rahaa käytettävissä tällä viikolla", "Paljonko voin käyttää palkkapäivään asti?", "paljonko voin käyttää tänään",
+                        "paljon mul on varaa käyttää ennen palkkapäivää", "paljonko on turvallista käyttää", "paljonko voin kuluttaa päivässä",
+                        "mikä on mun päiväbudjetti", "paljonko rahaa on jäljellä eläkepäivään asti"]),
     },
     "balance": {
         "en": dict(also=[Q["balance2"][0], "What is my balance?"],
@@ -594,6 +630,8 @@ if __name__ == "__main__":
             extra = {"match": m["match"], "unless": m["unless"]}
             if m.get("also"):
                 extra["also"] = m["also"]
+            if name == "safe-week":
+                extra["params"] = [SCOPE[lang]]
             if name in ("breaks", "afford"):
                 items, default = (ITEMS_BREAK if name == "breaks" else ITEMS_WANT)[lang]
                 extra["params"] = [PRICE, {"token": "§ITEM§", "choices": items, "default": default}]

@@ -117,6 +117,22 @@ def test_voice_filler_only_for_real_questions():
     assert early_filler("Kiitos paljon", "fi", 0) is None
 
 
+def test_voice_does_not_say_let_me_look_twice_when_the_question_comes_again(cx, monkeypatch):
+    """ElevenLabs asks a second time when the first answer is slow. The opening line was spoken twice."""
+    from kori.ai import agent
+    from kori.ai.tools import EARLY
+
+    async def turn(sess, text, mode, emit):
+        await emit("text", {"text": "It is 12 euros."})
+    monkeypatch.setattr(agent, "run_turn", turn)
+    ask = lambda: cx.post("/v1/chat/completions", headers={"Authorization": f"Bearer {config.VOICE_LLM_SECRET}"}, json={
+        "stream": False, "messages": [{"role": "user", "content": "How much did I spend on taxis last month?"}],
+        "elevenlabs_extra_body": {"session": "pytest-voice-twice", "customer": HERO, "lang": "en"}}).json()["choices"][0]["message"]["content"]
+    first, again = ask(), ask()
+    assert any(first.startswith(x) for x in EARLY["en"]) and first.endswith("It is 12 euros.")
+    assert again == "It is 12 euros."
+
+
 def test_chat_turn_survives_a_dropped_connection(cx, monkeypatch):
     """The phone loses the connection mid-answer, asks again with the same turn id, and gets the rest once."""
     from kori.ai import agent

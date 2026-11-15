@@ -21,7 +21,7 @@ from . import config, state as S, voice
 from .ai import agent, cards as C, tools as T
 from .data import get_customer
 from .engine import answers, insights, lessons, persona, trackrecord
-from .engine.core import Money
+from .engine.core import Money, year_as_it_went
 from .engine import loop
 from .engine.query import month_label, query, tx_row
 from .engine.whatif import what_if
@@ -305,13 +305,7 @@ def _whatif(customer: str, lang: str, ask: str, x_kori_device: str | None = None
 
 
 def _year(m: Money) -> dict | None:
-    """The last 12 complete months as they went, to set beside the usual month: a middle month hides the big ones."""
-    months = m.last_full_months(12)
-    if len(months) < 12:
-        return None
-    t = m.monthly.reindex(months).fillna(0.0)
-    came, went = float(t["income"].sum()), float(t["spend"].sum() + t["invested"].sum())
-    return {"months": 12, "in": round(came, 2), "out": round(went, 2), "net": round(came - went, 2)}
+    return year_as_it_went(m)
 
 
 @app.get("/api/plan")
@@ -770,7 +764,12 @@ async def completions(request: Request, authorization: str | None = Header(None)
 
     # Speak within a second: if this sounds like a question about money, say a short "let me look" right away,
     # while the model picks its calculation. Greetings and thanks get no filler.
-    early = T.early_filler(user_text, sess.lang, len(sess.turns))
+    # One question, one answer. If ElevenLabs calls again while we are still working (its own retry, or the user
+    # spoke over the coach), the old turn stops; a repeat of the same words does not show up twice on screen,
+    # and "let me look" is not said a second time.
+    repeat = sess.voice_last[0] == user_text and time.time() - sess.voice_last[1] < 20
+    sess.voice_last = (user_text, time.time())
+    early = None if repeat else T.early_filler(user_text, sess.lang, len(sess.turns))
     if isinstance(extra.get("filler"), str):          # test hook: try other buffer words without a deploy
         early = extra["filler"][:140] or None
 
@@ -779,7 +778,7 @@ async def completions(request: Request, authorization: str | None = Header(None)
             await q.put(("text", data["text"]))
             await sess.queue.put(("coach", {"text": data["text"]}))
         elif kind == "status":
-            if data.get("first") and not early:
+            if data.get("first") and not early and not repeat:
                 filler = T.VOICE_FILLER.get(data["tool"])
                 if filler:
                     await q.put(("text", filler[0 if sess.lang == "en" else 1]))
@@ -787,12 +786,8 @@ async def completions(request: Request, authorization: str | None = Header(None)
         else:
             await sess.queue.put((kind, data))
 
-    # One question, one answer. If ElevenLabs calls again while we are still working (its own retry, or the user
-    # spoke over the coach), the old turn stops; a repeat of the same words does not show up twice on screen.
     if sess.voice_task and not sess.voice_task.done():
         sess.voice_task.cancel()
-    repeat = sess.voice_last[0] == user_text and time.time() - sess.voice_last[1] < 20
-    sess.voice_last = (user_text, time.time())
 
     hold = float(extra.get("hold") or 0) if isinstance(extra.get("filler"), str) else 0.0   # test hook: a slow model
 

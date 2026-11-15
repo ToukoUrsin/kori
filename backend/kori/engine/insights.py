@@ -108,6 +108,15 @@ def _hero_line(m) -> str:
     L = lambda en, fi: en if lang == "en" else fi
     bal, due, res = s["balance"], s["cash"]["fixed_due"], s["cash"]["surprise_reserve"]
     until = fmt_day(date.fromisoformat(s["next_payday"]), lang)
+    if m.partial_view and s["limit"] == "budget" and s["amount"] > 0.005:
+        # the balance is here, so say why most of it is not the number: the number is this cycle's everyday money
+        b = s["budget"]
+        return L(f"This account shows {E(bal)}, but most of your salary moves to another bank. What stays here each pay cycle leaves "
+                 f"{E(b['everyday_budget'])} for everyday, and {E(b['everyday_spent'])} of it is spent. The rest of the balance I treat as "
+                 f"savings, not spending money.",
+                 f"Tällä tilillä on {E(bal)}, mutta suurin osa palkastasi siirtyy toiseen pankkiin. Tänne jäävästä palkasta jää "
+                 f"palkkajaksossa arkeen {E(b['everyday_budget'])}, ja siitä on käytetty {E(b['everyday_spent'])}. Loppua saldosta pidän "
+                 f"säästönä, en käyttörahana.")
     if m.partial_view:
         return L(f"This account shows {E(bal)}, but most of your salary moves to another bank, so I count only what stays here.",
                  f"Tällä tilillä on {E(bal)}, mutta suurin osa palkastasi siirtyy toiseen pankkiin, joten lasken vain sen, mikä jää tänne.")

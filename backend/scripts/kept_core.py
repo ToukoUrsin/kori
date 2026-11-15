@@ -314,7 +314,12 @@ table("projection", [{"monthly": a, "year": y, "put_in": round(a * y * 12, 2), "
                      for a in amounts for y in range(years + 1)], "«l_t_proj»")
 
 text = f"«say»"
-text += f" «say_fits»" if usual_left_over >= monthly_saving else f" «say_stretch»" if usual_left_over > 0 else f" «say_short»"
+year_short = round(-float((usual.get("year") or {}).get("net") or 0.0), 2)     # the last 12 months as they went: a middle month hides the big ones
+if usual_left_over >= monthly_saving and year_short > 0:
+    emit("year_short", year_short, "eur", "«l_year»")
+    text += f" «say_fits_year»"
+else:
+    text += f" «say_fits»" if usual_left_over >= monthly_saving else f" «say_stretch»" if usual_left_over > 0 else f" «say_short»"
 say(text + " «say_legal»")
 '''
 S_HTML = '''
@@ -340,6 +345,8 @@ S = {
         l_start="Where the amount picker starts", l_ymax="Top of the chart", l_t_scen="Ten years at other monthly amounts", l_t_proj="Year by year, for each amount",
         say="{eur(monthly_saving)} a month for ten years is {eur(monthly_saving * months)} put in. The middle outcome is about **{eur(u50[-1] * monthly_saving)}**: a weak decade ends near {eur(u10[-1] * monthly_saving)}, a strong one near {eur(u90[-1] * monthly_saving)}.",
         say_fits="A usual month leaves you {eur(usual_left_over)}, so it fits.",
+        say_fits_year="A usual month leaves you {eur(usual_left_over)}, so it fits a usual month. Your last 12 months still ended {eur(year_short)} short because of a few big months, so cover those first: the surprise reserve is for that.",
+        l_year="The last 12 months ended short by",
         say_stretch="A usual month leaves you {eur(usual_left_over)}, so this would be a stretch.",
         say_short="In a usual month you spend {eur(-usual_left_over)} more than comes in, so closing that gap comes first.",
         say_legal="An illustration, not investment advice.",
@@ -359,6 +366,8 @@ S = {
         l_start="Mistä summan valitsin alkaa", l_ymax="Kaavion yläreuna", l_t_scen="Kymmenen vuotta muilla kuukausisummilla", l_t_proj="Vuosi vuodelta, jokaisella summalla",
         say="{eur(monthly_saving)} kuussa kymmenen vuotta on {eur(monthly_saving * months)} sijoitettuna. Keskimmäinen lopputulos on noin **{eur(u50[-1] * monthly_saving)}**: heikko vuosikymmen päätyy noin {eur(u10[-1] * monthly_saving)}, vahva noin {eur(u90[-1] * monthly_saving)}.",
         say_fits="Tavallisesta kuukaudesta sinulle jää {eur(usual_left_over)}, joten se mahtuu.",
+        say_fits_year="Tavallisesta kuukaudesta sinulle jää {eur(usual_left_over)}, joten tavalliseen kuukauteen se mahtuu. Viimeiset 12 kuukauttasi päätyivät silti {eur(year_short)} miinukselle muutaman ison kuukauden takia, joten varaudu niihin ensin: yllätysvara on sitä varten.",
+        l_year="Viimeiset 12 kuukautta jäivät miinukselle",
         say_stretch="Tavallisesta kuukaudesta sinulle jää {eur(usual_left_over)}, joten tämä olisi tiukka.",
         say_short="Tavallisena kuukautena kulutat {eur(-usual_left_over)} enemmän kuin tulee sisään, joten se kannattaa kuroa umpeen ensin.",
         say_legal="Tämä on havainnollistus, ei sijoitusneuvo.",

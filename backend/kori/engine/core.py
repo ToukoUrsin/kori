@@ -846,3 +846,13 @@ class Money:
                             "window": self.usual["window"]},
             "months_of_history": len(self.full_months),
         }
+
+
+def year_as_it_went(m: "Money") -> dict | None:
+    """The last 12 complete months as they went, to set beside the usual month: a middle month hides the big ones."""
+    months = m.last_full_months(12)
+    if len(months) < 12:
+        return None
+    t = m.monthly.reindex(months).fillna(0.0)
+    came, went = float(t["income"].sum()), float(t["spend"].sum() + t["invested"].sum())
+    return {"months": 12, "in": round(came, 2), "out": round(went, 2), "net": round(came - went, 2)}
