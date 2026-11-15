@@ -402,6 +402,21 @@ CHIPS = {
 }
 
 # ------------------------------------------------------------------------------------------------------------ wordings
+# A purchase asked about for some other time ("in December", "next year") is not this view's question: it answers for today.
+LATER_EN = ["next year", "next month", "next summer", "next winter", "next spring", "next autumn", "next fall", "next christmas",
+            "this summer", "this winter", "this spring", "this autumn", "this fall", "in the summer", "in the winter", "in the spring",
+            "in the autumn", "in summer", "in winter", "in spring", "in autumn", "at christmas", "for christmas", "by christmas",
+            "in a year", "in two", "in three", "in six", "in a few months", "in a couple", "months from now", "later this year", "someday",
+            "in 202", "by 202"] + [f"{p} {m}" for p in ("in", "by", "until") for m in (
+                "january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december")]
+LATER_FI = ["ensi vuon", "ensi kuu", "ensi kesä", "ensi talv", "ensi kevä", "ensi syks", "ensi joulu", "tammikuu", "helmikuu", "maaliskuu",
+            "huhtikuu", "toukokuu", "kesäkuu", "heinäkuu", "elokuu", "syyskuu", "lokakuu", "marraskuu", "joulukuu", "jouluna", "jouluksi",
+            "kesällä", "talvella", "keväällä", "syksyllä", "vuoden päästä", "kuukauden päästä", "myöhemmin", "joskus"]
+# Somebody else's money is never this customer's to see.
+SOMEONE_EN = ["aino", "eetu", "mikko", "sanna", "jari", "helena", "his ", "her ", "their ", "someone", "somebody", "another", "other customer",
+              "other person", "wife", "husband", "partner", "friend", "neighbour", "neighbor", "boss", "mom", "mum", "dad", "brother", "sister"]
+SOMEONE_FI = ["ainon", "eetun", "mikon", "sannan", "jarin", "helenan", "hänen", "heidän", "jonkun", "toisen asiakk", "vaimo", "miehen",
+              "puoliso", "kaveri", "ystävä", "naapuri", "pomo", "äidin", "isän", "veljen", "siskon"]
 NOT_BOUGHT = ["bitcoin", "crypto", "stock", "share", "fund", "etf", "invest", "osake", "osakk", "rahasto", "sijoit", "krypto"]
 BREAK_EN = ["broke", "break", "died", "dead", "stopped working", "packed up", "need a new", "repair", "fix", "dentist", "vet ", "vet's", "emergency",
             "unexpected", "must pay", "have to pay", "need to pay", "surprise", "fine for", "a fine", "replace"]
@@ -455,7 +470,7 @@ M = {
                    match=[["balance", "how much money do i have", "how much money have i got", "how much is in my account", "how much is on my account",
                            "money in my account", "money on my account", "money in the bank", "money is in my account", "on my account right now"]],
                    unless=["trust", "right before", "accurate", "reliable", "held", "will", "forecast", "end of", "be on", "be at", "last month", "last year",
-                           "history", "was my", "lowest", "highest", "transfer", "other bank", "save", "saving", "invest", "week"] + DIGITS,
+                           "history", "was my", "lowest", "highest", "transfer", "other bank", "save", "saving", "invest", "week"] + SOMEONE_EN + DIGITS,
                    say=["What's my balance?", "balance?", "whats my balance", "what is my account balance", "how much money do I have",
                         "how much money is in my account", "my balance pls", "Why is my balance not my budget?", "why isn't my balance what I can spend",
                         "why is safe to spend lower than my balance", "how much is on my account right now", "current balance"]),
@@ -464,7 +479,7 @@ M = {
                            "rahaa tilillä", "rahaa tililläni", "tilillä on rahaa", "paljonko minulla on rahaa", "paljonko mulla on rahaa", "paljon mulla on rahaa",
                            "paljon mul on rahaa", "paljonko rahaa mulla on", "paljonko rahaa minulla on"]],
                    unless=["luot", "pitän", "pitik", "piti", "osu", "ensi", "ennuste", "tulee olemaan", "palkkapäivänä", "eläkepäivänä", "lopussa", "oli", "viime",
-                           "alin", "korkein", "siirr", "toise", "säästä", "sijoit", "viikolla", "viikolle"] + DIGITS,
+                           "alin", "korkein", "siirr", "toise", "säästä", "sijoit", "viikolla", "viikolle"] + SOMEONE_FI + DIGITS,
                    say=["Paljonko tililläni on rahaa?", "saldo?", "mikä on saldoni", "mikä mun saldo on", "paljon mun tilillä on", "paljonko mulla on rahaa",
                         "paljon mul on rahaa tilillä", "miksi saldoni ei ole budjettini", "miks saldo ei oo se mitä voin käyttää", "tilin saldo",
                         "paljonko rahaa minulla on"]),
@@ -537,12 +552,12 @@ M = {
                         "listaa mun tilaukset"]),
     },
     "breaks": {
-        "en": dict(match=[BREAK_EN, DIGITS], unless=NOT_BOUGHT + ["save", "saving", "a month", "per month", "what did", "did it cost", "cost me", "last year", "last month", "spent", "spend on"],
+        "en": dict(match=[BREAK_EN, DIGITS], unless=NOT_BOUGHT + LATER_EN + ["save", "saving", "a month", "per month", "what did", "did it cost", "cost me", "last year", "last month", "spent", "spend on"],
                    say=["My washing machine broke. A new one costs €600. Can I cover it?", "washing machine broke, new one 600, can i afford it",
                         "my phone broke, a new one is €400", "car repair 800 euros, can I pay it", "the dentist costs €350, can I cover it",
                         "fridge died, replacement 700€ ok?", "I have to pay a €250 vet bill", "my laptop broke and a new one costs 900",
                         "need a new washer for 550 can i cover it", "unexpected bill of €300, can I handle it"]),
-        "fi": dict(match=[BREAK_FI, DIGITS], unless=NOT_BOUGHT + ["säästä", "kuussa", "kuukaudessa", "paljonko maksoi", "paljon maksoi", "viime vuonna", "viime kuussa", "kulutin"],
+        "fi": dict(match=[BREAK_FI, DIGITS], unless=NOT_BOUGHT + LATER_FI + ["säästä", "kuussa", "kuukaudessa", "paljonko maksoi", "paljon maksoi", "viime vuonna", "viime kuussa", "kulutin"],
                    say=["Pesukoneeni hajosi. Uusi maksaa 600 €. Pystynkö maksamaan sen?", "pesukone hajos, uus maksaa 600 €, riittääkö rahat",
                         "puhelin meni rikki, uusi 400 e", "auton korjaus 800 €, pystynkö maksamaan", "hammaslääkäri maksaa 350 euroa, onnistuuko",
                         "jääkaappi hajosi, uusi maksaa 700", "eläinlääkärilasku 250 €, pakko maksaa", "läppäri hajos ja uus maksaa 900",
@@ -551,13 +566,13 @@ M = {
     "afford": {
         "en": dict(match=[["afford", "can i buy", "could i buy", "should i buy", "can i get", "ok to buy", "okay to buy", "want to buy", "treat myself",
                            "splurge", "is it ok if i buy", "buy a", "buy the", "buying"], DIGITS],
-                   unless=BREAK_EN + NOT_BOUGHT + ["save", "saving", "a month", "per month", "monthly", "every month", "goal", "rent", "afford to live", "loan", "mortgage", "house", "flat", "apartment", "on credit", "finance"],
+                   unless=BREAK_EN + NOT_BOUGHT + LATER_EN + ["save", "saving", "a month", "per month", "monthly", "every month", "goal", "rent", "afford to live", "loan", "mortgage", "house", "flat", "apartment", "on credit", "finance"],
                    say=["Can I afford a €400 phone?", "can i afford a 400 phone", "can I buy a €900 laptop", "afford 250 headphones?",
                         "is it ok to buy a 1200 sofa", "should i buy a €300 jacket", "can i get a new bike for 600", "want to buy a tv for 500, can i",
                         "can I afford a €1500 trip", "can i afford it, 80 euros", "treat myself to €150 shoes?"]),
         "fi": dict(match=[["varaa", "voinko ostaa", "voisinko ostaa", "kannattaako ostaa", "saanko ostaa", "voinko hankkia", "ostaa", "ostaisin",
                            "ostanko", "osta", "hankki"], DIGITS],
-                   unless=BREAK_FI + NOT_BOUGHT + ["säästä", "kuussa", "kuukaudessa", "joka kuu", "tavoite", "vuokra", "laina", "lainal", "asunno", "asunto", "osamaks"],
+                   unless=BREAK_FI + NOT_BOUGHT + LATER_FI + ["säästä", "kuussa", "kuukaudessa", "joka kuu", "tavoite", "vuokra", "laina", "lainal", "asunno", "asunto", "osamaks"],
                    say=["Onko minulla varaa 400 €:n puhelimeen?", "onko mulla varaa 400 euron puhelimeen", "voinko ostaa 900 € läppärin",
                         "varaa 250 € kuulokkeisiin?", "kannattaako ostaa 1200 euron sohva", "voinko ostaa takin 300 eurolla",
                         "voisinko ostaa uuden pyörän 600 €", "onko varaa 1500 € matkaan", "haluun ostaa telkkarin 500 eurolla, onko varaa",

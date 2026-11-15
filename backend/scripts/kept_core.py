@@ -379,6 +379,16 @@ Q = {
     "laptop": ("I need a new laptop. What can I afford?", "Tarvitsen uuden läppärin. Mihin minulla on varaa?", "What a laptop does to your days", "Mitä läppäri tekee päivillesi", "The engine's limits and laptops in Finnish shops now", "Moottorin rajat ja tänään myynnissä olevat läppärit"),
     "saving": ("What if I save €150 a month for ten years?", "Mitä jos säästän 150 € kuussa kymmenen vuotta?", "Ten years of saving", "Kymmenen vuotta säästämistä", "Try 4,000 possible decades", "Kokeile 4 000 mahdollista vuosikymmentä"),
 }
+# A purchase asked about for some other time ("in December", "next year") is not this view's question: it answers for today.
+LATER_EN = ["next year", "next month", "next summer", "next winter", "next spring", "next autumn", "next fall", "next christmas",
+            "this summer", "this winter", "this spring", "this autumn", "this fall", "in the summer", "in the winter", "in the spring",
+            "in the autumn", "in summer", "in winter", "in spring", "in autumn", "at christmas", "for christmas", "by christmas",
+            "in a year", "in two", "in three", "in six", "in a few months", "in a couple", "months from now", "later this year", "someday",
+            "in 202", "by 202"] + [f"{p} {m}" for p in ("in", "by", "until") for m in (
+                "january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december")]
+LATER_FI = ["ensi vuon", "ensi kuu", "ensi kesä", "ensi talv", "ensi kevä", "ensi syks", "ensi joulu", "tammikuu", "helmikuu", "maaliskuu",
+            "huhtikuu", "toukokuu", "kesäkuu", "heinäkuu", "elokuu", "syyskuu", "lokakuu", "marraskuu", "joulukuu", "jouluna", "jouluksi",
+            "kesällä", "talvella", "keväällä", "syksyllä", "vuoden päästä", "kuukauden päästä", "myöhemmin", "joskus"]
 # The same question in the customer's own words (kept.py `match`): every group needs one hit, no `unless` stem may appear.
 MEANS = {
     "groceries": {
@@ -393,9 +403,9 @@ MEANS = {
                "unless": ["vähennä", "karsi", "jos", "viime kuu", "paljon", "muihin", "muut", "ikäis", "suurin", "halvem"]}},
     "laptop": {
         "en": {"match": [["laptop", "computer", "notebook", "macbook"], ["afford", "need", "buy", "new", "budget"]],
-               "unless": ["broke", "broken", "stolen", "repair", "sell"]},
+               "unless": ["broke", "broken", "stolen", "repair", "sell"] + LATER_EN},
         "fi": {"match": [["läppär", "kannettav", "tietokone"], ["varaa", "tarvitsen", "tarvin", "ostaa", "uusi", "uuden", "budjet"]],
-               "unless": ["hajosi", "rikki", "varaste", "korjau", "myy"]}},
+               "unless": ["hajosi", "rikki", "varaste", "korjau", "myy"] + LATER_FI}},
     "saving": {
         "en": {"match": [["save", "saving", "saved", "put aside", "set aside", "invest"], ["ten years", "10 years", "decade"]],
                "unless": ["week", "a year", "per year", "a day", "goal", "trip"]},

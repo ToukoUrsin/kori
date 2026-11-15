@@ -5,7 +5,7 @@ import { NoticeRow } from "../components/cards/parts";
 import { OneThing } from "../components/loop/OneThing";
 import { ReplaySheet } from "../components/replay/ReplaySheet";
 import { ReplayStrip } from "../components/replay/ReplayStrip";
-import { BigMoney, Collapse, ErrorInline, LangToggle, LinkedNote, LinkedTag, SectionHead, Skel } from "../components/ui/bits";
+import { BigMoney, Collapse, cx, ErrorInline, LangToggle, LinkedNote, LinkedTag, SectionHead, Skel, Slow } from "../components/ui/bits";
 import { day, longDate, money, monthName, weekday } from "../lib/format";
 import { api } from "../lib/api";
 import { isEmbedMode } from "../lib/host";
@@ -38,7 +38,7 @@ function Header({ d }: { d?: Home }) {
 }
 
 function Hero({ d }: { d: Home }) {
-  const { lang, t, minuteFocus } = useApp();
+  const { lang, t, minuteFocus, home } = useApp();
   const s = d.safe;
   const empty = s.status === "empty";
   const date = day(s.next_payday, lang);
@@ -47,7 +47,8 @@ function Hero({ d }: { d: Home }) {
   return (
     <section data-focus-key="safe" data-on={minuteFocus === "safe" ? "true" : undefined} className="focus-ring -mx-2.5 rounded-card px-2.5 py-2">
       <p className="text-[14px] leading-5 text-ink-2">{s.partial_view ? t("today.safePartialLabel") : t("today.safeLabel", { word: payWord })}</p>
-      <p className="mt-0.5">
+      {/* a number that is being worked out again (the plan just changed) is dimmed until the new one is in */}
+      <p className={cx("mt-0.5 transition-opacity duration-200", home.loading && "opacity-40 delay-500")} aria-busy={home.loading || undefined}>
         <BigMoney value={s.amount} lang={lang} className="text-[56px] font-semibold leading-[62px] tracking-[-0.04em] text-ink" />
       </p>
       {linked && <LinkedTag label={linked.label} className="mb-1" />}
@@ -161,7 +162,10 @@ export function Today() {
             <ErrorInline onRetry={home.reload} />
           </div>
         ) : (
-          <Skeleton />
+          <>
+            <Slow />
+            <Skeleton />
+          </>
         )}
       </>
     );

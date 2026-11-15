@@ -4,7 +4,7 @@ import { WhatIfBody } from "../components/cards/bodies";
 import { Ledger, StatusChip, type LedgerRow } from "../components/cards/parts";
 import { TwoLine } from "../components/charts/Charts";
 import { SpokenBar } from "../components/charts/SpokenBar";
-import { Button, CatIcon, Chip, ErrorInline, LinkedNote, LinkedTag, Money, SectionHead, Skel, cx } from "../components/ui/bits";
+import { Button, CatIcon, Chip, cx, ErrorInline, LinkedNote, LinkedTag, Money, SectionHead, Skel, Slow } from "../components/ui/bits";
 import { api, ApiError, type PlanPut } from "../lib/api";
 import { humanize, money, num, pct } from "../lib/format";
 import { useApp } from "../lib/store";
@@ -535,6 +535,10 @@ function Setters({ q }: { q: Query<PlanResponse> }) {
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const pending = useRef<Partial<PlanPut>>({});
   const dirty = useRef(false);
+  const flying = useRef(false);
+  // what the newest render knows, for a save that lands after several taps
+  const now = useRef({ d, customer, lang, q, bump, showToast, t });
+  now.current = { d, customer, lang, q, bump, showToast, t };
 
   // follow the server unless a change of ours is still on its way
   useEffect(() => {
@@ -542,30 +546,48 @@ function Setters({ q }: { q: Query<PlanResponse> }) {
     setCushion(d.cushion);
     setSaving(d.savings_plan);
   }, [d.cushion, d.savings_plan]);
-  useEffect(() => () => clearTimeout(timer.current), []);
+
+  // One save at a time, in the order of the taps. Taps made while a save is on its way go out together when it
+  // lands, and only the last answer is shown, so the screen can never end one step behind the server.
+  const flush = async () => {
+    if (flying.current) return;
+    flying.current = true;
+    setBusy(true);
+    let last: PlanResponse | undefined;
+    try {
+      while (Object.keys(pending.current).length) {
+        const send = pending.current;
+        pending.current = {};
+        last = await api.putPlan({ customer: now.current.customer, lang: now.current.lang, ...send });
+      }
+      dirty.current = false;
+      if (last) {
+        now.current.q.setData(last);
+        now.current.bump();
+      }
+    } catch {
+      pending.current = {};
+      dirty.current = false;
+      setCushion(now.current.d.cushion);
+      setSaving(now.current.d.savings_plan);
+      now.current.showToast(now.current.t("plan.saveFail"));
+      now.current.bump();       // show what the server really has
+    } finally {
+      flying.current = false;
+      setBusy(false);
+    }
+  };
+  // leaving the screen within the pause after a tap still saves the tap
+  useEffect(() => () => {
+    clearTimeout(timer.current);
+    if (Object.keys(pending.current).length) void flush();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const push = (body: Partial<PlanPut>) => {
     pending.current = { ...pending.current, ...body };
     dirty.current = true;
     clearTimeout(timer.current);
-    timer.current = setTimeout(async () => {
-      const send = pending.current;
-      pending.current = {};
-      setBusy(true);
-      try {
-        const r = await api.putPlan({ customer, lang, ...send });
-        dirty.current = Object.keys(pending.current).length > 0;
-        q.setData(r);
-        bump();
-      } catch {
-        dirty.current = false;
-        setCushion(d.cushion);
-        setSaving(d.savings_plan);
-        showToast(t("plan.saveFail"));
-      } finally {
-        setBusy(false);
-      }
-    }, 350);
+    timer.current = setTimeout(() => void flush(), 350);
   };
 
   return (
@@ -636,7 +658,10 @@ export function Plan() {
             <ErrorInline onRetry={q.reload} />
           </div>
         ) : (
-          <Skeleton />
+          <>
+            <Slow />
+            <Skeleton />
+          </>
         )
       ) : (
         <div className="px-5 pb-8 pt-2">

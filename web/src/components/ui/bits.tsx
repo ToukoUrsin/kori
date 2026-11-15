@@ -134,6 +134,22 @@ export function Skel({ className }: { className?: string }) {
   return <div className={cx("skel", className)} aria-hidden />;
 }
 
+/** A wait that has gone on too long says so: the screen is still coming, nothing is broken. */
+export function Slow({ after = 6000 }: { after?: number }) {
+  const { t } = useApp();
+  const [on, setOn] = useState(false);
+  useEffect(() => {
+    const id = setTimeout(() => setOn(true), after);
+    return () => clearTimeout(id);
+  }, [after]);
+  if (!on) return null;
+  return (
+    <p role="status" className="px-5 pb-1 pt-2 text-[13px] leading-[18px] text-ink-3">
+      {t("common.slow")}
+    </p>
+  );
+}
+
 export function ErrorInline({ onRetry, message, className }: { onRetry?: () => void; message?: string; className?: string }) {
   const { t } = useApp();
   return (

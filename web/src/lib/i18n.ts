@@ -24,6 +24,7 @@ const D = {
   "common.remove": ["Remove", "Poista"],
   "common.undo": ["Undo", "Kumoa"],
   "common.reset": ["Reset", "Nollaa"],
+  "common.slow": ["Kori is slow right now. Still loading.", "Kori on juuri nyt hidas. Lataus jatkuu."],
   "common.loadError": ["This didn't load.", "Tämän lataaminen ei onnistunut."],
   "common.loadErrorHint": ["Check your connection and try again.", "Tarkista yhteys ja yritä uudelleen."],
   "common.offline": ["You're offline. The numbers on screen may be out of date.", "Olet offline-tilassa. Näytöllä olevat luvut voivat olla vanhentuneita."],

@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 import asyncio
+import functools
+import inspect
 import json
 import logging
 import time
@@ -9,6 +11,7 @@ import uuid
 from datetime import date
 
 from fastapi import FastAPI, File, Form, Header, HTTPException, Query, Request, UploadFile
+from fastapi.encoders import jsonable_encoder
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse, Response, StreamingResponse
 from pydantic import BaseModel
@@ -67,6 +70,45 @@ def _persona(m: Money) -> dict:
                          ("palkkapäivä" if lang == "fi" else "payday"))}
 
 
+_FIRST: dict[tuple, tuple[float, bytes]] = {}     # a screen as a customer who has changed nothing sees it
+_FIRST_TTL = 600.0
+
+
+def first_view(keep=None):
+    """A read-only screen for a device that has changed nothing (no plan, pins, lessons, consent) is the same for
+    everyone, so it is worked out once per customer and language and served as bytes. Many people opening the
+    link at the same moment then cost one calculation, not one each. Any saved change turns this off for that device."""
+    def wrap(fn):
+        sig = inspect.signature(fn)
+
+        @functools.wraps(fn)
+        def inner(*a, **kw):
+            try:
+                bound = sig.bind(*a, **kw)
+                bound.apply_defaults()
+                args = dict(bound.arguments)
+                device = args.pop("x_kori_device", None)
+                st = S.load((device if isinstance(device, str) and device else "anon")[:64], args["customer"])
+                blank = S._blank()
+                same = set(st) <= set(blank) and all(st.get(k) == v for k, v in blank.items() if k != "created")
+            except Exception:   # noqa: BLE001 - when in doubt, work it out for this device
+                same = False
+            if not same:
+                return fn(*a, **kw)
+            key = (fn.__name__, *sorted((k, str(v)) for k, v in args.items()))
+            hit = _FIRST.get(key)
+            if hit and time.time() - hit[0] < _FIRST_TTL:
+                return Response(content=hit[1], media_type="application/json")
+            out = fn(*a, **kw)
+            if keep is None or keep(out):
+                if len(_FIRST) > 2000:
+                    _FIRST.clear()
+                _FIRST[key] = (time.time(), JSONResponse(content=jsonable_encoder(out)).body)
+            return out
+        return inner
+    return wrap
+
+
 @app.exception_handler(ValueError)
 async def _bad(_, e: ValueError):
     return JSONResponse({"detail": str(e)}, status_code=400)
@@ -79,13 +121,21 @@ def health():
             "voice_agent": bool(config.ELEVENLABS_AGENT_ID)}
 
 
+_PERSONAS: dict[str, tuple[float, list]] = {}      # the demo customers are the same for every visitor: worked out once
+
+
 @app.get("/api/personas")
 def personas(lang: str = "en"):
+    lang = _lang(lang)
+    hit = _PERSONAS.get(lang)
+    if hit and time.time() - hit[0] < _FIRST_TTL:
+        return hit[1]
     out = []
     for p in S.PERSONAS:
-        m = Money(p["id"], prefs=S.Prefs(lang=_lang(lang)))
+        m = Money(p["id"], prefs=S.Prefs(lang=lang))
         out.append({**_persona(m), "safe": m.safe["amount"], "status": m.safe["status"],
                     "lessons_total": len(lessons.build(m))})
+    _PERSONAS[lang] = (time.time(), out)
     return out
 
 
@@ -131,6 +181,7 @@ def _goal(m: Money) -> dict | None:
 
 
 @app.get("/api/home")
+@first_view(lambda out: bool(out.get("replay")))
 def home(customer: str, lang: str = "en", x_kori_device: str | None = Header(None)):
     m, st, _ = _money(customer, lang, x_kori_device)
     L = lambda en, fi: en if m.prefs.lang == "en" else fi
@@ -157,6 +208,7 @@ def home(customer: str, lang: str = "en", x_kori_device: str | None = Header(Non
 
 
 @app.get("/api/replay")
+@first_view()
 def replay(customer: str, lang: str = "en", x_kori_device: str | None = Header(None)):
     """Would the number have held? Every past month replayed from what was visible on that day."""
     m, _, _ = _money(customer, lang, x_kori_device)
@@ -194,6 +246,7 @@ def card(req: CardReq, x_kori_device: str | None = Header(None)):
 
 
 @app.get("/api/baskets")
+@first_view()
 def baskets(customer: str, lang: str = "en", month: str | None = None, x_kori_device: str | None = Header(None)):
     m, _, _ = _money(customer, lang, x_kori_device)
     keys = (m.full_months + [m.this_month])[-13:]
@@ -240,6 +293,7 @@ def whatif(req: WhatIfReq, x_kori_device: str | None = Header(None)):
 
 
 @app.get("/api/plan")
+@first_view()
 def plan(customer: str, lang: str = "en", x_kori_device: str | None = Header(None)):
     m, st, _ = _money(customer, lang, x_kori_device)
     cats = [{"key": c, "label": cat_label(c, m.prefs.lang), "icon": v["icon"], "basket": m._basket_of(c),
@@ -391,7 +445,7 @@ def plan_put(req: PlanReq, x_kori_device: str | None = Header(None)):
     if req.basket_overrides is not None:
         p["basket_overrides"] = {k: v for k, v in req.basket_overrides.items() if k in CATEGORIES and v in BASKETS}
     S.save(device, req.customer, st)
-    result = plan(req.customer, req.lang, x_kori_device)
+    result = plan.__wrapped__(req.customer, req.lang, x_kori_device)     # this device's own plan, never the shared first view
     after_safe = result["safe"]
     if req.cushion is not None and req.cushion > before_safe["cash"]["cushion"] and after_safe["amount"] == before_safe["amount"]:
         result["reason"] = {"en": "Safe to spend did not move because this pay cycle's income limit is already lower than the cash available.",
@@ -409,6 +463,7 @@ def plan_put(req: PlanReq, x_kori_device: str | None = Header(None)):
 
 # ------------------------------------------------------------------ lessons
 @app.get("/api/lessons")
+@first_view()
 def lessons_list(customer: str, lang: str = "en", x_kori_device: str | None = Header(None)):
     m, st, _ = _money(customer, lang, x_kori_device)
     done = st.get("lessons", {})
@@ -841,6 +896,17 @@ def _warm() -> None:
                 trackrecord.story(Money(p["id"]))
             except Exception:   # noqa: BLE001
                 log.exception("replay warm-up failed for %s", p["id"])
+        for p in S.PERSONAS:                # and the first screen once more, now with its replay, kept for everyone
+            for lang in ("en", "fi"):
+                try:
+                    home(customer=p["id"], lang=lang, x_kori_device="warm")
+                except Exception:   # noqa: BLE001
+                    log.exception("first-view warm-up failed for %s", p["id"])
+        for lang in ("en", "fi"):
+            try:
+                personas(lang)
+            except Exception:   # noqa: BLE001
+                log.exception("customer list warm-up failed")
         log.info("warm-up done in %.1fs", time.time() - t0)
 
     threading.Thread(target=run, daemon=True, name="kori-warm").start()

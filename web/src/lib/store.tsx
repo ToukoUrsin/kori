@@ -197,10 +197,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const home = useQuery<Home>(`home|${customer}|${lang}|${version}`, `${customer}|${lang}`, () => api.home(customer, lang));
   const pins = useQuery<Card[]>(`pins|${customer}|${lang}|${version}`, `${customer}|${lang}`, () => api.pins(customer, lang));
-  const personasQ = useQuery<Persona[]>(`personas|${lang}|${version}`, lang, () => api.personas(lang));
+  // the list of demo customers does not change with anything this customer does: one fetch per language
+  const personasQ = useQuery<Persona[]>(`personas|${lang}`, lang, () => api.personas(lang));
 
   useEffect(() => {
-    if (!home.data) return;
+    // only once this language's own screen is in: what the customer is looking at never waits behind a prefetch
+    if (!home.data || home.loading) return;
     const run = () => {
       const key = `lessons|${customer}|${lang}|${version}`;
       prefetch(key, customer, async () => {
@@ -213,12 +215,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const other: Lang = lang === "fi" ? "en" : "fi";
       prefetch(`home|${customer}|${other}|${version}`, customer, () => api.home(customer, other));
       prefetch(`pins|${customer}|${other}|${version}`, customer, () => api.pins(customer, other));
-      prefetch(`personas|${other}|${version}`, other, () => api.personas(other));
+      prefetch(`personas|${other}`, other, () => api.personas(other));
     };
     const ric = (window as unknown as { requestIdleCallback?: (cb: () => void) => number }).requestIdleCallback;
     const id = ric ? ric(run) : window.setTimeout(run, 250);
     return () => ric ? undefined : clearTimeout(id as number);
-  }, [home.data, customer, lang, version]);
+  }, [home.data, home.loading, customer, lang, version]);
 
   // an unknown customer in the URL or storage falls back to the demo hero instead of a dead screen
   useEffect(() => {

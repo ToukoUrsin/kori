@@ -28,7 +28,7 @@ This one needs a bank in the same group as the shop. The receipt lines are sampl
 - "I need a new laptop. What can I afford?" €287 without changing anything, €715 if she cuts back. Then laptops in Finnish shops right now, with real prices from Prisma.fi and Verkkokauppa.com.
 - "What if I save €150 a month for ten years?" She puts in €18,000 and the middle outcome is about €22,000, with a weak and a strong decade beside it. One of S-Pankki's own funds, with its real fee. An illustration, not investment advice.
 
-She can type it or say it. Twenty common questions open in about a second, however she words them: their code and screen were approved once, and the numbers are computed again on her data each time. The four Kori suggests are picked for each customer. Anything else is written fresh: the answer in about 5 seconds, its screen in about 12.
+She can type it or say it. Twenty common questions open in about a second, asked in her own words: their code and screen were approved once, and the numbers are computed again on her data each time. The four Kori suggests are picked for each customer. Anything else is written fresh: a simple question is answered in about 5 seconds with its screen in about 12, a harder one can take 30.
 
 ## It coaches and teaches
 
@@ -38,7 +38,7 @@ She can type it or say it. Twenty common questions open in about a second, howev
 ## Ready for S-mobiili
 
 - https://kori-coach.fly.dev/host shows Kori inside a stand-in bank app. The host asks for consent, opens Kori in a web view and gets the safe-to-spend number back for its own home screen.
-- The code runs inside the bank, next to the data. The model gets the question and what the calculations return.
+- The calculations are built to run inside the bank, next to the data: the model only gets the question and what the calculations return. This demo runs on our own server, on S-Pankki's synthetic customers.
 - A bank can start with no model in the loop. On /host, under More, switch off "New answers written by AI": 20 answers the bank has reviewed still open in a second, asked in the customer's own words ("my washing machine broke, 600 euros, can I cover it"), and anything else gets a plain "not on the approved list".
 - When the salary goes to another bank, Kori says what it can't see and doesn't guess.
 - It says it's an AI and gives no investment or credit advice. A fund or a loan is shown as an example, with its assumptions named.

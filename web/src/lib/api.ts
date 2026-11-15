@@ -61,19 +61,24 @@ const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
 /**
  * fetch that survives a blip. A phone in a lift or between wifi and 4G drops requests that would work a moment
  * later, so a request that never reached the API (not an answer from it) is tried again, up to three times.
+ * A request that hangs is given up on and asked once more, with twice the patience: a slow server is not helped by
+ * being asked the same thing three times over.
  * Only for requests that are safe to repeat.
  */
-async function net(input: string, init: RequestInit = {}, tries = 3, patience = 6000): Promise<Response> {
+async function net(input: string, init: RequestInit = {}, tries = 3, patience = 12000): Promise<Response> {
   for (let i = 0; ; i++) {
-    // a request that hangs is as bad as one that fails: give up on it and ask again
     const ctl = new AbortController();
     const onAbort = () => ctl.abort();
     init.signal?.addEventListener("abort", onAbort);
-    const timer = setTimeout(() => ctl.abort(), patience * (i + 1));
+    let hung = false;
+    const timer = setTimeout(() => {
+      hung = true;
+      ctl.abort();
+    }, patience * (i + 1));
     try {
       return await fetch(input, { ...init, signal: ctl.signal });
     } catch (e) {
-      if (init.signal?.aborted || i >= tries - 1) throw e;
+      if (init.signal?.aborted || i >= tries - 1 || (hung && i >= 1)) throw e;
       await sleep(250 * (i + 1));
     } finally {
       clearTimeout(timer);

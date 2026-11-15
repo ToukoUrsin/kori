@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 import { BasketBar, basketShort } from "../components/cards/bodies";
 import { Cell, Cells, TxList } from "../components/cards/parts";
 import { HistoryStrip } from "../components/charts/Charts";
-import { Button, CatIcon, Dot, ErrorInline, IconButton, LinkedNote, LinkedTag, Money, SectionHead, Segmented, Skel, cx, useLast } from "../components/ui/bits";
+import { Button, CatIcon, cx, Dot, ErrorInline, IconButton, LinkedNote, LinkedTag, Money, SectionHead, Segmented, Skel, Slow, useLast } from "../components/ui/bits";
 import { Sheet } from "../components/ui/Sheet";
 import { api } from "../lib/api";
 import { humanize, money, monthName } from "../lib/format";
@@ -248,7 +248,10 @@ export function Baskets() {
             <ErrorInline onRetry={q.reload} />
           </div>
         ) : (
-          <Skeleton />
+          <>
+            <Slow />
+            <Skeleton />
+          </>
         )}
       </>
     );

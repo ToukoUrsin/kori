@@ -619,15 +619,21 @@ W["spent"] = {
             ["viime kuu", "edellisessä kuu", "edellisen kuu", "edellisenä kuu", "viime kk", "mennee kuu", "menneen kuu"]],
            ["suurin", "isoin", "tässä kuussa", "tänä vuonna", "päiväs", "viiko", "mitä jos", "leikka", "vähen", "säästä", "201", "202"] + OTHER_FI, []),
 }
+# The comparison is with the customer's own age group and nothing narrower: a place, an income or a gender is another question.
+NARROWER_EN = ["helsinki", "espoo", "vantaa", "tampere", "turku", "oulu", "city", "cities", "town", "region", "area", "neighbour", "neighbor",
+               "country", "countries", "finland", "finns", "finnish", "europe", "sweden", "income", "salary", "earn", "men", "women",
+               "students", "student", "job", "profession"]
+NARROWER_FI = ["helsin", "espoo", "vantaa", "tamperee", "turu", "oulu", "kaupun", "maakun", "alue", "naapur", "suome", "suoma", "euroop",
+               "ruotsi", "tulo", "palka", "tiena", "miehi", "miest", "naisi", "naist", "opiskeli", "amma"]
 W["peers"] = {
     "en": ("How do I compare with others my age?", "You and your age group", "Your usual month against customers of your age",
            [["compare", "compared", "comparison", "versus", "vs", "against", "than", "like me", "normal", "average", "typical", "stack up"],
             ["others", "other people", "other customers", "people", "peers", "my age", "same age", "age group", "everyone", "average person", "the average"]],
-           ["save", "afford", "last month", "this month", "week", "what if", "spender", "kind of", "type of"] + OTHER_EN, ["How do I compare with others?"]),
+           ["save", "afford", "last month", "this month", "week", "what if", "spender", "kind of", "type of"] + NARROWER_EN + OTHER_EN, ["How do I compare with others?"]),
     "fi": ("Miten vertaudun muihin ikäisiini?", "Sinä ja ikäryhmäsi", "Tavallinen kuukautesi samanikäisiin asiakkaisiin verrattuna",
            [["vert", "verr", "muihin", "muita", "muiden", "keskiver", "enemmän kuin", "vähemmän kuin", "normaali", "tavallinen ihminen"],
             ["muihin", "muiden", "muut", "muita", "ikäis", "samanikäis", "ikätoveri", "ikäryhm", "keskiver", "ihmis", "asiakkai"]],
-           ["säästä", "varaa", "viime kuu", "tässä kuussa", "viiko", "mitä jos", "kuluttaja", "millainen"] + OTHER_FI, ["Miten vertaudun muihin?"]),
+           ["säästä", "varaa", "viime kuu", "tässä kuussa", "viiko", "mitä jos", "kuluttaja", "millainen"] + NARROWER_FI + OTHER_FI, ["Miten vertaudun muihin?"]),
 }
 W["save-monthly"] = {
     "en": ("How much can I safely save a month?", "Room to save", "Room to save in a usual month, and the buffer",

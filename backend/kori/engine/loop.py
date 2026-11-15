@@ -9,6 +9,7 @@ Plain code on the same transactions and the same definitions as ``Money.safe``. 
 """
 from __future__ import annotations
 
+import math
 import time
 from datetime import date, timedelta
 
@@ -111,7 +112,7 @@ def _cycle_row(m: Money, start: date, end: date, detail: bool = True) -> dict:
     other = m.other_paid(start - timedelta(days=1), end - timedelta(days=1))
     fixed = r2(d[d["basket"] == "fixed"]["spend"].sum() + sum(v for c, v in other.items() if m._basket_of(c) == "fixed"))
     surprise = r2(m.usual["surprise"] * days / DAYS_PER_MONTH)
-    saving = m.saving_in_cycle(days)     # the habit by the length of the cycle, what was set aside on top whole
+    saving = m.saving_in_past_cycle(days)     # the habit by the length of the cycle; a saving set today starts now
     available = r2(max(0.0, income - fixed - surprise - saving))
     everyday = d[d["basket"] == EVERYDAY]
     spent = r2(everyday["spend"].sum() + sum(v for c, v in other.items() if m._basket_of(c) == EVERYDAY))
@@ -437,7 +438,7 @@ def suggest(m: Money) -> dict:
         else:
             # one big purchase did it: the habits are fine. The pace is what matters now; a reserve is what stops the next one
             b = drv["biggest"]
-            reserve = _make(m, "set_aside", drv["category"], amount=max(10.0, round(b["amount"] / 120) * 10.0), ci=ci)
+            reserve = _make(m, "set_aside", drv["category"], amount=max(10.0, math.ceil(b["amount"] / 12 / 5) * 5.0), ci=ci)
             options = [pace, reserve]
             what = _what(w, b)
             question = {"text": L(f"{what[:1].upper() + what[1:]} for {E(b['amount'])} did it. Will something like it come again "

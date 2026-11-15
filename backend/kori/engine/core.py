@@ -386,6 +386,11 @@ class Money:
         habit, pledged = self.saving_parts
         return r2(habit * days / DAYS_PER_MONTH + pledged)
 
+    def saving_in_past_cycle(self, days: int) -> float:
+        """What a pay cycle that is over is judged against: the saving habit of that time. A saving set today
+        starts with the running cycle; it does not rewrite the verdict on a cycle that has ended."""
+        return r2(self.invest_typical * days / DAYS_PER_MONTH)
+
     @cached_property
     def cushion(self) -> float:
         if self.prefs.cushion is not None:

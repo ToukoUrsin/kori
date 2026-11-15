@@ -1109,4 +1109,4 @@ def starters(m: Money) -> list[dict]:
         keys = ["week", groceries, "eating", "cycle"]
     else:
         keys = ["eating", groceries, "laptop" if products_ready("web") else "laptop900", "saving"]
-    return [{"text": b if fi else a, "hint": d if fi else c} for a, b, c, d in (_Q[k] for k in keys + ["year"])]
+    return [{"text": b if fi else a, "hint": d if fi else c} for a, b, c, d in (_Q[k] for k in keys)]

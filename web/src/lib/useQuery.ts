@@ -56,8 +56,10 @@ export function useQuery<T>(key: string | null, scope: string, fn: () => Promise
         },
         (e: unknown) => {
           if (!alive) return;
-          // a dropped connection (not an answer from the API) gets one quiet second try
-          if (attempt === 0 && !(e instanceof ApiError)) {
+          // a dropped connection (not an answer from the API) gets one quiet second try; a request that hung
+          // has had its second try already
+          const hung = e instanceof Error && e.name === "AbortError";
+          if (attempt === 0 && !(e instanceof ApiError) && !hung) {
             timer = setTimeout(() => run(1), 700);
             return;
           }

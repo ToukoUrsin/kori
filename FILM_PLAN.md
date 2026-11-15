@@ -1,10 +1,12 @@
-# Kori film plan (max 1:55)
+# Kori film plan (under 2:00)
 
-For Touko to film. Everything below was run on the live site on Sun 15.11 at 00:45 (build 7753a25).
+Touko's voice take is recorded (`/bulk2/runs/junction/takes/kori-take1.mp4`), so nothing is left to film. The film is cut from that take over clean captures of the live site (build dfd1e8f, Sun 15.11 01:33): build notes in `/bulk3/runs/spankki/film2/BRIEF.md`, the cut in `/bulk3/runs/spankki/film2/out/`.
 
-**Two things before recording**
-- **The opening is a ready-made 10-second cold open**, not the phone shot: `/bulk3/runs/opens/final/kori/open.mp4` (final version lands by 03:30; `open_bridge.mp4` joins it to the real Home screen, `end.mp4` is a 2-second end card, `README.md` there says how it cuts). It takes the place of shot 0:00–0:08 below, and the spoken line of that shot plays over it. With the open and the end card the plan runs 1:59 of the 2:00 allowed, so nothing may run long: if it does, drop the 0:20–0:24 line.
-- **The voiceover wording below is the working draft.** The final lines come from the main thread.
+**Decided, so nobody has to choose while cutting**
+- **Opening**: the final 10-second cold open `/bulk3/runs/opens/final/kori/open.mp4`, without the bridge, cut from its hold straight to the phone's Home. Touko's first line plays over it. `end.mp4` (2 s) closes the film.
+- **No line of Touko's is dropped** ("Then she asks her own questions." stays). His greeting at the start and the false start at 1:42 are cut. The bridge (`open_bridge.mp4`, +1.75 s) is used only if the film still ends under 2:00 with every line in.
+- **On-screen labels**: "Voice: ElevenLabs" while Kori talks, "Gemini writes this code" on the code shot.
+- The voiceover column below is the script the take follows; where his words differ, the captions follow his words.
 
 **Changed on screen since the last plan**: the sentence under the big number now ends "and €230 more stays as savings"; the replay button reads "Tested on 18 past paydays: the number held 17 times"; the laptop view says "In Finnish shops now, real prices"; twenty questions now open in a second in any wording (not only the four suggested ones); voice works again.
 
