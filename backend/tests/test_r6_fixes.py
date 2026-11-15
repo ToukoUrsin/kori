@@ -239,3 +239,13 @@ def test_cannot_time_a_surprise_is_still_right(monkeypatch, lang, answer):
     assert not teachback.check("baskets", answer, lang)["mixed_up"]
     _offline(monkeypatch)
     assert asyncio.run(agent.grade_teachback(lang, lessons.get(Money("CUST00092"), "baskets"), answer))["passed"], answer
+
+
+def test_a_wrong_fact_with_ideas_missing_is_a_plain_not_yet(monkeypatch):
+    """A judge's answer named no basket and said surprises can't be planned for, and the heading read "Not yet, but close"."""
+    _offline(monkeypatch)
+    le = lessons.get(Money("CUST00092"), "baskets")
+    out = asyncio.run(agent.grade_teachback("en", le, "Surprise costs are random so you can't plan for them, just spend less on coffee."))
+    assert not out["passed"] and out["grade"] == "not_yet" and "plan for it" in out["missing"]
+    out = asyncio.run(agent.grade_teachback("en", le, SWAPPED["en"]))            # every idea named, one upside down: close
+    assert not out["passed"] and out["grade"] == "partly"

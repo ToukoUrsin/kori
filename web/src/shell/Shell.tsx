@@ -250,7 +250,7 @@ function PersonaSheet() {
                       <span className="block text-[13px] leading-[18px] text-ink-2">{p.blurb}</span>
                     </span>
                     <span className="flex shrink-0 flex-col items-end gap-1">
-                      {p.safe != null && <span className="num text-[14px] font-semibold leading-5 text-ink">{money(p.safe, lang)}</span>}
+                      {p.safe != null && <span className="num text-[14px] font-semibold leading-5 text-ink">{money(on && home.data ? home.data.safe.amount : p.safe, lang)}</span>}
                       {p.partial_view ? (
                         <span className="inline-flex h-5 items-center rounded-full bg-sunk px-2 text-[11px] font-semibold text-ink-2">{t("today.partialStatus")}</span>
                       ) : p.status ? (

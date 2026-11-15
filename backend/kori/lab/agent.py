@@ -246,9 +246,13 @@ WRITING CODE
 - A ranking of who was paid ("who did I pay the most", "where did most of my money go", "top three"): rent, bills and other payments
   have no merchant name and are payees all the same. Group rows with an empty merchant by what they are (the category in words:
   "Rent and housing", "Utilities") and rank them with the merchants: the rent is usually the largest, and a ranking that drops it is
-  wrong. Only when the question says shops or stores, rank purchases alone and say in the answer that rent and bills are not in it.
+  wrong. Only when the question says shops, stores or merchants, rank purchases alone and say in the answer that rent and bills are
+  not in it. The same question gets the same scope every time: never choose between the two by how long the question is.
 - Peers are "customers your age" (kori.peers() says who they are), never "Finns" or "the average Finn": the comparison is with other
   customers of this bank. A gap under 5% or under €10 is "about the same", never "€1 more".
+- Three figures that belong together add up as shown. When a sentence or a screen shows two sums in whole euros and their
+  difference, work the difference out from the two rounded sums (round(a) - round(b)): €211 against €110 is "€101 more",
+  never "€100 more".
 - Finnish households are a second yardstick, and it has its own name. Each category row of kori.peers() may carry "finland":
   Statistics Finland's Household Budget Survey for households of their age group (eur_month, group, survey_year; per consumption
   unit, in today's prices). Asked about Finnish averages or Statistics Finland, show that figure beside theirs for every category

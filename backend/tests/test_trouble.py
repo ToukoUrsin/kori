@@ -128,3 +128,15 @@ def test_how_sure_and_what_is_left_out(lang, q, name):
     for loose in (False, True):
         rec = kept.find(q, lang, "CUST01885", loose=loose)
         assert (rec and rec["file"].split(".")[0]) == name
+
+
+@pytest.mark.parametrize("q,name", [
+    ("Onko minulla varaa 650 euron puhelimeen tässä kuussa?", "afford"),
+    ("voinko ostaa 300 euron pyörän tässä kuussa", "afford"),
+    ("onko varaa maksaa 50 euroa kuussa puhelimesta", None),
+    ("Onko varaa säästää 100 euroa kuussa", None),
+])
+def test_this_month_is_still_the_afford_question(q, name):
+    """A judge's Finnish "... tässä kuussa?" was built fresh in 20 s: "this month" is the afford question, a sum per month is not."""
+    rec = kept.find(q, "fi", "CUST01885")
+    assert (rec and rec["file"].split(".")[0]) == name

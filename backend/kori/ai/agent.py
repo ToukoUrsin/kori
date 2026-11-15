@@ -430,7 +430,8 @@ async def grade_teachback(lang: str, lesson: dict, answer: str) -> dict:
         # model names a plain mistake of fact in "wrong", and the word check knows the commonest swaps.
         wrong = str((model or {}).get("wrong") or "").strip() or det.get("mixed_up", "")
         passed = not det["misconception"] and not wrong and (det["grade"] == "got_it" or (model_passed and det["grade"] == "partly"))
-        grade = "got_it" if passed else "partly" if wrong and det["grade"] == "got_it" else det["grade"]
+        # a mistake of fact is "close" only when every idea is there beside it; with ideas missing too it is a plain "not yet"
+        grade = "got_it" if passed else "partly" if wrong and det["grade"] == "got_it" else "not_yet" if wrong else det["grade"]
         missing = "" if passed else wrong or det["missing"]
     got = (model or {}).get("got", "") if not (det and not passed and det.get("grade") == "got_it") else ""
     encouragement = (model or {}).get("encouragement", "") if passed and model_passed else ""
