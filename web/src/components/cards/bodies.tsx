@@ -184,7 +184,8 @@ export function vsUsualShort(p: number | null | undefined, t: ReturnType<typeof 
  * whole month is €2,138.") and, while the month runs, the month so far against the usual for the same days, never against a whole month.
  */
 export function basketWords(b: Basket, isCurrent: boolean, t: ReturnType<typeof useApp>["t"], lang: "en" | "fi"): string {
-  const p = isCurrent ? b.vs_usual_so_far_pct : b.vs_usual_pct;
+  // bills land on their own days (rent on the 1st), so a month that is still running is not compared day for day
+  const p = isCurrent ? (b.key === "fixed" ? null : b.vs_usual_so_far_pct) : b.vs_usual_pct;
   const kind = isCurrent ? "soFar" : "month";
   const compare = p == null ? "" : Math.abs(p) < 1 ? t(`baskets.${kind}Same`) : t(p > 0 ? `baskets.${kind}Up` : `baskets.${kind}Down`, { p: pct(Math.abs(p), lang) });
   if (!b.line) return compare || t("common.usual", { v: money(b.usual, lang) });
@@ -193,7 +194,7 @@ export function basketWords(b: Basket, isCurrent: boolean, t: ReturnType<typeof 
 
 /** The same on the Baskets tab, where the month and the sum are already on screen: one line, the usual and the gap. */
 export function basketShort(b: Basket, isCurrent: boolean, t: ReturnType<typeof useApp>["t"], lang: "en" | "fi"): string {
-  const p = isCurrent ? b.vs_usual_so_far_pct : b.vs_usual_pct;
+  const p = isCurrent ? (b.key === "fixed" ? null : b.vs_usual_so_far_pct) : b.vs_usual_pct;
   const kind = isCurrent ? "soFar" : "month";
   const usual = t(isCurrent ? "baskets.usualWhole" : "baskets.usualMonth", { v: money(b.usual, lang) });
   const head = usual.charAt(0).toUpperCase() + usual.slice(1);

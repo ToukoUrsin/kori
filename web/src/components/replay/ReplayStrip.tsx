@@ -58,7 +58,7 @@ export function ReplayCells({
             ) : (
               <div aria-hidden>{button}</div>
             )}
-            {large && (index % 4 === 0 || selected === cell.month) && <p className="num mt-1 truncate text-center text-[11px] leading-[14px] text-ink-3">{monthShort(cell.month, lang)}</p>}
+            {large && (index % 4 === 0 || selected === cell.month) && <p className="num mt-1 flex justify-center whitespace-nowrap text-[11px] leading-[14px] text-ink-3">{monthShort(cell.month, lang)}</p>}
           </li>
         );
       })}

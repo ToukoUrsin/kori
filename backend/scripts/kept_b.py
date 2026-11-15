@@ -639,12 +639,14 @@ W["save-monthly"] = {
     "en": ("How much can I safely save a month?", "Room to save", "Room to save in a usual month, and the buffer",
            [["save", "saving", "put aside", "set aside", "put away", "savings"], ["a month", "per month", "each month", "every month", "monthly", "month"],
             ["how much", "what amount", "can i", "safe", "safely", "should i", "could i", "able to"]],
-           ["year", "ten", "goal", "trip", "for a", "how long", "what if", "invest", "fund", "last month", "this month", "cut", "reduce", "on "] + OTHER_EN,
+           ["year", "ten", "goal", "trip", "for a", "how long", "what if", "invest", "fund", "last month", "this month", "cut", "reduce", "on ",
+            "half", "halv", "coffee", "cafe", "café", "if i"] + stems(SPENT_WORDS["en"]) + OTHER_EN,
            ["How much can I safely save each month?", "How much can I save a month?"]),
     "fi": ("Paljonko voin turvallisesti säästää kuussa?", "Säästövara", "Säästövara tavallisena kuukautena ja puskuri",
            [["säästä", "säästö", "sivuun", "säästää", "säästäis"], ["kuussa", "kuukaudessa", "kuukausittain", "kuukausi", "kk"],
             ["paljonko", "kuinka paljon", "paljon", "voin", "pystyn", "turvallis", "riittää", "kannattaa", "voisin"]],
-           ["vuotta", "vuodessa", "tavoite", "matka", "kauanko", "kauan", "sijoit", "rahasto", "mitä jos", "viime kuu", "leikka", "vähen"] + OTHER_FI,
+           ["vuotta", "vuodessa", "tavoite", "matka", "kauanko", "kauan", "sijoit", "rahasto", "mitä jos", "viime kuu", "leikka", "vähen",
+            "puolit", "kahvi", "jos"] + stems(SPENT_WORDS["fi"]) + OTHER_FI,
            ["Paljonko voin säästää kuussa?", "Paljonko mä voin säästää kuussa?"]),
 }
 W["goal"] = {

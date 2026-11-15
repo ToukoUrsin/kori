@@ -412,6 +412,12 @@ LATER_EN = ["next year", "next month", "next summer", "next winter", "next sprin
 LATER_FI = ["ensi vuon", "ensi kuu", "ensi kesä", "ensi talv", "ensi kevä", "ensi syks", "ensi joulu", "tammikuu", "helmikuu", "maaliskuu",
             "huhtikuu", "toukokuu", "kesäkuu", "heinäkuu", "elokuu", "syyskuu", "lokakuu", "marraskuu", "joulukuu", "jouluna", "jouluksi",
             "kesällä", "talvella", "keväällä", "syksyllä", "vuoden päästä", "kuukauden päästä", "myöhemmin", "joskus"]
+# A question about one kind of spending ("on groceries this week") is not the general question: it is built fresh.
+TOPIC_EN = ["spend on", "spending on", "grocer", "food", "eating out", "eat out", "restaurant", "dining", "takeaway", "coffee", "cafe", "café",
+            "taxi", "uber", "cloth", "fuel", "petrol", "transport", "bars", "beer", "drinks", "shopping", "travel", "trip", "rent", "entertainment",
+            "health", "pharmac", "subscription", "streaming"]
+TOPIC_FI = ["ruoka", "ruoa", "ruoki", "ravintol", "ulkona syö", "syömi", "noutoruo", "kahvi", "taksi", "vaatte", "vaatt", "bensa", "polttoain",
+            "liikente", "baari", "olu", "juomi", "ostoksi", "matkoi", "matkusta", "vuokra", "viihte", "tervey", "apteek", "tilauks", "suoratoisto"]
 # Somebody else's money is never this customer's to see.
 SOMEONE_EN = ["aino", "eetu", "mikko", "sanna", "jari", "helena", "his ", "her ", "their ", "someone", "somebody", "another", "other customer",
               "other person", "wife", "husband", "partner", "friend", "neighbour", "neighbor", "boss", "mom", "mum", "dad", "brother", "sister"]
@@ -453,13 +459,13 @@ M = {
     "safe-week": {
         "en": dict(match=[["week", "wk", "next 7 days", "next seven days"], ["safe", "spend", "budget", "afford", "use", "left", "allowed", "money", "blow", "have"]],
                    unless=["weekend", "last week", "next week", "per week", "every week", "each week", "a week on", "spent", "did i", "usually", "average",
-                           "save", "saving", "invest", "a week", "spend less", "cut", "less"],
+                           "save", "saving", "invest", "a week", "spend less", "cut", "less"] + TOPIC_EN,
                    say=["What is safe for me to spend this week?", "safe this week?", "how much can I spend this week", "what's my budget this week",
                         "budget for the week", "how much money do I have for this week", "what can I afford this week", "spending money this week",
                         "how much is left for this week", "can i spend much this week", "how much am i allowed to spend this week", "weekly budget?"]),
         "fi": dict(match=[["viiko", "viikk", "vk"], ["käyt", "varaa", "turvall", "kulut", "kuluttaa", "budjet", "rahaa", "tuhla", "törsä", "jäljellä", "jää", "saan", "voin"]],
                    unless=["viikonlop", "viime viiko", "viime viikk", "ensi viiko", "ensi viikk", "joka viikko", "viikossa", "käytin", "kulutin", "meni",
-                           "tavallisesti", "keskimäärin", "säästä", "sijoit"],
+                           "tavallisesti", "keskimäärin", "säästä", "sijoit"] + TOPIC_FI,
                    say=["Paljonko voin turvallisesti käyttää tällä viikolla?", "paljon mul on varaa käyttää tällä viikolla", "paljonko voin käyttää tällä viikolla",
                         "mikä on mun budjetti tälle viikolle", "paljonko rahaa tälle viikolle", "paljon mä voin tuhlata tällä viikolla",
                         "viikon budjetti?", "paljonko on turvallista käyttää tällä viikolla", "kuinka paljon voin kuluttaa tällä viikolla",

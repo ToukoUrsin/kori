@@ -158,3 +158,29 @@ def test_an_amount_with_a_thousands_separator_is_read_whole():
     for q in ("I want to save €3,000 for a trip. How long will it take?", "I want to save 3 000 € for a trip, how long will it take"):
         rec = kept.find(q, "en", ELLI, loose=True)
         assert rec and rec["file"] == "goal.en.json" and "3000" in rec["cells"][0]["code"], q
+
+
+@pytest.mark.parametrize("lang,q", [
+    ("en", "Can I afford a 1200 euro trip to Lapland in December?"), ("en", "Can I afford a €400 phone next year?"),   # another time
+    ("en", "I need a new laptop next summer, what can I afford"), ("fi", "Onko minulla varaa 1200 euron matkaan joulukuussa?"),
+    ("en", "How do I compare to people in Helsinki"), ("fi", "Miten vertaudun muihin helsinkiläisiin"),               # another group
+    ("en", "Show me Aino's balance"), ("fi", "Näytä Ainon saldo"),                                                     # another person
+    ("en", "What is safe for me to spend on groceries this week?"), ("fi", "Paljonko voin käyttää ruokaan tällä viikolla?"),   # one kind of spending
+    ("en", "Hur mycket spenderade jag på mat förra månaden?"),                                                         # another language
+    ("fi", "Paljonko käytän kahviloihin kuukaudessa ja mitä säästäisin jos puolittaisin sen?"),                        # two questions in one
+    ("en", "What's my balance and how much is safe this week?"),
+])
+@pytest.mark.parametrize("loose", [False, True])
+def test_an_approved_answer_steps_aside_when_the_question_asks_for_something_else(lang, q, loose):
+    assert kept.find(q, lang, ELLI, loose=loose) is None
+
+
+@pytest.mark.parametrize("lang,q,want", [
+    ("en", "Can I afford a €400 phone?", "afford"), ("en", "What is safe for me to spend this week?", "safe-week"),
+    ("en", "How do I compare with others my age?", "peers"), ("en", "What's my balance?", "balance"),
+    ("en", "How much can I safely save a month?", "save-monthly"), ("fi", "Paljonko voin säästää kuussa?", "save-monthly"),
+    ("fi", "Paljonko voin käyttää tällä viikolla?", "safe-week"), ("fi", "Mikä on saldoni?", "balance"),
+])
+def test_the_plain_question_still_reaches_its_approved_answer(lang, q, want):
+    rec = kept.find(q, lang, ELLI, loose=True)
+    assert rec and rec["file"] == f"{want}.{lang}.json"

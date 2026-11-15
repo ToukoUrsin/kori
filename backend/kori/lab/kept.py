@@ -48,6 +48,14 @@ def _hit(term: str, q: str, words: list[str]) -> bool:
     return (" " + term) in (" " + q) if " " in term else any(w.startswith(term) for w in words)
 
 
+# Words no English or Finnish question has. A question in another language is never one of the approved ones.
+_ELSEWHERE = {"jag", "hur", "mycket", "och", "är", "inte", "vad", "förra", "månad", "månaden", "pengar", "mina", "mitt", "ska",
+              "wie", "viel", "ich", "habe", "und", "nicht", "mein", "meine", "combien", "cuánto", "cuanto", "dinero"}
+# Two questions in one ("... and what would I save if I halved it?") is not the approved question either.
+_AND = ("and what", "and how", "and if", "and can", "and would", "and should", "and where", "and when", "and why",
+        "ja mitä", "ja paljonko", "ja paljon", "ja miten", "ja jos", "ja voinko", "ja kuinka", "ja missä", "ja milloin", "ja miksi")
+
+
 def _means(rec: dict, q: str, loose: bool) -> bool:
     """The same question in other words. `match` is a list of groups of stems: every group needs one hit, and no
     `unless` stem may appear. No model reads the question, so the bank's approved-only mode can use it too.
@@ -56,6 +64,8 @@ def _means(rec: dict, q: str, loose: bool) -> bool:
     if not groups:
         return False
     words = q.split()
+    if _ELSEWHERE & {w.strip("?!.,") for w in words} or any((" " + t + " ") in (" " + q + " ") for t in _AND):
+        return False
     if not loose and (len(words) > 14 or (re.search(r"\d", q) and not (rec.get("param") or rec.get("params")))):
         return False
     if any(_hit(t, q, words) for t in rec.get("unless") or []):
