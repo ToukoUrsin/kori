@@ -15,6 +15,9 @@ type Strings = {
   thinking: string;
   thinkingShort: string;
   drawing: string;
+  reading: string;
+  looking: (rows: number) => string;
+  waitNote: (seconds: number) => string;
   approved: string;
   queued: string;
   ask: string;
@@ -63,6 +66,9 @@ export const strings: Record<LabLang, Strings> = {
     thinking: "Kori is working…",
     thinkingShort: "Thinking",
     drawing: "Building the screen for this answer",
+    reading: "Reading your question and your payments",
+    looking: (rows) => `Going through your ${rows.toLocaleString("en-GB")} payments`,
+    waitNote: (s) => `A new answer takes about half a minute · ${s} s`,
     queued: "Asked when this answer is done",
     approved: "Approved answers only. Kori writes no new answers in this mode.",
     ask: "Ask anything",
@@ -115,6 +121,9 @@ export const strings: Record<LabLang, Strings> = {
     thinking: "Kori työskentelee…",
     thinkingShort: "Mietin",
     drawing: "Rakennan näkymää tälle vastaukselle",
+    reading: "Luen kysymystäsi ja maksujasi",
+    looking: (rows) => `Käyn läpi ${rows.toLocaleString("fi-FI")} maksuasi`,
+    waitNote: (s) => `Uusi vastaus vie noin puoli minuuttia · ${s} s`,
     queued: "Kysyn tämän, kun vastaus on valmis",
     approved: "Vain hyväksytyt vastaukset. Kori ei kirjoita tässä tilassa uusia vastauksia.",
     ask: "Kysy mitä vain",

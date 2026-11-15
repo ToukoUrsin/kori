@@ -17,11 +17,15 @@ const PAUSE_RIGHT = 2600;
 const PAUSE_MISS = 4200;
 
 /** The sorting exercise: one payment at a time, three baskets, then the result from the API. */
-export function useSort(items: LessonSortItem[] | undefined) {
+/** Where a sort was left, so a lesson that was closed opens on the same payment. */
+export type SortPlace = { index: number; picks: Record<number, BasketKey>; result: LessonSortResult | null };
+
+export function useSort(items: LessonSortItem[] | undefined, from?: SortPlace) {
   const { customer, lang, t, bump, showToast } = useApp();
-  const [index, setIndex] = useState(0);
-  const [picks, setPicks] = useState<Record<number, BasketKey>>({});
-  const [result, setResult] = useState<LessonSortResult | null>(null);
+  // a payment already answered moves on by itself; one left open waits for its answer
+  const [index, setIndex] = useState(from?.index ?? 0);
+  const [picks, setPicks] = useState<Record<number, BasketKey>>(from?.picks ?? {});
+  const [result, setResult] = useState<LessonSortResult | null>(from?.result ?? null);
   const [failed, setFailed] = useState(false);
   const [moved, setMoved] = useState<Record<number, boolean>>({});
   const timer = useRef<number | undefined>(undefined);

@@ -352,18 +352,21 @@ export function Collapse({ open, children }: { open: boolean; children: ReactNod
 }
 
 export function LangToggle({ className }: { className?: string }) {
-  const { lang, setLang, t } = useApp();
+  const { lang, langNext, setLang, t } = useApp();
+  // the tapped language lights at once; the screen follows when its words are in
+  const on = langNext ?? lang;
   return (
-    <div role="group" aria-label={t("common.language")} className={cx("inline-flex h-9 items-center rounded-full bg-sunk p-0.5", className)}>
+    <div role="group" aria-label={t("common.language")} aria-busy={!!langNext || undefined} className={cx("inline-flex h-9 items-center rounded-full bg-sunk p-0.5", className)}>
       {(["en", "fi"] as const).map((l) => (
         <button
           key={l}
           type="button"
-          aria-pressed={lang === l}
+          aria-pressed={on === l}
           onClick={() => setLang(l)}
           className={cx(
             "relative h-8 min-w-11 rounded-full px-2.5 text-[12px] font-semibold uppercase tracking-[0.04em] transition-colors duration-150 after:absolute after:-inset-y-1.5 after:inset-x-0",
-            lang === l ? "bg-surface text-ink shadow-[0_1px_2px_oklch(0.22_0.02_160/0.14)]" : "text-ink-3 hover:text-ink",
+            on === l ? "bg-surface text-ink shadow-[0_1px_2px_oklch(0.22_0.02_160/0.14)]" : "text-ink-3 hover:text-ink",
+            langNext === l && "animate-pulse",
           )}
         >
           {l}

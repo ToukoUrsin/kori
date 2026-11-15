@@ -1,0 +1,463 @@
+{
+ "caps": {
+  "voice": {
+   "video": "cap/voice.mp4",
+   "from": "t-voice-2",
+   "w": 390,
+   "h": 844,
+   "px": [
+    1170,
+    2532
+   ],
+   "seconds": 32.22,
+   "events": [
+    {
+     "at": 0,
+     "kind": "start"
+    },
+    {
+     "at": 0.719,
+     "kind": "tap",
+     "label": "customers",
+     "box": {
+      "x": 16,
+      "y": 8,
+      "width": 99.33333587646484,
+      "height": 44
+     }
+    },
+    {
+     "at": 1.532,
+     "kind": "tap",
+     "label": "reset",
+     "box": {
+      "x": 8,
+      "y": 790,
+      "width": 340.66668701171875,
+      "height": 36
+     }
+    },
+    {
+     "at": 4.597,
+     "kind": "home"
+    },
+    {
+     "at": 8.133,
+     "kind": "tap",
+     "label": "talk",
+     "box": {
+      "x": 327,
+      "y": 734,
+      "width": 44,
+      "height": 44
+     }
+    },
+    {
+     "at": 30.501,
+     "kind": "coach finished"
+    },
+    {
+     "at": 32.22,
+     "kind": "end"
+    }
+   ],
+   "voice": {
+    "file": "cap/voice-voice.wav",
+    "start": 11.421,
+    "lufs": -18.6
+   }
+  },
+  "chat": {
+   "video": "cap/chat.mp4",
+   "from": "t-chat-5",
+   "w": 390,
+   "h": 844,
+   "px": [
+    1170,
+    2532
+   ],
+   "seconds": 85.676,
+   "events": [
+    {
+     "at": 0,
+     "kind": "start"
+    },
+    {
+     "at": 0.033,
+     "kind": "home"
+    },
+    {
+     "at": 1.52,
+     "kind": "tap",
+     "label": "ask",
+     "box": {
+      "x": 37,
+      "y": 412.66668701171875,
+      "width": 286,
+      "height": 20
+     }
+    },
+    {
+     "at": 4.816,
+     "kind": "tap",
+     "label": "groceries",
+     "box": {
+      "x": 16,
+      "y": 609.25,
+      "width": 358,
+      "height": 46.25
+     }
+    },
+    {
+     "at": 5.689,
+     "kind": "view",
+     "label": "groceries"
+    },
+    {
+     "at": 9.337,
+     "kind": "scroll",
+     "label": "rows"
+    },
+    {
+     "at": 19.356,
+     "kind": "tap",
+     "label": "coffee off",
+     "box": {
+      "x": 324,
+      "y": 357.890625,
+      "width": 46,
+      "height": 28
+     }
+    },
+    {
+     "at": 21.715,
+     "kind": "scroll",
+     "label": "lever"
+    },
+    {
+     "at": 24.501,
+     "kind": "tap",
+     "label": "eating out",
+     "box": {
+      "x": 37,
+      "y": 596.7239990234375,
+      "width": 290,
+      "height": 20
+     }
+    },
+    {
+     "at": 25.343,
+     "kind": "view",
+     "label": "eating out"
+    },
+    {
+     "at": 27.995,
+     "kind": "scroll",
+     "label": "what would change it"
+    },
+    {
+     "at": 33.267,
+     "kind": "tap",
+     "label": "save the difference",
+     "box": {
+      "x": 20,
+      "y": 627.78125,
+      "width": 154,
+      "height": 36
+     }
+    },
+    {
+     "at": 34.114,
+     "kind": "view",
+     "label": "ten years"
+    },
+    {
+     "at": 38.607,
+     "kind": "scroll",
+     "label": "fund"
+    },
+    {
+     "at": 42.614,
+     "kind": "tap",
+     "label": "new chat",
+     "box": {
+      "x": 338,
+      "y": 4,
+      "width": 44,
+      "height": 44
+     }
+    },
+    {
+     "at": 43.351,
+     "kind": "tap",
+     "label": "laptop",
+     "box": {
+      "x": 16,
+      "y": 663.5,
+      "width": 358,
+      "height": 46.25
+     }
+    },
+    {
+     "at": 44.172,
+     "kind": "view",
+     "label": "laptop"
+    },
+    {
+     "at": 49.796,
+     "kind": "tap",
+     "label": "price picker",
+     "box": {
+      "x": 84.4,
+      "y": 386.52606201171875,
+      "width": 28,
+      "height": 28
+     }
+    },
+    {
+     "at": 51.449,
+     "kind": "picker",
+     "label": "stop 3: €715 laptop price €26.75 a day after €44.55 your usual day €200 €1,356 Tighter d"
+    },
+    {
+     "at": 53.932,
+     "kind": "scroll",
+     "label": "shops"
+    },
+    {
+     "at": 57.663,
+     "kind": "tap",
+     "label": "field",
+     "box": {
+      "x": 30,
+      "y": 788,
+      "width": 296,
+      "height": 36
+     }
+    },
+    {
+     "at": 57.695,
+     "kind": "type"
+    },
+    {
+     "at": 59.814,
+     "kind": "send"
+    },
+    {
+     "at": 65.174,
+     "kind": "words"
+    },
+    {
+     "at": 65.975,
+     "kind": "view",
+     "label": "oat drink"
+    },
+    {
+     "at": 69.788,
+     "kind": "done"
+    },
+    {
+     "at": 75.961,
+     "kind": "scroll",
+     "label": "oat down"
+    },
+    {
+     "at": 85.676,
+     "kind": "end"
+    }
+   ]
+  },
+  "lab": {
+   "video": "cap/lab.mp4",
+   "from": "t-lab-3",
+   "w": 1040,
+   "h": 624,
+   "px": [
+    3120,
+    1872
+   ],
+   "seconds": 26.734,
+   "events": [
+    {
+     "at": 0,
+     "kind": "start"
+    },
+    {
+     "at": 1.54,
+     "kind": "page"
+    },
+    {
+     "at": 1.693,
+     "kind": "tap",
+     "label": "groceries",
+     "box": {
+      "x": 79,
+      "y": 254.14584350585938,
+      "width": 304,
+      "height": 54
+     }
+    },
+    {
+     "at": 5.058,
+     "kind": "code"
+    },
+    {
+     "at": 6.868,
+     "kind": "words"
+    },
+    {
+     "at": 8.677,
+     "kind": "view"
+    },
+    {
+     "at": 14.006,
+     "kind": "done"
+    },
+    {
+     "at": 16.774,
+     "kind": "scroll",
+     "label": "check line"
+    },
+    {
+     "at": 26.734,
+     "kind": "end"
+    }
+   ]
+  },
+  "proof": {
+   "video": "cap/proof.mp4",
+   "from": "t-proof-2",
+   "w": 390,
+   "h": 844,
+   "px": [
+    1170,
+    2532
+   ],
+   "seconds": 12.668,
+   "events": [
+    {
+     "at": 0,
+     "kind": "start"
+    },
+    {
+     "at": 0.847,
+     "kind": "home"
+    },
+    {
+     "at": 2.708,
+     "kind": "tap",
+     "label": "tested",
+     "box": {
+      "x": 20,
+      "y": 281.66668701171875,
+      "width": 350,
+      "height": 106
+     }
+    },
+    {
+     "at": 2.779,
+     "kind": "sheet"
+    },
+    {
+     "at": 4.681,
+     "kind": "scroll",
+     "label": "versus balance"
+    },
+    {
+     "at": 12.667,
+     "kind": "end"
+    }
+   ]
+  },
+  "host": {
+   "video": "cap/host.mp4",
+   "from": "t-host-1",
+   "w": 390,
+   "h": 844,
+   "px": [
+    1170,
+    2532
+   ],
+   "seconds": 14.158,
+   "events": [
+    {
+     "at": 0.001,
+     "kind": "start"
+    },
+    {
+     "at": 1.589,
+     "kind": "tap",
+     "label": "tile",
+     "box": {
+      "x": 16,
+      "y": 211,
+      "width": 358,
+      "height": 68
+     }
+    },
+    {
+     "at": 1.636,
+     "kind": "consent"
+    },
+    {
+     "at": 3.007,
+     "kind": "tap",
+     "label": "allow",
+     "box": {
+      "x": 199,
+      "y": 776,
+      "width": 171,
+      "height": 48
+     }
+    },
+    {
+     "at": 3.203,
+     "kind": "kori inside"
+    },
+    {
+     "at": 6.406,
+     "kind": "tap",
+     "label": "host home",
+     "box": {
+      "x": 0,
+      "y": 786,
+      "width": 130,
+      "height": 58
+     }
+    },
+    {
+     "at": 7.057,
+     "kind": "tile"
+    },
+    {
+     "at": 9.838,
+     "kind": "tap",
+     "label": "open Kori",
+     "box": {
+      "x": 16,
+      "y": 211,
+      "width": 358,
+      "height": 68
+     }
+    },
+    {
+     "at": 10.01,
+     "kind": "kori inside 2"
+    },
+    {
+     "at": 14.158,
+     "kind": "end"
+    }
+   ]
+  }
+ },
+ "open": {
+  "seconds": 10,
+  "lufs": -22.5,
+  "end": 2,
+  "stamp": "2026-11-14T23:28:33.573Z"
+ },
+ "take": {
+  "lufs": -17.4
+ }
+}

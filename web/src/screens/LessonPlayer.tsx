@@ -9,7 +9,7 @@ import { api } from "../lib/api";
 import { useApp } from "../lib/store";
 import type { Lesson, LessonSummary, TeachBack } from "../lib/types";
 import { useQuery } from "../lib/useQuery";
-import { SortBaskets, SortBody, SortResult, useSort } from "./lesson/sort";
+import { SortBaskets, SortBody, SortResult, useSort, type SortPlace } from "./lesson/sort";
 
 type Step = { kind: "slide"; i: number } | { kind: "sort"; i: number } | { kind: "check" } | { kind: "teach" } | { kind: "done" };
 
@@ -19,19 +19,27 @@ function phaseOf(st: Step): Phase | null {
   return st.kind === "slide" ? "read" : st.kind === "done" ? null : st.kind;
 }
 
+/** Where a lesson was left: the X keeps the place, and the lesson opens there again until it is done. Kept for this visit only. */
+type Place = { n: number; total: number; picked: number | null; answer: string; sort?: SortPlace };
+const places = new Map<string, Place>();
+export function lessonPlace(customer: string, id: string): Place | undefined {
+  return places.get(`${customer}|${id}`);
+}
+
 function Player({ id, onClose, onList }: { id: string; onClose: () => void; onList: () => void }) {
   const { customer, lang, t, bump, openLesson, version } = useApp();
   const reduce = useReducedMotion();
   const q = useQuery<Lesson>(`lesson|${id}|${customer}|${lang}|${version}`, `${customer}|${lang}`, () => api.lesson(id, customer, lang));
   const list = useQuery<LessonSummary[]>(`lessons|${customer}|${lang}|${version}`, `${customer}|${lang}`, () => api.lessons(customer, lang));
   const d = q.data;
-  const [n, setN] = useState(0);
-  const [picked, setPicked] = useState<number | null>(null);
-  const [answer, setAnswer] = useState("");
+  const placeKey = `${customer}|${id}`;
+  const [n, setN] = useState(() => places.get(placeKey)?.n ?? 0);
+  const [picked, setPicked] = useState<number | null>(() => places.get(placeKey)?.picked ?? null);
+  const [answer, setAnswer] = useState(() => places.get(placeKey)?.answer ?? "");
   const [grade, setGrade] = useState<TeachBack | null>(null);
   const [grading, setGrading] = useState(false);
   const [note, setNote] = useState<string | null>(null);
-  const sort = useSort(d?.slides.find((s) => s.kind === "sort")?.items);
+  const sort = useSort(d?.slides.find((s) => s.kind === "sort")?.items, places.get(placeKey)?.sort);
   const scroller = useRef<HTMLDivElement>(null);
   const answerRef = useRef<HTMLTextAreaElement>(null);
   const marked = useRef(false);
@@ -59,6 +67,14 @@ function Player({ id, onClose, onList }: { id: string; onClose: () => void; onLi
   useEffect(() => {
     scroller.current?.scrollTo({ top: 0 });
   }, [n]);
+
+  // keep the place on every step, a sort's payments included; a finished lesson, or one not started, has none
+  const sortPicks = Object.keys(sort.picks).length;
+  useEffect(() => {
+    if (!d) return;
+    if ((n === 0 && !sortPicks) || step?.kind === "done") places.delete(placeKey);
+    else places.set(placeKey, { n, total, picked, answer, sort: { index: sort.index, picks: sort.picks, result: sort.result } });
+  }, [d, n, step?.kind, total, picked, answer, placeKey, sortPicks, sort.index, sort.picks, sort.result]);
 
   // The API is the source of truth. A lesson can only be marked done after a passed teach-back.
   useEffect(() => {

@@ -142,10 +142,13 @@
 
 /* ---------------------------------------------------------------- sheets */
 
-.host-sheet-backdrop { position: absolute; z-index: 50; inset: 0; display: flex; align-items: flex-end; background: oklch(0.22 0.02 160 / 0.32); animation: host-fade 180ms ease-out; }
-.host-sheet { width: 100%; max-height: calc(100% - 24px); overflow: auto; border-radius: 22px 22px 0 0; padding: 16px 20px calc(20px + var(--safe-b)); background: var(--color-surface); box-shadow: var(--shadow-sheet); animation: host-rise 320ms var(--ease-out-expo); }
+/* a sheet rises over the bank's screen but stops at its tab bar: the tabs stay live, and a tap on one closes the sheet */
+.host-sheet-backdrop { position: absolute; z-index: 50; inset: 0 0 calc(58px + 1px + var(--safe-b)) 0; display: flex; align-items: flex-end; background: oklch(0.22 0.02 160 / 0.32); animation: host-fade 180ms ease-out; }
+.host-sheet { width: 100%; max-height: calc(100% - 24px); overflow: auto; border-radius: 22px 22px 0 0; padding: 16px 20px 20px; background: var(--color-surface); box-shadow: var(--shadow-sheet); animation: host-rise 320ms var(--ease-out-expo); }
 .host-sheet-top { display: flex; align-items: center; justify-content: space-between; }
 .host-sheet-top .host-icon-button { margin-right: -10px; }
+.host-sheet-close { display: inline-flex; height: 44px; align-items: center; gap: 4px; margin-right: -10px; border: 0; border-radius: 12px; padding: 0 10px; background: transparent; color: var(--color-ink-2); font-size: 15px; font-weight: 500; }
+@media (hover: hover) { .host-sheet-close:hover { background: var(--color-sunk); color: var(--color-ink); } }
 .host-sheet-symbol { display: grid; width: 40px; height: 40px; place-items: center; border-radius: 12px; background: var(--color-sunk); color: var(--color-ink-2); }
 .host-sheet h2 { margin: 14px 0 6px; font-size: 22px; font-weight: 600; line-height: 28px; letter-spacing: -0.02em; text-wrap: balance; }
 .host-sheet-lead { margin: 0; color: var(--color-ink-2); font-size: 15px; line-height: 22px; }

@@ -107,7 +107,7 @@ def first_view(keep=None):
                     return Response(content=hit[1], media_type="application/json")
                 out = fn(*a, **kw)
                 if keep is None or keep(out):
-                    if len(_FIRST) > 2000:
+                    if len(_FIRST) > 5000:
                         _FIRST.clear()
                     _FIRST[key] = (time.time(), JSONResponse(content=jsonable_encoder(out)).body)
             return out
@@ -294,7 +294,13 @@ class WhatIfReq(BaseModel):
 
 @app.post("/api/whatif")
 def whatif(req: WhatIfReq, x_kori_device: str | None = Header(None)):
-    m, _, _ = _money(req.customer, req.lang, x_kori_device)
+    return _whatif(customer=req.customer, lang=req.lang, ask=req.model_dump_json(), x_kori_device=x_kori_device)
+
+
+@first_view()       # Plan tests its three ready-made surprises on opening: the same sum for everyone who has changed nothing
+def _whatif(customer: str, lang: str, ask: str, x_kori_device: str | None = None):
+    req = WhatIfReq.model_validate_json(ask)
+    m, _, _ = _money(customer, lang, x_kori_device)
     return W(m, what_if(m, req.changes, req.months, req.goal_amount, req.goal_name))
 
 

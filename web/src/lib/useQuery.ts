@@ -2,11 +2,22 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { ApiError } from "./api";
 
 const cache = new Map<string, unknown>();
+const inflight = new Map<string, Promise<void>>();
+
+/** Fetch into the cache once; a second ask for the same key while it is on the way shares the first. */
+export function warm<T>(key: string, fn: () => Promise<T>): Promise<void> {
+  if (cache.has(key)) return Promise.resolve();
+  let p = inflight.get(key);
+  if (!p) {
+    p = fn().then((data) => void cache.set(key, data), () => undefined).finally(() => inflight.delete(key));
+    inflight.set(key, p);
+  }
+  return p;
+}
 
 export function prefetch<T>(key: string, scope: string, fn: () => Promise<T>): void {
   void scope;
-  if (cache.has(key)) return;
-  void fn().then((data) => cache.set(key, data), () => undefined);
+  void warm(key, fn);
 }
 
 export function invalidate(prefix?: string) {

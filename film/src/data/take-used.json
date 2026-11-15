@@ -1,0 +1,11 @@
+{
+ "caps": {"voice": "t-voice-2", "chat": "t-chat-5", "lab": "t-lab-3", "proof": "t-proof-2", "host": "t-host-1"},
+ "koriLines": [
+  [0.79, 2.26, "Hi Elli, it's Kori."],
+  [2.64, 5.38, "You have €57 a day until payday."],
+  [5.92, 8.95, "Last pay cycle went €141 over"],
+  [8.95, 10.76, "because of one purchase:"],
+  [11.12, 14.71, "Matkatoimisto Mylly, €293."],
+  [15.17, 17.28, "Will something like it come again within a year?"]
+ ]
+}

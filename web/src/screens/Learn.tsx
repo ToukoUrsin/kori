@@ -7,6 +7,7 @@ import { useApp } from "../lib/store";
 import type { Card, LessonSummary } from "../lib/types";
 import { prefetch, useQuery } from "../lib/useQuery";
 import { ScreenHeader } from "../shell/Shell";
+import { lessonPlace } from "./LessonPlayer";
 
 function AboutCard({ tool }: { tool: string }) {
   const { customer, lang, version } = useApp();
@@ -35,6 +36,7 @@ export function Learn() {
   const list = q.data;
   const done = list ? list.filter((l) => l.done).length : 0;
   const next = list?.find((l) => !l.done);
+  const nextPlace = next ? lessonPlace(customer, next.id) : undefined;
 
   return (
     <>
@@ -67,9 +69,11 @@ export function Learn() {
                 <p className="mt-1 text-[14px] leading-[21px] text-ink-2">{next.concept}</p>
                 <div className="mt-3.5 flex items-center gap-3">
                   <Button variant="primary" onClick={() => openLesson(next.id)}>
-                    {t("lesson.start")}
+                    {t(nextPlace ? "lesson.resume" : "lesson.start")}
                   </Button>
-                  <span className="num text-[13px] leading-[18px] text-ink-3">{t("lesson.min", { n: next.minutes })}</span>
+                  <span className="num text-[13px] leading-[18px] text-ink-3">
+                    {nextPlace && nextPlace.n > 0 ? t("learn.step", { n: Math.min(nextPlace.n + 1, nextPlace.total), total: nextPlace.total }) : t("lesson.min", { n: next.minutes })}
+                  </span>
                 </div>
               </section>
             ) : (
@@ -77,7 +81,9 @@ export function Learn() {
             )}
 
             <ul className="mt-3 divide-y divide-line rounded-card border border-line bg-surface">
-              {list.map((l, i) => (
+              {list.map((l, i) => {
+                const place = l.done ? undefined : lessonPlace(customer, l.id);
+                return (
                 <li key={l.id}>
                   <button
                     type="button"
@@ -97,11 +103,14 @@ export function Learn() {
                       {l.done ? <Check size={15} strokeWidth={2.5} aria-label={t("lesson.done")} /> : i + 1}
                     </span>
                     <span className="min-w-0 flex-1 text-[15px] font-medium leading-5 text-ink">{l.title}</span>
-                    <span className="num shrink-0 text-[13px] leading-5 text-ink-3">{l.done ? t("lesson.done") : t("lesson.minShort", { n: l.minutes })}</span>
+                    <span className="num shrink-0 text-[13px] leading-5 text-ink-3">
+                      {l.done ? t("lesson.done") : place ? t("lesson.started") : t("lesson.minShort", { n: l.minutes })}
+                    </span>
                     <ChevronRight size={17} strokeWidth={2} className="shrink-0 text-ink-3 transition-transform duration-150 group-hover:translate-x-0.5" aria-hidden />
                   </button>
                 </li>
-              ))}
+                );
+              })}
             </ul>
           </>
         )}

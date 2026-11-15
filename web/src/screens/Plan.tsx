@@ -281,8 +281,27 @@ const PRESETS = [
   { key: "dentist", label: "plan.preset.dentist", amount: 350 },
 ] as const;
 
+/** A surprise already tested stays tested: the same tap shows its answer at once. */
+const oneOffs = new Map<string, WhatIfData>();
+function testOneOff(customer: string, lang: Lang, version: number, label: string, amount: number, signal?: AbortSignal): Promise<WhatIfData> {
+  const k = `${customer}|${lang}|${version}|${label}|${amount}`;
+  const hit = oneOffs.get(k);
+  if (hit) return Promise.resolve(hit);
+  return api.whatif({ customer, lang, changes: [{ type: "one_off", label, amount }], months: 12 }, signal).then((r) => {
+    oneOffs.set(k, r);
+    return r;
+  });
+}
+
 function OneOff() {
   const { customer, lang, t, version } = useApp();
+  // the three ready-made surprises are worked out while the customer reads the page, so a tap answers at once
+  useEffect(() => {
+    const id = window.setTimeout(() => {
+      for (const p of PRESETS) void testOneOff(customer, lang, version, t(p.label), p.amount).catch(() => undefined);
+    }, 1200);
+    return () => clearTimeout(id);
+  }, [customer, lang, version, t]);
   const [pick, setPick] = useState<{ key: string; label: string; amount: number } | null>(null);
   const [custom, setCustom] = useState(false);
   const [raw, setRaw] = useState("");
@@ -295,7 +314,7 @@ function OneOff() {
     if (!pick) return;
     const ac = new AbortController();
     setFailed(false);
-    api.whatif({ customer, lang, changes: [{ type: "one_off", label: pick.label, amount: pick.amount }], months: 12 }, ac.signal).then(setRes, () => {
+    testOneOff(customer, lang, version, pick.label, pick.amount, ac.signal).then(setRes, () => {
       if (!ac.signal.aborted) setFailed(true);
     });
     return () => ac.abort();
@@ -365,13 +384,11 @@ function OneOff() {
           ) : failed ? (
             <ErrorInline onRetry={() => setNonce((n) => n + 1)} className="!border-0 !px-0" />
           ) : (
-            <div aria-hidden>
-              <Skel className="h-6 w-52" />
-              <Skel className="mt-2 h-3.5 w-28" />
-              <Skel className="mt-4 h-3.5 w-full" />
-              <Skel className="mt-2 h-3.5 w-4/5" />
-              <Skel className="mt-4 h-[116px]" />
-            </div>
+            // a short wait says what is happening, in one line, instead of a large grey card
+            <p role="status" className="flex min-h-[44px] items-center gap-2.5 pb-0.5 text-[15px] leading-[22px] text-ink-2">
+              <span className="h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-line-strong border-t-brand motion-reduce:animate-none" aria-hidden />
+              {t("plan.testing", { amount: money(pick.amount, lang) })}
+            </p>
           )}
         </div>
       )}

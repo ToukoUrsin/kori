@@ -3,7 +3,7 @@ import { api } from "./api";
 import { isEmbedMode, postToHost } from "./host";
 import { makeT, type TFn } from "./i18n";
 import type { BasketKey, Card, Home, Lang, Persona } from "./types";
-import { invalidate, prefetch, useQuery, type Query } from "./useQuery";
+import { invalidate, prefetch, useQuery, warm, type Query } from "./useQuery";
 
 export type Tab = "today" | "baskets" | "plan" | "learn";
 const TABS: Tab[] = ["today", "baskets", "plan", "learn"];
@@ -30,6 +30,8 @@ export const LEGACY_COACH = new URLSearchParams(location.search).get("coach") ==
 
 interface App {
   lang: Lang;
+  /** the language being switched to while its screen loads; the current screen stays until then */
+  langNext: Lang | null;
   setLang: (l: Lang) => void;
   customer: string;
   setCustomer: (id: string) => void;
@@ -157,7 +159,44 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener("hashchange", onHash);
   }, []);
 
-  const setLang = useCallback((l: Lang) => setLangState(l), []);
+  // A switch of language keeps this screen until the other language's own Today is in, then swaps it whole:
+  // never a screen of grey placeholders in between. After a few seconds it switches anyway and the screen says it is loading.
+  const [langNext, setLangNext] = useState<Lang | null>(null);
+  const langTo = useRef<Lang | null>(null);
+  const setLang = useCallback(
+    (l: Lang) => {
+      langTo.current = l;
+      if (l === lang) return setLangNext(null);
+      const ready = () => {
+        if (langTo.current !== l) return;
+        langTo.current = null;
+        setLangNext(null);
+        setLangState(l);
+      };
+      const hk = `home|${customer}|${l}|${version}`;
+      const pk = `pins|${customer}|${l}|${version}`;
+      setLangNext(l);
+      const t = window.setTimeout(ready, 4000);
+      // the tab on screen is fetched too, so it arrives with its words already in the new language
+      const v = version;
+      const own: Promise<void>[] =
+        tab === "plan"
+          ? [warm(`plan|${customer}|${l}|${v}`, () => api.plan(customer, l))]
+          : tab === "baskets"
+            ? [warm(`baskets|${customer}|${l}||${v}`, () => api.baskets(customer, l))]
+            : tab === "learn"
+              ? [
+                  warm(`lessons|${customer}|${l}|${v}`, () => api.lessons(customer, l)),
+                  ...["spender_profile", "compare_with_peers"].map((tool) => warm(`card|${tool}|${customer}|${l}|${v}`, () => api.card(customer, l, tool))),
+                ]
+              : [];
+      void Promise.all([warm(hk, () => api.home(customer, l)), warm(pk, () => api.pins(customer, l)), warm(`personas|${l}`, () => api.personas(l)), ...own]).then(() => {
+        clearTimeout(t);
+        ready();
+      });
+    },
+    [lang, customer, version, tab],
+  );
   const setTab = useCallback((t: Tab) => {
     setTabState(t);
     history.replaceState(null, "", location.pathname + location.search + (t === "today" ? "" : "#" + t));
@@ -310,6 +349,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const value: App = {
     lang,
+    langNext,
     setLang,
     customer,
     setCustomer,

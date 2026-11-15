@@ -19,7 +19,7 @@ type Run = { id: string; title: string; code: string; by: string; streaming?: bo
 type Check = { figures: number; traced: number; flagged: string[] };
 type View = { id: string; title: string; data: Record<string, any>; html: string; done: boolean; check?: Check; by?: string; ms?: number };
 type Source = { title: string; url: string; host: string };
-type Turn = { id: string; question: string; status?: { text: string; kind: string }; sandbox?: { rows: number; isolation: string }; text: string; runs: Run[]; views: View[]; sources: Source[]; chips: string[]; done?: any; error?: string; pending: boolean };
+type Turn = { id: string; t0?: number; question: string; status?: { text: string; kind: string }; sandbox?: { rows: number; isolation: string }; text: string; runs: Run[]; views: View[]; sources: Source[]; chips: string[]; done?: any; error?: string; pending: boolean };
 type SheetTarget = { run: Run; fact?: Fact; table?: Table };
 
 
@@ -234,6 +234,7 @@ export default function LabChat({ onVoice, embed }: { onVoice?: () => void; embe
   const [sheet, setSheet] = useState<SheetTarget | null>(null);
   const [voiceNote, setVoiceNote] = useState("");
   const [draft, setDraft] = useState("");
+  const [tick, setTick] = useState(() => Date.now());                             // a clock for the wait line while an answer is on its way
   const [queued, setQueued] = useState("");                                        // asked while an answer was still building: sent the moment it is done
   const [mock] = useState(() => new URLSearchParams(location.search).get("mock") === "1");
   // The customer sees a plain chat. `?dev=1` shows the work behind an answer (code, ledger, sources) for a technical reader.
@@ -243,6 +244,13 @@ export default function LabChat({ onVoice, embed }: { onVoice?: () => void; embe
   const scrollRef = useRef<HTMLDivElement>(null);
   const stickRef = useRef(true);
   const copy = strings[lang];
+  const anyPending = turns.some((turn) => turn.pending);
+  useEffect(() => {
+    if (!anyPending) return;
+    setTick(Date.now());
+    const id = window.setInterval(() => setTick(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [anyPending]);
   const currentTurn = turns[turns.length - 1];
 
   useEffect(() => {
@@ -283,7 +291,7 @@ export default function LabChat({ onVoice, embed }: { onVoice?: () => void; embe
     const controller = new AbortController(); abortRef.current = controller;
     const id = newId();
     setDraft("");
-    setTurns((all) => [...all, { id, question, text: "", runs: [], views: [], sources: [], chips: [], pending: true }]);
+    setTurns((all) => [...all, { id, t0: Date.now(), question, text: "", runs: [], views: [], sources: [], chips: [], pending: true }]);
     try {
       const stream = mock ? playMock(lang, question) : realEvents(customer, lang, session, question, id, controller.signal);
       for await (const event of stream) {
@@ -384,6 +392,7 @@ export default function LabChat({ onVoice, embed }: { onVoice?: () => void; embe
 
   if (!dev) {
     const busy = !!currentTurn?.pending;
+    const waited = busy && currentTurn?.t0 ? Math.max(0, Math.floor((tick - currentTurn.t0) / 1000)) : 0;
     return <div className={`kc-root ${embed ? "kc-embed" : ""}`}><div className="kc-col">
       <header className="kc-head">
         {embed
@@ -396,14 +405,19 @@ export default function LabChat({ onVoice, embed }: { onVoice?: () => void; embe
         {turns.length === 0 ? <section className="kc-empty"><h1>{copy.emptyTitle}</h1></section> : <div className="kc-thread">{turns.map((turn) => {
           const shown = turn.text.length > 0 || !turn.pending;        // the answer first, then the view it built: never a half-drawn screen
           const working = turn.pending && !turn.text;
-          const doing = turn.runs.length ? turn.runs[turn.runs.length - 1].title : "";
+          // what is happening, in the customer's words: a ready answer is on screen in a second or two and says "Thinking";
+          // a new one takes longer, so after a moment the line says what is being looked at and the seconds keep counting
+          const long = turn.pending && waited >= 3;
+          const doing = turn.runs.length ? turn.runs[turn.runs.length - 1].title : long ? (turn.sandbox?.rows ? copy.looking(turn.sandbox.rows) : copy.reading) : "";
           // the answer is said and its screen is on the way: the line and the placeholder stay until every view is finished
           const drawing = turn.pending && !!turn.text && (turn.runs.length > 0 || turn.views.length > 0) && !(turn.views.length > 0 && turn.views.every((view) => view.done));
           return <article className="kc-turn" key={turn.id} data-state={turn.pending ? "working" : "done"}>
             <div className="kc-user">{keepFigures(turn.question)}</div>
             {working && <div className="kc-working" role="status"><span className="kc-dots" aria-hidden><i /><i /><i /></span><span className="kc-doing">{doing || copy.thinkingShort}</span></div>}
+            {working && long && <div className="kc-wait" aria-live="off">{copy.waitNote(waited)}</div>}
             {turn.text && <div className="kc-answer">{renderBold(turn.text)}</div>}
             {drawing && <div className="kc-working" role="status"><span className="kc-dots" aria-hidden><i /><i /><i /></span><span className="kc-doing">{copy.drawing}</span></div>}
+            {drawing && long && <div className="kc-wait" aria-live="off">{copy.waitNote(waited)}</div>}
             {turn.views.map((view) => <div className={`kc-view ${shown && view.html ? "on" : ""}`} key={view.id}><FrameHost view={view} lang={lang} mock={mock} onAsk={(text) => void runQuestion(text)} onTrace={() => undefined} sources={turn.sources} /></div>)}
             {drawing && <div className="kc-ghost" aria-hidden><div className="kc-ghost-row"><i /><i /><i /></div><i className="kc-ghost-bar" /><i className="kc-ghost-line" /><i className="kc-ghost-line" /><i className="kc-ghost-line" /></div>}
             {!turn.pending && (() => { const n = (turn.done?.flagged ?? turn.views.find((view) => view.check)?.check?.flagged ?? []).length; return n ? <div className="kc-flag">{copy.warning(n)}</div> : !turn.error && turn.views.some((view) => view.html) ? <div className="kc-checked"><Check size={13} strokeWidth={2.2} aria-hidden />{copy.checked}</div> : null; })()}

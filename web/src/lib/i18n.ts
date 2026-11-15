@@ -142,6 +142,7 @@ const D = {
     "Suurin osa palkastasi siirtyy toiseen pankkiin pian palkkapäivän jälkeen, joten nämä luvut koskevat vain tätä tiliä. Open banking -yhteydellä (PSD2) Kori näkisi kokonaiskuvan.",
   ],
   "today.switchPersona": ["Switch demo customer", "Vaihda demoasiakasta"],
+  "today.otherCustomers": ["See another demo customer", "Katso toista demoasiakasta"],
 
   "minute.play": ["Play the money minute", "Toista rahaminuutti"],
   "minute.pause": ["Pause", "Tauko"],
@@ -273,6 +274,7 @@ const D = {
   "plan.preset.custom": ["Other amount", "Muu summa"],
   "plan.customAmount": ["Amount in euros", "Summa euroina"],
   "plan.test": ["Test it", "Kokeile"],
+  "plan.testing": ["Testing {amount} against your account…", "Kokeilen {amount} tiliäsi vasten…"],
   "plan.covered": ["Your account covers it", "Tilisi kattaa sen"],
   "plan.notCovered": ["Your account does not cover it", "Tilisi ei riitä siihen"],
   "plan.balanceAfter": ["Balance {now} → {after}", "Saldo {now} → {after}"],
@@ -408,10 +410,12 @@ const D = {
   "calculate.engine": ["Calculated from your own transactions.", "Laskettu omista tapahtumistasi."],
 
   "lesson.start": ["Start lesson", "Aloita oppitunti"],
+  "lesson.resume": ["Continue lesson", "Jatka oppituntia"],
   "lesson.again": ["Open again", "Avaa uudelleen"],
   "lesson.min": ["about {n} min", "noin {n} min"],
   "lesson.minShort": ["{n} min", "{n} min"],
   "lesson.done": ["Done", "Tehty"],
+  "lesson.started": ["Started", "Aloitettu"],
 
   "card.pin": ["Pin to My view", "Kiinnitä omaan näkymään"],
   "card.pinned": ["Pinned", "Kiinnitetty"],

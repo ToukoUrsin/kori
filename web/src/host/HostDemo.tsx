@@ -304,8 +304,9 @@ function SheetFrame({ lang, icon, children, onClose }: { lang: Lang; icon: React
       <section className="host-sheet" role="dialog" aria-modal="true">
         <div className="host-sheet-top">
           <div className="host-sheet-symbol">{icon}</div>
-          <button type="button" className="host-icon-button" onClick={onClose} aria-label={text(lang, "Close", "Sulje")}>
-            <X size={20} aria-hidden />
+          <button type="button" className="host-sheet-close" onClick={onClose}>
+            {text(lang, "Close", "Sulje")}
+            <X size={18} aria-hidden />
           </button>
         </div>
         {children}
@@ -767,7 +768,15 @@ export function HostDemo() {
                 )}
               </main>
             )}
-            <HostNav tab={tab} lang={lang} onChange={(next) => chooseTab(next)} onMore={() => setSheet("permissions")} />
+            <HostNav
+              tab={tab}
+              lang={lang}
+              onChange={(next) => {
+                setSheet(null);
+                chooseTab(next);
+              }}
+              onMore={() => setSheet((open) => (open === "permissions" ? null : "permissions"))}
+            />
 
             {sheet === "consent" && <ConsentSheet lang={lang} onAllow={() => void allowTransactions()} onClose={() => setSheet(null)} />}
             {sheet === "permissions" && (

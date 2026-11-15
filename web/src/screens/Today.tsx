@@ -347,8 +347,22 @@ export function Today() {
           )
         )}
 
-        <p className="mt-6 text-center text-[12px] leading-[17px] text-ink-3">{t("common.demoDay", { date: longDate(d.today, lang) })}</p>
         </Collapse>
+
+        {/* the end of the page says this is a demo, and offers the other customers in words, not only behind the avatar */}
+        <div className="mt-6 flex flex-col items-center gap-0.5 text-center">
+          <p className="text-[12px] leading-[17px] text-ink-3">{t("common.demoDay", { date: longDate(d.today, lang) })}</p>
+          {!isEmbedMode() && (
+            <button
+              type="button"
+              onClick={() => setOverlay({ kind: "persona" })}
+              className="inline-flex min-h-11 items-center gap-1 rounded-full px-3 text-[14px] font-medium leading-5 text-brand-strong transition-colors duration-150 hover:bg-sunk"
+            >
+              {t("today.otherCustomers")}
+              <ChevronRight size={16} strokeWidth={2} aria-hidden />
+            </button>
+          )}
+        </div>
       </div>
     </>
   );

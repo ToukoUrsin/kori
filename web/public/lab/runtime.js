@@ -739,12 +739,19 @@
         hitr.addEventListener("pointerdown", function () { choose(i); }); hitr.addEventListener("pointerenter", function (e) { if (e.buttons) choose(i); });
       });
       var out2 = tpl ? h("div", "k-readout") : null; if (out2) this.appendChild(out2);
-      var col = tone(this.getAttribute("tone"), "brand");
+      var col = tone(this.getAttribute("tone"), "brand"), zero = null;
       function choose(i, quiet) {
         sel = i;
         bars.forEach(function (b, j) { b.style.fill = j === i || i < 0 ? col : "var(--color-brand-line)"; if (me.closest("k-slides")) b.style.fill = j === i || i < 0 ? "var(--k-tone)" : "var(--k-rule)"; });
         labs.forEach(function (t, j) { t.setAttribute("class", "k-ax" + (j === i ? " on" : "")); if (j === i && !t.textContent) t.textContent = lab(rows[j]); });
         if (i >= 0 && bars[i]) { var bx = i * band + band / 2; val.textContent = apply(rows[i][yc], f); val.setAttribute("x", Math.max(24, Math.min(W - 24, bx))); val.setAttribute("y", +bars[i].getAttribute("y") - 7); }
+        // a picked month with nothing in it gets a mark on the floor of its own slot, and its label sits over that mark, not beside a neighbour's bar
+        if (zero) zero.remove(); zero = null;
+        if (i >= 0 && bars[i] && val0(rows[i]) <= 0) {
+          var zx = i * band + band / 2;
+          zero = el("rect", { x: zx - bw / 2, y: T + ph - 2, width: bw, height: 2.5, rx: 1.25 }, svg); zero.style.fill = me.closest("k-slides") ? "var(--k-tone)" : col;
+          val.setAttribute("x", Math.max(12, Math.min(W - 12, zx))); val.setAttribute("y", T + ph - 9);
+        }
         if (out2 && rows[i]) out2.innerHTML = fillRow(tpl, rows[i], i).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>");
         if (!quiet && i >= 0) me.dispatchEvent(new CustomEvent("k-pick", { bubbles: true, detail: rows[i] }));
       }

@@ -189,7 +189,8 @@ const {default: scenario} = await import(path.resolve(here, '..', 'scenarios', `
 const lang = scenario.lang || 'en';
 const browser = await chromium.launch({
 	headless: true,
-	args: ['--autoplay-policy=no-user-gesture-required', '--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream'],
+	// --hidpi: the window itself is at SCALE device pixels, so the screencast frames are too (without it they are CSS-sized)
+	args: ['--autoplay-policy=no-user-gesture-required', '--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream', ...(args.includes('--hidpi') ? [`--force-device-scale-factor=${SCALE}`] : [])],
 });
 const ctx = await browser.newContext({
 	viewport: {width: VW, height: VH}, deviceScaleFactor: SCALE, isMobile: VW < 600, hasTouch: VW < 600,
