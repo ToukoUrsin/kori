@@ -37,6 +37,8 @@ Demo customer in every shot: Elli, in English.
 
 **Screens the film shows, which must keep looking as they do**: Today above the fold, the voice coach's opening, the chat's start and ask field, the approved answers for groceries, eating out, ten-year saving and the laptop, the line "Every number checked against the calculation", the payday replay sheet, the bank app after consent, and the work view. Changes elsewhere on the site need no re-cut.
 
+**On screen since the film was cut** (small, no re-cut): the sentence under the Today number now ends with a link, "See the sum", that opens the sum behind the number (same three lines, nothing moved); the eating-out answer's sentence names both windows when six and twelve months disagree, and has one more note line under its by-month chart; the ten-year answer's sentence says how the year really went.
+
 **What the film leaves out** (said by three test judges, kept for a next cut): the three baskets, a lesson with its say-it-back, Finnish, and the bank's switch that turns new AI answers off. A next cut would trade the oat drink or part of the laptop shot for ten seconds of those.
 
 ## If a shot is recorded again: links, device, reset

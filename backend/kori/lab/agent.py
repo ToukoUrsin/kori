@@ -251,6 +251,10 @@ WRITING CODE
 - A change says its direction: "55% less" or "−55%", never a bare "55% change". One of a thing is singular: "1 month", "1 visit".
 - Money in a sentence is written by eur(), never by your own f-string. Money that is missing is said in words with a positive
   amount ("€578 short", "578 € liian vähän"), never as a negative amount: no "€-578", no "leaves -€578".
+- Someone who says the money will not stretch (cannot pay a bill or the rent, is behind, got a collection letter, is thinking of a
+  quick loan) gets no cheer and no lecture. Say what the numbers on this account show, then one next step: ask the biller or the
+  bank for a later due date before the bill falls due. Name the free help: Takuusäätiö's Velkalinja, and the financial and debt
+  counselling of the legal aid offices (talous- ja velkaneuvonta). No phone numbers, and no promise on a biller's behalf.
 - One merchant is its whole name: filter with tx["merchant"] == "Keittiö Kaarna", never with str.contains or a part of the name.
   "Kaarna-halli" and "Kaarna Polttoaine" are other places, and counting them in is a wrong answer.
 - For one merchant or one payment, "the last 12 months" is the 365 days up to today, so a payment from this month is in it and the

@@ -1,0 +1,96 @@
+"""Money that will not stretch: "I can't pay my bills" never opens the cheerful bills answer.
+
+It opens one approved answer of its own (the bills on the way against the balance, what to do first, where free help is),
+with AI on and off, in any wording, and it is tried before every other approved answer."""
+import asyncio
+import uuid
+
+import pytest
+
+from kori import state as S
+from kori.lab import agent, check, kept
+
+ELLI, MIKKO, JARI = "CUST01885", "CUST01051", "CUST02957"
+EN = ["I can't pay my bills this month, what do I do?", "i cant pay my bills", "I cannot pay my rent", "I can't pay my bills at the moment",
+      "I'm behind on my bills", "debt collection letter came, what now", "should i take a payday loan to cover this",
+      "I lost my job last month and I can't pay my rent or my 300 euro electricity bill, and what should I do now?"]
+FI = ["En pysty maksamaan laskujani. Mitä teen?", "rahat ei riitä laskuihin", "sain perintäkirjeen, mitä nyt", "laskut on myöhässä",
+      "mulla ei oo varaa maksaa sähkölaskua", "Jäin työttömäksi enkä saa vuokraa maksettua, ja mitä minun pitäisi nyt tehdä tässä tilanteessa oikein?"]
+
+
+def _file(q, lang, loose):
+    rec = kept.find(q, lang, ELLI, loose)
+    return rec and rec["file"]
+
+
+@pytest.mark.parametrize("loose", [False, True])
+@pytest.mark.parametrize("lang,q", [("en", q) for q in EN] + [("fi", q) for q in FI])
+def test_trouble_is_heard_in_any_wording(lang, q, loose):
+    assert _file(q, lang, loose) == f"trouble.{lang}.json"
+
+
+@pytest.mark.parametrize("loose", [False, True])
+@pytest.mark.parametrize("lang,q,file", [
+    ("en", "What bills are coming before payday?", "bills.en.json"), ("en", "upcoming bills", "bills.en.json"),
+    ("fi", "Mitä laskuja on tulossa ennen palkkapäivää?", "bills.fi.json"),
+])
+def test_the_plain_bills_question_is_still_the_bills_answer(lang, q, file, loose):
+    assert _file(q, lang, loose) == file
+
+
+@pytest.mark.parametrize("loose", [False, True])
+@pytest.mark.parametrize("lang,q", [
+    ("en", "my friend can't pay his bills"), ("en", "am i behind on my savings goal"), ("en", "when will i run out of money at this pace"),
+    ("fi", "kaverini ei pysty maksamaan laskujaan"), ("fi", "sain perintöä 5000 euroa, mitä teen"), ("fi", "onko palkka myöhässä"),
+])
+def test_other_questions_are_not_taken_for_trouble(lang, q, loose):
+    assert _file(q, lang, loose) != f"trouble.{lang}.json"
+
+
+def test_somebody_elses_trouble_gets_no_approved_answer_at_all():
+    assert kept.find("my friend can't pay his bills", "en", ELLI, True) is None          # not the bills answer with this customer's numbers
+    assert kept.find("kaverini ei pysty maksamaan laskujaan", "fi", ELLI, True) is None
+
+
+@pytest.mark.parametrize("lang", ["en", "fi"])
+def test_it_is_asked_for_and_never_suggested(lang):
+    rec = kept.find(EN[0] if lang == "en" else FI[0], lang, ELLI)
+    assert rec["quiet"] and rec["first"]
+    assert rec["question"] not in kept.questions(lang, ELLI)
+    assert rec["question"] not in kept.nearest("bills laskut pay maksaa", lang, ELLI, n=50)
+    assert f"trouble.{lang}.json" in [a["file"] for a in kept.approved(lang)]
+    assert "Velkalinja" in rec["html"] and not any(ch.isdigit() for ch in rec["html"].split("<script>")[0])    # help is named, no phone number
+
+
+async def _hold(question: str, lang: str, customer: str):
+    sid = uuid.uuid4().hex
+    sess = agent.session(sid, "dev-" + sid[:8], customer, lang)
+    try:
+        m, st = S.money(sess.device, customer, lang)
+        await agent._warm(sess, m)
+        w = agent._Work(sess, sess.new_turn(question), m, st)
+        rec = kept.find(question, lang, customer)
+        return await agent._kept_cells(w, rec), w, rec, m
+    finally:
+        await agent.forget(sid)
+
+
+@pytest.mark.parametrize("lang,customer", [("en", ELLI), ("fi", ELLI), ("en", MIKKO), ("fi", MIKKO), ("en", JARI), ("fi", JARI)])
+def test_the_answer_adds_up_and_passes_the_check(lang, customer):
+    q = EN[0] if lang == "en" else FI[0]
+    record, w, rec, m = asyncio.run(_hold(q, lang, customer))
+    if record is None and not w.facts:
+        pytest.skip("no sandbox on this machine")
+    assert record, "the kept cell did not hold"
+    f = {k: v["v"] for k, v in w.facts.items()}
+    bills = [r["amount"] for r in w.tables["bills"]["rows"]]
+    assert abs(sum(bills) - f["bills_total"]) < 0.005
+    assert f["short"] == 0 and abs(f["balance"] - f["bills_total"] - f["after_bills"]) < 0.005      # every demo customer's bills fit
+    said = w.said if isinstance(w.said, str) else " ".join(map(str, w.said))
+    assert ("covered" in said) if lang == "en" else ("katettu" in said)
+    if customer == MIKKO:                                                       # nothing safe to spend: said once, not cheered
+        assert f["safe_to_spend"] == 0 and (("nothing more is safe" in said) if lang == "en" else ("ei ole ennen sitä" in said))
+    ledger = w.ledger()
+    ok = check.allowed(ledger, q)
+    assert check.answer(w.said, ok, lang) == []
+    assert check.fragment(rec["html"], ledger, ok, lang)["flagged"] == []

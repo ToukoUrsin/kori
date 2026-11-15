@@ -56,6 +56,12 @@ _AND = ("and what", "and how", "and if", "and can", "and would", "and should", "
         "ja mitä", "ja paljonko", "ja paljon", "ja miten", "ja jos", "ja voinko", "ja kuinka", "ja missä", "ja milloin", "ja miksi")
 
 
+def _subject(rec: dict, q: str) -> bool:
+    """The question holds this view's own words, whatever else it says."""
+    words = q.split()
+    return bool(rec.get("match")) and all(any(_hit(t, q, words) for t in g) for g in rec["match"])
+
+
 def _means(rec: dict, q: str, loose: bool) -> bool:
     """The same question in other words. `match` is a list of groups of stems: every group needs one hit, and no
     `unless` stem may appear. No model reads the question, so the bank's approved-only mode can use it too.
@@ -64,10 +70,13 @@ def _means(rec: dict, q: str, loose: bool) -> bool:
     if not groups:
         return False
     words = q.split()
-    if _ELSEWHERE & {w.strip("?!.,") for w in words} or any((" " + t + " ") in (" " + q + " ") for t in _AND):
+    if _ELSEWHERE & {w.strip("?!.,") for w in words}:
         return False
-    if not loose and (len(words) > 14 or (re.search(r"\d", q) and not (rec.get("param") or rec.get("params")))):
-        return False
+    if not rec.get("first"):                          # money that will not stretch is heard however long or tangled the message is
+        if any((" " + t + " ") in (" " + q + " ") for t in _AND):
+            return False
+        if not loose and (len(words) > 14 or (re.search(r"\d", q) and not (rec.get("param") or rec.get("params")))):
+            return False
     if any(_hit(t, q, words) for t in rec.get("unless") or []):
         return False
     return all(any(_hit(t, q, words) for t in g) for g in groups)
@@ -119,6 +128,9 @@ def find(message: str, lang: str, customer: str | None = None, loose: bool = Fal
         rec = next((r for r in mine if r.get("param") and r["param"].get("pattern") and re.match(r["param"]["pattern"], q)), None)
     if rec is None:
         rec = next((r for r in mine if _means(r, q, loose)), None)
+    urgent = [r for r in mine if r.get("first")]         # "I can't pay my bills" is never the plain bills answer, in any wording
+    if rec is not None and not rec.get("first") and any(_subject(r, q) for r in urgent):
+        rec = next((r for r in urgent if _means(r, q, loose)), None)
     return _fill(rec, q, own) if rec else None
 
 
@@ -126,7 +138,7 @@ def questions(lang: str, customer: str | None = None) -> list[str]:
     """The questions that have a kept view in this language, as the customer would ask them."""
     seen: dict[str, None] = {}
     for (lg, _), r in records().items():
-        if lg == lang and not r.get("tap") and not (r.get("only") and customer not in r["only"]):   # a tapped payment is not a question to suggest
+        if lg == lang and not (r.get("tap") or r.get("quiet")) and not (r.get("only") and customer not in r["only"]):   # a tapped payment and a cry for help are not questions to suggest
             seen.setdefault(r["question"])
     return list(seen)
 
@@ -138,7 +150,7 @@ def nearest(message: str, lang: str, customer: str | None = None, n: int = 3) ->
     words = q.split()
     scored: dict[str, int] = {}
     for (lg, _), r in records().items():
-        if lg != lang or r.get("tap") or (r.get("only") and customer not in r["only"]):
+        if lg != lang or r.get("tap") or r.get("quiet") or (r.get("only") and customer not in r["only"]):
             continue
         hits = sum((2 if i == 0 else 1) for i, g in enumerate(r.get("match") or []) if any(_hit(t, q, words) for t in g))   # the first group is the subject
         scored[r["question"]] = max(scored.get(r["question"], 0), hits)

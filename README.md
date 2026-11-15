@@ -146,8 +146,8 @@ before?" and see the months it held, the months it did not, and the reason for e
   in the bank's list opens an approved answer about that one payment and that one place, in about a second. The
   contract is in `docs/INTEGRATION.md`.
 - **A way in without a model.** The bank can start with approved answers only: on `/host`, under More, switch off
-  "New answers written by AI". Twenty approved questions, and any payment tapped in the bank's own list (all listed
-  under the switch), still open in about a second, asked in the customer's own words, with code and a screen that were reviewed once and numbers computed again on the customer's data, and no model is called for the turn
+  "New answers written by AI". Twenty approved questions, any payment tapped in the bank's own list, and one answer for a
+  customer who says they cannot pay their bills (all listed under the switch), still open in about a second, asked in the customer's own words, with code and a screen that were reviewed once and numbers computed again on the customer's data, and no model is called for the turn
   (`approved=1` on the web-view address, `approved: true` on `/api/lab/chat`). Any other question gets a plain "not
   on the approved list". Fresh answers can be switched on later, question family by question family.
 - **PSD2 view.** One demo customer has their salary in another bank. Kori says so, shows what it cannot see and
@@ -178,7 +178,7 @@ before?" and see the months it held, the months it did not, and the reason for e
 - **What is not real yet?** Receipt lines are sample data (S-mobiili has the real ones in Omat ostot), the other-bank
   link is simulated, and the customers are S-Pankki's synthetic set. The calculations, the shop prices, the fund and
   its fee, and the Statistics Finland figures are real.
-- **How is it tested?** 1,190 automated cases, and a replay of the safe-to-spend number on 106,553 past days of
+- **How is it tested?** 1,247 automated cases, and a replay of the safe-to-spend number on 106,553 past days of
   4,850 customers (above, under "Why the numbers can be trusted").
 
 ## Architecture
@@ -211,7 +211,7 @@ PYTHONPATH=. uv run uvicorn kori.app:app --port 8811
 cd ../web && pnpm install && pnpm dev      # http://localhost:8812
 ```
 
-Tests (1,190 cases from 198 test functions: engine arithmetic, the approved answers and their wordings, number check, API, the sandbox, the shop and swap rules, the demo customers in both languages):
+Tests (1,247 cases from 204 test functions: engine arithmetic, the approved answers and their wordings, number check, API, the sandbox, the shop and swap rules, the demo customers in both languages):
 
 ```bash
 cd backend && PYTHONPATH=. uv run pytest -q

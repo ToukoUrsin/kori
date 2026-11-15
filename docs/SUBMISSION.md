@@ -45,7 +45,7 @@ She can type it or say it. Twenty common questions open in about a second, asked
 
 ## How it's built
 
-Every figure is calculated by code and checked before you see or hear it. The chat and the app's own screens run the same calculations, so they agree. A zero is checked a second time before it's shown. Claude only draws: each screen is built from what Gemini's code produced. The code sees one customer's payments and nothing else: no network, a time limit, and each question logged with its code and result. Kori also runs on Gemini alone. 1,190 automated test cases.
+Every figure is calculated by code and checked before you see or hear it. The chat and the app's own screens run the same calculations, so they agree. A zero is checked a second time before it's shown. Claude only draws: each screen is built from what Gemini's code produced. The code sees one customer's payments and nothing else: no network, a time limit, and each question logged with its code and result. Kori also runs on Gemini alone. 1,247 automated test cases.
 
 ## Gemini API: it writes the code behind every answer
 

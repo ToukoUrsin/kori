@@ -59,6 +59,7 @@ Q = {
     "track-record": ("Was this number right before?", "Onko tämä luku pitänyt ennenkin?"),
     "track-record2": ("Can I trust the safe to spend number?", "Voinko luottaa turvalliseen käyttövaraan?"),
     "bills": ("What bills are coming before payday?", "Mitä laskuja on tulossa ennen palkkapäivää?"),
+    "trouble": ("I can't pay my bills. What do I do?", "En pysty maksamaan laskujani. Mitä teen?"),
     "repeating": ("What do I pay for every month?", "Mitä maksan joka kuukausi?"),
     "repeating2": ("What are my subscriptions?", "Mitä tilauksia minulla on?"),
     "breaks": ("My washing machine broke. A new one costs €600. Can I cover it?", "Pesukoneeni hajosi. Uusi maksaa 600 €. Pystynkö maksamaan sen?"),
@@ -264,6 +265,73 @@ if items and abs(sum(i["amount"] for i in items) - b["total"]) < 0.005:      # t
                lede="Kaikki tämä on varattu ennen kuin turvallinen käyttövara lasketaan, joten nämä eivät yllätä.", r_total="Varattu laskuihin", r_until="ennen"),
 }, ("Bills before payday", "Laskut ennen palkkapäivää"), ("The bills on the way", "Tulossa olevat laskut"))
 
+# ------------------------------------------------------------------------------------------------------------ trouble
+# "I can't pay my bills": never the cheerful bills answer. The bills on the way against the balance, what to do first, and
+# where free help is. No phone numbers and no promises on a biller's behalf: the bank's own team owns those.
+V["trouble"] = ('''
+b = kori.bills()
+s = kori.safe_to_spend()
+items = [{"label": i["label"], "date": i["date"], "amount": i["amount"]} for i in b.get("items") or []]
+balance = s.get("balance")
+if balance is not None and items and abs(sum(i["amount"] for i in items) - b["total"]) < 0.005:      # the rows add up to the total on screen
+    due = b["total"]
+    left = round(balance - due, 2)
+    emit("balance", balance, "eur", "«r_balance»")
+    emit("bills_total", due, "eur", b["label"])
+    emit("next_payday", s["next_payday"], "date", "«l_next»")
+    emit("after_bills", max(left, 0), "eur", "«l_after»")
+    emit("short", max(-left, 0), "eur", "«l_short»")
+    emit("safe_to_spend", s["amount"], "eur", "«l_safe»")
+    table("bills", items, b["label"])
+    if left < 0:
+        say(f"«say_short»")
+    elif s["amount"] > 0:
+        say(f"«say_ok» «say_safe» «say_ask»")
+    else:
+        say(f"«say_ok» «say_none» «say_ask»")
+''', '''
+<p class="k-lede">«lede»</p>
+<div class="k-rows"><div class="k-row"><div>«r_balance»</div><b>{{balance|eur}}</b></div>
+<k-each table="bills"><template><div class="k-row"><div class="k-dim">{label}<small>{date|date}</small></div><b class="k-dim">−{amount|eur}</b></div></template></k-each>
+<div class="k-row total" id="ok"><div>«r_after»<small>«r_until» {{next_payday|date}}</small></div><b>{{after_bills|eur}}</b></div>
+<div class="k-row total" id="no"><div>«r_short»<small>«r_until» {{next_payday|date}}</small></div><b>{{short|eur}}</b></div>
+<div class="k-row" id="sf"><div>«r_safe»<small>«r_safe2»</small></div><b>{{safe_to_spend|eur}}</b></div></div>
+<div class="k-stack"><p class="k-h">«h_steps»</p><div class="k-rows">
+<div class="k-row"><div>«s1»<small>«s1b»</small></div></div>
+<div class="k-row"><div>«s2»<small>«s2b»</small></div></div>
+<div class="k-row"><div>«s3»<small>«s3b»</small></div></div></div></div>
+<p class="k-note">«note»</p>
+«chips»
+<script>var sh=K.fact("short")>0;K.$("#ok").hidden=sh;K.$("#sf").hidden=sh;K.$("#no").hidden=!sh</script>
+''', {
+    "en": dict(r_balance="On your account", say_none="Beyond them, nothing more is safe to spend until then.", l_next="Next payday", l_after="Left after the bills before payday", l_short="Missing for the bills before payday",
+               l_safe="Safe to spend until payday",
+               say_ok="By the numbers on this account, the bills before {PAY} are covered: **{eur(due, True)}** is due by {day(s['next_payday'])} and you have {eur(balance, True)}.",
+               say_safe="After them and the money kept back, {eur(s['amount'], True)} is safe to spend.",
+               say_ask="If a bill still cannot be paid, ask for a later due date before it falls due.",
+               say_short="You are **{eur(-left, True)}** short for the bills due before {PAY} on {day(s['next_payday'])}: {eur(due, True)} is due and the account has {eur(balance, True)}. Do not wait for the due date: ask each biller or the bank now for a later date or a payment plan. Free debt advice is listed below.",
+               lede="Your bills against your balance, and what to do next.",
+               r_after="Left after these bills", r_short="Missing for these bills", r_until="before", r_safe="Safe to spend", r_safe2="after the reserve, the cushion and what is kept as savings",
+               h_steps="If money will not stretch",
+               s1="Home, electricity, food and medicine first", s1b="They cost the most to miss. Other bills can wait a little longer.",
+               s2="Ask for more time before the due date", s2b="Call the biller or the bank. Most will move a date or split a bill when you ask early.",
+               s3="Free help with debts", s3b="Takuusäätiö's Velkalinja helpline, and financial and debt counselling at the state legal aid offices. Both are free and confidential.",
+               note="This shows this account only. A loan, a card or a bill paid from somewhere else is not in it."),
+    "fi": dict(r_balance="Tililläsi", say_none="Niiden lisäksi turvallista käyttövaraa ei ole ennen sitä.", l_next="Seuraava palkkapäivä", l_after="Jää laskujen jälkeen ennen palkkapäivää", l_short="Puuttuu laskuista ennen palkkapäivää",
+               l_safe="Turvallista käyttää palkkapäivään asti",
+               say_ok="Tämän tilin lukujen mukaan laskut ennen {PAY}ä on katettu: {day(s['next_payday'])} mennessä erääntyy **{eur(due, True)}** ja tililläsi on {eur(balance, True)}.",
+               say_safe="Niiden ja varattujen rahojen jälkeen turvallista käyttövaraa on {eur(s['amount'], True)}.",
+               say_ask="Jos jokin lasku jää silti maksamatta, pyydä lisää maksuaikaa ennen eräpäivää.",
+               say_short="Ennen {PAY}ä {day(s['next_payday'])} erääntyvistä laskuista puuttuu **{eur(-left, True)}**: laskuja on {eur(due, True)} ja tililläsi on {eur(balance, True)}. Älä odota eräpäivää: pyydä laskuttajalta tai pankilta jo nyt lisää maksuaikaa tai maksusuunnitelma. Maksuton velkaneuvonta on listattu alla.",
+               lede="Laskusi saldoasi vasten, ja mitä tehdä seuraavaksi.",
+               r_after="Jää näiden laskujen jälkeen", r_short="Näistä laskuista puuttuu", r_until="ennen", r_safe="Turvallista käyttää", r_safe2="kun yllätysvara, pohjavara ja säästöön jäävä osa on varattu",
+               h_steps="Jos rahat eivät riitä",
+               s1="Asuminen, sähkö, ruoka ja lääkkeet ensin", s1b="Niiden maksamatta jättäminen tulee kalleimmaksi. Muut laskut voivat odottaa hetken.",
+               s2="Pyydä lisää maksuaikaa ennen eräpäivää", s2b="Soita laskuttajalle tai pankkiin. Useimmat siirtävät eräpäivää tai jakavat laskun osiin, kun kysyt ajoissa.",
+               s3="Maksutonta apua velkoihin", s3b="Takuusäätiön Velkalinja sekä oikeusaputoimistojen talous- ja velkaneuvonta. Molemmat ovat maksuttomia ja luottamuksellisia.",
+               note="Tässä näkyy vain tämä tili. Laina, kortti tai muualta maksettava lasku ei ole mukana."),
+}, ("If the bills do not fit", "Jos rahat eivät riitä laskuihin"), ("The bills on the way against the balance", "Tulossa olevat laskut saldoa vasten"))
+
 # ------------------------------------------------------------------------------------------------------------ repeating
 V["repeating"] = ('''
 p = kori.repeating()
@@ -406,6 +474,7 @@ CHIPS = {
     "track-record": (("balance2", ("Why not my balance", "Miksi ei saldo")), ("last-cycle", ("Last pay cycle", "Edellinen palkkajakso"))),
     "bills": (("repeating", ("What repeats", "Mikä toistuu")), ("balance2", ("Why not my balance", "Miksi ei saldo"))),
     "repeating": (("bills", ("Bills before payday", "Laskut ennen palkkapäivää")), ("last-cycle", ("Last pay cycle", "Edellinen palkkajakso"))),
+    "trouble": (("balance2", ("Why not my balance", "Miksi ei saldo")), ("repeating", ("What repeats", "Mikä toistuu"))),
     "breaks": (("safe-week", ("Safe this week", "Turvallista tällä viikolla")), ("balance2", ("Why not my balance", "Miksi ei saldo"))),
     "afford": (("safe-week", ("Safe this week", "Turvallista tällä viikolla")), ("breaks", ("If something breaks", "Jos jotain hajoaa"))),
 }
@@ -433,6 +502,27 @@ SOMEONE_EN = ["aino", "eetu", "mikko", "sanna", "jari", "helena", "his ", "her "
 SOMEONE_FI = ["ainon", "eetun", "mikon", "sannan", "jarin", "helenan", "hänen", "heidän", "jonkun", "toisen asiakk", "vaimo", "miehen",
               "puoliso", "kaveri", "ystävä", "naapuri", "pomo", "äidin", "isän", "veljen", "siskon"]
 NOT_BOUGHT = ["bitcoin", "crypto", "stock", "share", "fund", "etf", "invest", "osake", "osakk", "rahasto", "sijoit", "krypto"]
+# Money that will not stretch. These come before every other view: "I can't pay my bills" must never open the plain bills answer.
+TROUBLE_EN = ["can t pay", "cant pay", "cannot pay", "can not pay", "couldn t pay", "unable to pay", "not able to pay", "no way to pay", "can t afford my",
+              "cant afford my", "cannot afford my", "can t afford the rent", "can t afford rent", "can t cover my", "cant cover my", "cannot cover my",
+              "can t make rent", "behind on my bill", "behind on bill", "behind on the bill", "behind on rent", "behind on my rent", "behind on the rent",
+              "behind on payment", "behind on my payment", "behind with my", "behind with the rent", "behind with rent", "behind with bill",
+              "debt collect", "collection agenc", "collection letter", "debt problem", "drowning in debt", "deep in debt", "ran out of money",
+              "have run out of money", "ve run out of money", "i m out of money", "im out of money", "i am out of money", "money has run out",
+              "money ran out", "no money left", "no money for", "not enough money for", "make ends meet", "payment default", "bailiff", "overdue",
+              "missed a payment", "missed payment", "payday loan", "quick loan", "instant loan"]
+TROUBLE_FI = ["pysty maksa", "en voi maksaa", "saa maksettua", "saa vuokraa maksettua", "saa laskuja maksettua", "saa laskua maksettua", "saa laskujani maksettua",
+              "ei ole varaa maksaa", "ei oo varaa maksaa", "ei varaa maksaa", "rahat ei riitä", "rahat eivät riitä", "raha ei riitä", "rahat eivät riittäneet",
+              "rahat loppu", "rahat on loppu", "rahat ovat loppu", "ei ole rahaa", "ei oo rahaa", "veloissa", "velkaantu", "velkaongelm", "velkakier",
+              "perintä", "perinnä", "ulosot", "maksuhäiriö", "pikavip", "laskut myöhässä", "lasku myöhässä", "laskut on myöhässä", "lasku on myöhässä",
+              "laskut ovat myöhässä", "vuokra myöhässä", "vuokra on myöhässä", "maksut myöhässä", "jäi maksamatta", "jää maksamatta", "jäänyt maksamatta", "jääneet maksamatta", "rästissä", "en selviä lasku",
+              "en selviydy lasku"]
+# Somebody else's trouble is not answered with this customer's numbers.
+OTHERS_EN = ["my friend", "my partner", "my wife", "my husband", "my mom", "my mum", "my dad", "my brother", "my sister", "my neighbour", "my neighbor",
+             "my boss", "someone", "somebody", "other customer", "aino", "eetu", "mikko", "sanna", "jari", "helena", "his bill", "her bill", "their bill",
+             "his rent", "her rent", "their rent"]
+OTHERS_FI = ["ainon", "eetun", "mikon", "sannan", "jarin", "helenan", "hänen", "heidän", "jonkun", "toisen asiakk", "vaimoni", "mieheni", "puolisoni",
+             "kaverini", "kaverilla", "ystäväni", "ystävällä", "naapurini", "äitini", "isäni", "veljeni", "siskoni"]
 BREAK_EN = ["broke", "break", "died", "dead", "stopped working", "packed up", "need a new", "repair", "fix", "dentist", "vet ", "vet's", "emergency",
             "unexpected", "must pay", "have to pay", "need to pay", "surprise", "fine for", "a fine", "replace"]
 BREAK_FI = ["rikki", "hajos", "hajo", "korja", "hammaslääk", "eläinlääk", "pakko maksaa", "pakollinen", "yllättäv", "yllätys", "lakkasi toimimasta",
@@ -559,6 +649,17 @@ M = {
                         "pitääkö tää luku paikkansa", "onko luku pitänyt aiemmin", "voinko luottaa suhun", "pitikö tää luku ennenkin",
                         "onko turvallinen käyttövara luotettava", "osuuko tää arvio", "onko tätä testattu"]),
     },
+    "trouble": {
+        "en": dict(match=[TROUBLE_EN], unless=OTHERS_EN,
+                   say=["I can't pay my bills. What do I do?", "i cant pay my bills", "I cannot pay my rent this month", "can't pay the electricity bill",
+                        "I'm behind on my bills", "i have no money left for bills", "I can't make ends meet", "debt collection letter came, what now",
+                        "unable to pay my bills this month", "i ran out of money and rent is due", "I can't pay my bills at the moment",
+                        "I lost my job and I can't pay my rent or the electricity bill, and what should I do now?"]),
+        "fi": dict(match=[TROUBLE_FI], unless=OTHERS_FI,
+                   say=["En pysty maksamaan laskujani. Mitä teen?", "en pysty maksamaan laskuja", "en saa vuokraa maksettua tässä kuussa",
+                        "rahat ei riitä laskuihin", "rahat eivät riitä vuokraan", "laskut on myöhässä, mitä teen", "sain perintäkirjeen, mitä nyt",
+                        "mulla ei oo varaa maksaa sähkölaskua", "rahat loppu ja vuokra erääntyy", "en selviä laskuista"]),
+    },
     "bills": {
         "en": dict(match=[["bill", "invoice", "payments due", "due before", "what's due", "whats due", "what is due", "anything due", "coming out before",
                            "direct debits before", "payments coming", "payments are due", "payments due"]],
@@ -632,6 +733,8 @@ if __name__ == "__main__":
                 extra["also"] = m["also"]
             if name == "safe-week":
                 extra["params"] = [SCOPE[lang]]
+            if name == "trouble":                     # asked for, never suggested; and tried before every other view
+                extra |= {"quiet": True, "first": True}
             if name in ("breaks", "afford"):
                 items, default = (ITEMS_BREAK if name == "breaks" else ITEMS_WANT)[lang]
                 extra["params"] = [PRICE, {"token": "§ITEM§", "choices": items, "default": default}]

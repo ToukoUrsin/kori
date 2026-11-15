@@ -37,7 +37,7 @@ function Header({ d }: { d?: Home }) {
   );
 }
 
-function Hero({ d }: { d: Home }) {
+function Hero({ d, onSum }: { d: Home; onSum: () => void }) {
   const { lang, t, minuteFocus, home } = useApp();
   const s = d.safe;
   const empty = s.status === "empty";
@@ -60,7 +60,13 @@ function Hero({ d }: { d: Home }) {
         )}
         {s.days_to_payday === 1 ? t("today.dayTo", { word: payWord, date }) : t("today.daysTo", { n: s.days_to_payday, word: payWord, date })}
       </p>
-      <p className="mt-3 text-pretty text-[15px] leading-[21px] text-ink-2">{d.hero?.sentence}</p>
+      {/* the sentence names five pots; one tap opens the sum behind it, row by row, with what "stays as savings" means */}
+      {d.hero?.sentence && (
+        <button type="button" data-entry="sum" onClick={onSum} className="mt-3 block w-full text-left text-pretty text-[15px] leading-[21px] text-ink-2">
+          {d.hero.sentence}{" "}
+          <span className="whitespace-nowrap font-medium text-ink underline decoration-line-strong underline-offset-[3px]">{t("today.seeSum")}</span>
+        </button>
+      )}
       {/* what the simulated link added, said once on this screen, where the numbers it changes are */}
       {linked && <LinkedNote note={linked.note} className="mt-2" />}
     </section>
@@ -189,7 +195,7 @@ export function Today() {
             <span>{t("today.unknownCustomer", { id: unknownCustomer, name: d.persona.name })}</span>
           </p>
         )}
-        <Hero d={d} />
+        <Hero d={d} onSum={() => setOverlay({ kind: "card", card: safeCard })} />
         <ReplayStrip story={replay || null} loading={replayLoading} onOpen={() => setReplayOpen(true)} />
         <ReplaySheet story={replay || null} open={replayOpen} onClose={() => setReplayOpen(false)} />
         <a
