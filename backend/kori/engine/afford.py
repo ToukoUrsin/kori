@@ -118,7 +118,7 @@ def afford(m: Money, amount: float, label: str | None = None, basket: str | None
         options.append({
             "key": "rebuild", "amount": back, "months": n, "monthly": monthly, "fits_in_left_over": bool(room >= monthly),
             "left_over_monthly": room, "per_day": r2(monthly / DAYS_PER_MONTH),
-            "text": L(f"A must cannot wait, so the plan is to put back the {E(back)} that the reserve did not cover: {E(monthly)} a month for {n} months.",
+            "text": L(f"A must cannot wait, so the plan is to put back the {E(back)} that the reserve did not cover: {E(monthly)} a month for {n} {'month' if n == 1 else 'months'}.",
                       f"Pakollista menoa ei voi lykätä, joten suunnitelma on palauttaa se {E(back)}, jota vara ei kattanut: {E(monthly)} kuussa {n} kuukauden ajan.")})
 
     until = fmt_day(pay, lang)
@@ -137,6 +137,9 @@ def afford(m: Money, amount: float, label: str | None = None, basket: str | None
     elif reserve and verdict == "no":
         headline = L(f"Not fully. Your surprise reserve covers {E(reserve['used'])} and money this pay cycle does not need covers {E(reserve['from_buffer'])}. Safe to spend covers part of the rest, and {E(short_by)} is still missing before payday on {until}.",
                      f"Ei kokonaan. Yllätysvarasi kattaa {E(reserve['used'])} ja raha, jota tämä palkkajakso ei tarvitse, {E(reserve['from_buffer'])}. Turvallinen käyttövara kattaa osan lopusta, ja {E(short_by)} jää puuttumaan ennen palkkapäivää {until}.")
+    elif reserve and reserve["from_buffer"] > 0.005:        # three pots pay for it: name each, so the sentence adds up
+        headline = L(f"Yes. {E(reserve['used'], True)} comes from your surprise reserve and {E(reserve['from_buffer'], True)} from money this pay cycle does not need. The other {E(from_safe, True)} lowers your pace: now {E(per_day_before)} a day, after it {E(per_day_after)} a day until {until}.",
+                     f"Kyllä. Yllätysvarastasi tulee {E(reserve['used'], True)} ja {E(reserve['from_buffer'], True)} rahasta, jota tämä palkkajakso ei tarvitse. Loput {E(from_safe, True)} pienentää päivätahtiasi: nyt {E(per_day_before)} päivässä, sen jälkeen {E(per_day_after)} päivässä {until} asti.")
     elif reserve:
         headline = L(f"Yes, but only {E(reserve['used'])} comes from your surprise reserve. The rest lowers your pace: now {E(per_day_before)} a day, after it {E(per_day_after)} a day until {until}.",
                      f"Kyllä, mutta yllätysvarastasi tulee vain {E(reserve['used'])}. Loppu pienentää päivätahtiasi: nyt {E(per_day_before)} päivässä, sen jälkeen {E(per_day_after)} päivässä {until} asti.")

@@ -304,6 +304,16 @@ def _whatif(customer: str, lang: str, ask: str, x_kori_device: str | None = None
     return W(m, what_if(m, req.changes, req.months, req.goal_amount, req.goal_name))
 
 
+def _year(m: Money) -> dict | None:
+    """The last 12 complete months as they went, to set beside the usual month: a middle month hides the big ones."""
+    months = m.last_full_months(12)
+    if len(months) < 12:
+        return None
+    t = m.monthly.reindex(months).fillna(0.0)
+    came, went = float(t["income"].sum()), float(t["spend"].sum() + t["invested"].sum())
+    return {"months": 12, "in": round(came, 2), "out": round(went, 2), "net": round(came - went, 2)}
+
+
 @app.get("/api/plan")
 @first_view()
 def plan(customer: str, lang: str = "en", x_kori_device: str | None = Header(None)):
@@ -315,7 +325,7 @@ def plan(customer: str, lang: str = "en", x_kori_device: str | None = Header(Non
                       "left_over": m.usual["left_over"]},
             "categories": cats, "prefs": st["prefs"], "cushion": m.cushion, "savings_plan": m.savings_plan,
             "goal": _goal(m), "safe": {k: m.safe[k] for k in ("amount", "per_day", "days_to_payday", "status", "usual_per_day")},
-            "save": m.safe_to_save, "balance": m.balance})
+            "save": m.safe_to_save, "balance": m.balance, "year": _year(m)})
 
 
 class PlanReq(BaseModel):

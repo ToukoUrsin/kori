@@ -221,7 +221,7 @@ const D = {
   "baskets.moved": ["{cat} moved to {basket}.", "{cat} siirretty koriin {basket}."],
   "baskets.moveFail": ["The move didn't save. Try again.", "Siirto ei tallentunut. Yritä uudelleen."],
   "baskets.default": ["Kori's default", "Korin oletus"],
-  "baskets.slips": ["Slips through your fingers", "Valuu sormien läpi"],
+  "baskets.slips": ["Small purchases", "Pienet ostokset"],
   "baskets.slipsLine": ["{count} purchases under {under} in the last {days} days", "{count} alle {under} ostosta viimeisen {days} päivän aikana"],
   "baskets.slipsYear": ["{v} a year at this rate", "{v} vuodessa tällä tahdilla"],
   "baskets.slipsShow": ["Show me", "Näytä"],
@@ -249,6 +249,7 @@ const D = {
 
   "plan.title": ["Plan", "Suunnitelma"],
   "plan.typical": ["Your typical month", "Tyypillinen kuukautesi"],
+  "plan.yearNote": ["That is a month in the middle of your last six. Over your last 12 months {in} came in and {out} went out: the big months took what the usual ones left.", "Tämä on kuuden viime kuukautesi keskimmäinen. Viimeisten 12 kuukauden aikana tilille tuli {in} ja tililtä lähti {out}: isot kuukaudet veivät sen, mitä tavallisista jäi."],
   "plan.income": ["Income", "Tulot"],
   "plan.saving": ["Saving", "Säästöön"],
   "plan.leftOver": ["Left over", "Jää yli"],
@@ -345,6 +346,7 @@ const D = {
   "peers.median": ["Typical", "Tyypillinen"],
   "peers.range": ["Middle half", "Keskimmäinen puolikas"],
   "peers.finland": ["Statistics Finland", "Tilastokeskus"],
+  "peers.finlandIs": ["Finnish households {v} (Statistics Finland)", "Suomalaiset kotitaloudet {v} (Tilastokeskus)"],
   "peers.more": ["{p} more than typical", "{p} enemmän kuin tyypillinen"],
   "peers.less": ["{p} less than typical", "{p} vähemmän kuin tyypillinen"],
   "peers.same": ["about typical", "suunnilleen tyypillinen"],
@@ -356,7 +358,7 @@ const D = {
   "profile.traits": ["What shows in your transactions", "Mitä tapahtumistasi näkyy"],
   "profile.strongest": ["Strongest: {label}", "Vahvin: {label}"],
   "profile.weakest": ["Most room to grow: {label}", "Eniten kasvunvaraa: {label}"],
-  "profile.compared": ["Compared with {who}", "Vertailussa: {who}"],
+  "profile.compared": ["Compared with {who}", "Vertailukohta on {who}"],
   "profile.pctl": ["more than {p} of people", "enemmän kuin {p} ihmisistä"],
 
   "save.now": ["Safe to save right now", "Turvallista säästää juuri nyt"],

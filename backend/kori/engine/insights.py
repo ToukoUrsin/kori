@@ -115,10 +115,13 @@ def _hero_line(m) -> str:
         # The balance is not all spoken for: the everyday money this pay cycle left is used up, and the rest is
         # held for bills, the reserve and the cushion, or is money Kori does not count as spending money.
         b = s["budget"]
+        free = s["cash"]["free"]                                  # the way out is named: the money is there, and it is savings
         return L(f"Your account shows {E(bal)}, but this pay cycle's everyday money is used up: there was {E(b['everyday_budget'])} "
-                 f"for it and {E(b['everyday_spent'])} is spent. The rest is held for bills and reserves, or kept as savings.",
+                 f"for it and {E(b['everyday_spent'])} is spent. {E(bal - free)} is held for bills and reserves. The other {E(free)} is "
+                 f"savings from before: if you need money before {until}, it comes from there.",
                  f"Tililläsi on {E(bal)}, mutta tämän palkkajakson arkiraha on käytetty: siihen oli {E(b['everyday_budget'])}, "
-                 f"ja arkeen on mennyt {E(b['everyday_spent'])}. Loput on varattu laskuihin ja varoihin tai jää säästöön.")
+                 f"ja arkeen on mennyt {E(b['everyday_spent'])}. Laskuihin ja varoihin on varattu {E(bal - free)}. Loput {E(free)} on "
+                 f"aiemmin kertynyttä säästöä: jos tarvitset rahaa ennen {until}, se tulee sieltä.")
     if s["amount"] <= 0.005:
         return tidy(L(f"Your account shows {E(bal)}, and all of it is spoken for until payday on {until}.",
                       f"Tililläsi on {E(bal)}, ja se kaikki on jo varattu palkkapäivään {until} asti."))

@@ -186,7 +186,7 @@ PYTHONPATH=. uv run uvicorn kori.app:app --port 8811
 cd ../web && pnpm install && pnpm dev      # http://localhost:8812
 ```
 
-Tests (over 1,000: engine arithmetic, the approved answers and their wordings, number check, API, the sandbox, the shop and swap rules, the demo customers in both languages):
+Tests (1,137 cases from 187 test functions: engine arithmetic, the approved answers and their wordings, number check, API, the sandbox, the shop and swap rules, the demo customers in both languages):
 
 ```bash
 cd backend && PYTHONPATH=. uv run pytest -q

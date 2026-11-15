@@ -458,6 +458,8 @@ export interface PlanResponse {
   cushion: number;
   savings_plan: number;
   goal: Goal | null;
+  /** the last 12 complete months as they went, beside the usual month */
+  year?: { months: number; in: number; out: number; net: number } | null;
   safe: { amount: number; per_day: number; days_to_payday: number; status: Status; status_label?: string; status_line?: string; usual_per_day: number };
   save: SaveData;
   balance: number;

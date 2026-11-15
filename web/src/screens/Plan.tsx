@@ -19,7 +19,7 @@ const STEP = 5;
 /* ------------------------------------------------------------ typical month */
 
 function Typical({ d }: { d: PlanResponse }) {
-  const { t, home } = useApp();
+  const { t, home, lang } = useApp();
   const name = (k: BasketKey) => home.data?.baskets.baskets.find((b) => b.key === k)?.label || humanize(k);
   const u = d.usual;
   const rows: LedgerRow[] = [
@@ -47,6 +47,12 @@ function Typical({ d }: { d: PlanResponse }) {
       <div className="mt-2.5">
         <Ledger rows={rows} />
       </div>
+      {/* a middle month hides the big ones: when the year went worse than twelve usual months, say so */}
+      {d.year && !d.linked_view && u.left_over > 0 && d.year.net < u.left_over * 6 && (
+        <p className="mt-2.5 border-t border-line pt-2.5 text-[13px] leading-[18px] text-ink-2">
+          {t("plan.yearNote", { in: money(d.year.in, lang), out: money(d.year.out, lang) })}
+        </p>
+      )}
     </section>
   );
 }

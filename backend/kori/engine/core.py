@@ -817,8 +817,8 @@ class Money:
         months_covered = round(buffer_now / musts_monthly, 1) if musts_monthly > 0 else None
         return {
             "now": now, "monthly_capacity": monthly_capacity,
-            "already_saving_monthly": self.invest_typical,
-            "extra_monthly": r2(max(0.0, monthly_capacity - self.invest_typical)),
+            "already_saving_monthly": self.savings_plan,       # the saving set in Plan when there is one, else the habit
+            "extra_monthly": r2(max(0.0, monthly_capacity - self.savings_plan)),
             "buffer": {"balance": buffer_now, "musts_monthly": musts_monthly, "months_covered": months_covered,
                        "target_months": 3, "target": buffer_target,
                        "gap": r2(max(0.0, buffer_target - buffer_now))},

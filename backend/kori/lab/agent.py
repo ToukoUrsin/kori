@@ -229,6 +229,14 @@ WRITING CODE
 - Peers are "customers your age" (kori.peers() says who they are), never "Finns" or "the average Finn": the comparison is with other
   customers of this bank. A gap under 5% or under €10 is "about the same", never "€1 more".
 - Values of kind, category and type are data, not words for the customer: write "fast food", not fast_food, in labels and tables.
+- On screen a category carries the app's name, not the data's: Restaurants is "Eating out" (Ravintolat), Transportation "Getting
+  around" (Liikkuminen), Entertainment "Fun" (Huvit), Lifestyle "Shopping" (Ostokset), Travel "Trips" (Matkat), Home & Tech "Home &
+  tech" (Koti ja tekniikka), Utilities "Utilities" (Laskut ja sähkö), Groceries "Groceries" (Ruokaostokset), Housing (Asuminen),
+  Health (Terveys). Filter with the data's value, label with the app's name.
+- A change says its direction: "55% less" or "−55%", never a bare "55% change". One of a thing is singular: "1 month", "1 visit".
+- For one merchant or one payment, "the last 12 months" is the 365 days up to today, so a payment from this month is in it and the
+  counts agree with each other (visits in the last 12 months can never be fewer than visits this month).
+- A breakdown that ends in a total has every part on screen: the parts add up to the total, to the cent.
 - A question that is not about this person's money (the weather, the news, sports, a recipe, homework) gets no code and no web call:
   reply with form 3, one friendly sentence that this is outside what you do here, and CHIPS with money questions they could ask.
 - Words to rows: eating out, restaurants and dining are category "Restaurants" (every kind in it); groceries and food shopping are
@@ -430,6 +438,19 @@ def _app_says(m: Money, st: dict) -> str:
     return _says_cache[key]
 
 
+def _plan_says(m: Money) -> str:
+    """What this customer set in Plan on this phone. Not cached with the rest: it changes with a tap."""
+    lines, g = [], m.prefs.goal or {}
+    amount = g.get("amount")
+    if isinstance(amount, (int, float)) and amount > 0:
+        name = str(g.get("name") or "Goal")
+        lines.append(f"- Their own goal, set in Plan: \"{name}\", €{amount:,.0f}. A question about \"my goal\" or about that thing means this "
+                     f"amount: use it and say it is the goal from their plan. Never assume another price for it.   [kori.goal({amount:g}, name={name!r})]")
+    if m.prefs.savings_goal_monthly:
+        lines.append(f"- Monthly saving set in Plan: €{m.prefs.savings_goal_monthly:,.0f}. It is already taken out of safe to spend.   [kori.safe_to_save()]")
+    return ("\n" + "\n".join(lines)) if lines else ""
+
+
 def _sandbox(m: Money | None = None, st: dict | None = None) -> str:
     from .door import products_ready
     engine = _engine_doc(m, st) if m is not None else "kori.help() lists the calls\n"
@@ -466,7 +487,7 @@ def _system(m: Money, st: dict | None = None) -> str:
         name=p["name"] if p else "the customer", age=m.customer.age, today=f"{m.today:%A %-d %B %Y}",
         pay_word=("Pension day" if pension else "Payday"), payday=f"{m.next_payday:%-d %B}", days=m.days_to_payday,
         language="Finnish (natural, spoken-plain, never translated-sounding)" if lang == "fi" else "English",
-        sandbox=_sandbox(m, st), format=FORMAT, account=_account(m), app_says=_app_says(m, st) if st is not None else "",
+        sandbox=_sandbox(m, st), format=FORMAT, account=_account(m), app_says=(_app_says(m, st) + _plan_says(m)) if st is not None else "",
         money_style="Money as 1 357 € and 56,54 € (Finnish style)" if lang == "fi" else "Money as €1,357 and €56.54")
 
 

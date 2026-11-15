@@ -646,6 +646,7 @@ function PeerLine({ r, color }: { r: PeerRow; color?: string }) {
       </div>
       <p className="mt-1 text-[12px] leading-4 text-ink-3">
         {txt} (<span className="num">{money(r.median, lang)}</span>)
+        {r.finland?.eur_month != null && <> · <span className="num">{t("peers.finlandIs", { v: money(r.finland.eur_month, lang) })}</span></>}
       </p>
     </li>
   );
@@ -719,7 +720,7 @@ export function ProfileBody({ d }: { d: ProfileData }) {
           <ul className="mt-1 divide-y divide-line">
             {d.traits.map((x) => (
               <li key={x.key} className="py-2.5">
-                <div className="flex items-baseline justify-between gap-3">
+                <div className="flex flex-wrap items-baseline justify-between gap-x-3">
                   <span className="text-[14px] font-medium leading-5 text-ink">{x.name}</span>
                   <span className="num shrink-0 text-[12px] text-ink-3">{t("profile.pctl", { p: pct(x.percentile, lang) })}</span>
                 </div>
@@ -729,7 +730,7 @@ export function ProfileBody({ d }: { d: ProfileData }) {
           </ul>
         </div>
       )}
-      {d.compared_with && <p className="mt-1 text-[12px] leading-4 text-ink-3">{t("profile.compared", { who: d.compared_with })}</p>}
+      {d.compared_with && <p className="mt-1 text-[12px] leading-4 text-ink-3">{t("profile.compared", { who: d.compared_with.charAt(0).toLowerCase() + d.compared_with.slice(1) })}</p>}
     </div>
   );
 }
