@@ -28,7 +28,10 @@
   "why isn't my balance what I can spend",
   "why is safe to spend lower than my balance",
   "how much is on my account right now",
-  "current balance"
+  "current balance",
+  "What is left out of my safe to spend number?",
+  "what's held back from my safe to spend",
+  "what is not included in the safe number"
  ],
  "match": [
   [

@@ -1,5 +1,6 @@
 import { Check, ChevronRight } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
+import { OnLearn } from "../components/cards/bodies";
 import { CardView } from "../components/cards/CardView";
 import { Button, Collapse, ErrorInline, FoldRow, SectionHead, Skel, cx } from "../components/ui/bits";
 import { api } from "../lib/api";
@@ -135,10 +136,12 @@ export function Learn() {
 
         <section className="mt-8">
           <SectionHead title={t("learn.about")} />
-          <div className="space-y-3">
-            <AboutCard tool="spender_profile" />
-            <AboutCard tool="compare_with_peers" />
-          </div>
+          <OnLearn.Provider value>
+            <div className="space-y-3">
+              <AboutCard tool="spender_profile" />
+              <AboutCard tool="compare_with_peers" />
+            </div>
+          </OnLearn.Provider>
         </section>
       </div>
     </>

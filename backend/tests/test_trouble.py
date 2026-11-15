@@ -108,3 +108,23 @@ def test_before_my_salary_is_before_payday(q, name):
     """A judge with AI off asked "how much is okay to blow before my salary comes" and was told it is not on the list."""
     rec = kept.find(q, "en", "CUST01885", loose=True)
     assert (rec and rec["file"].split(".")[0]) == name
+
+
+@pytest.mark.parametrize("lang,q,name", [
+    ("en", "How sure are you about my safe to spend number?", "track-record"),
+    ("en", "how confident are you in this number", "track-record"),
+    ("en", "has the number ever been wrong", "track-record"),
+    ("fi", "Kuinka varma olet tästä luvusta?", "track-record"),
+    ("en", "What is left out of my safe to spend number?", "balance"),
+    ("en", "what's held back from my safe to spend", "balance"),
+    ("en", "how much is safe to spend", "safe-week"),
+    ("fi", "paljonko voin varmasti käyttää tällä viikolla", "safe-week"),
+    ("en", "are you sure about my grocery spending", None),
+    ("en", "What is not included in my rent?", None),
+])
+def test_how_sure_and_what_is_left_out(lang, q, name):
+    """"How sure are you about my safe to spend number?" opened the plain safe-to-spend answer: it is the track record's
+    question, and what the number leaves out is the sum that takes the balance down to it."""
+    for loose in (False, True):
+        rec = kept.find(q, lang, "CUST01885", loose=loose)
+        assert (rec and rec["file"].split(".")[0]) == name

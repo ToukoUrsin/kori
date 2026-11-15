@@ -186,7 +186,7 @@ def compare(m: Money, by: str = "age", categories: list[str] | None = None) -> d
     return {"group": {"by": key, "label": label, "size": int(len(g)), "min_group_size": MIN_GROUP},
             "window": usual_window(lang),
             "categories": items, "baskets": baskets, **extra,
-            "note": {"en": "Peers are other customers in this dataset; nobody is identifiable and groups are never smaller than 30 people.",
+            "note": {"en": "Peers are other customers. Nobody can be identified, and a group is never smaller than 30 people.",
                      "fi": "Vertailuryhmä on muita asiakkaita; ketään ei voi tunnistaa eikä ryhmä ole koskaan alle 30 henkeä."}[lang]}
 
 

@@ -54,7 +54,9 @@ def config(public_url: str, secret_id: str) -> dict:
                              "client_events": ["audio", "interruption", "user_transcript", "agent_response",
                                                "agent_response_correction", "vad_score", "agent_chat_response_part"]},
             "language_presets": {"fi": {"overrides": {"agent": {"first_message": "Hei, olen Kori. Mitä katsotaan?"},
-                                                      "tts": {"voice_id": VOICE_FI}}}},
+                                                      "tts": {"voice_id": VOICE_FI},
+                                                      # the waiting phrase in Finnish too, never English inside Finnish speech
+                                                      "turn": {"soft_timeout_config": {"message": "Lasken vielä..."}}}}},
         },
         "platform_settings": {
             "overrides": {

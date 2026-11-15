@@ -282,6 +282,8 @@ export function Today() {
         {/* everything with its own tab or sheet is one row here: Today points, the other tabs explain */}
         <section className="mt-6" aria-label={t("today.elsewhere")}>
           <ul className="divide-y divide-line overflow-hidden rounded-card border border-line bg-surface">
+            {/* the sentence under the big number already opens this sum ("See the sum"): the row is only for when it is missing */}
+            {!d.hero?.sentence && (
             <li>
               <GoRow
                 title={t("today.notBudget", { balance: money(d.safe.balance, lang, { cents: true }) })}
@@ -289,10 +291,12 @@ export function Today() {
                 onClick={() => setOverlay({ kind: "card", card: safeCard })}
               />
             </li>
+            )}
             <li data-focus-key="forecast">
               <GoRow
                 title={t("today.forecast", { word: payTo })}
-                detail={t("today.forecastRow", { safe: money(d.forecast.per_day.safe, lang, { cents: true }), usual: money(d.forecast.per_day.usual, lang, { cents: true }) })}
+                // a safe pace of zero is already the big number above: the row then gives only the usual
+                detail={d.forecast.per_day.safe <= 0 ? t("today.forecastRowUsual", { usual: money(d.forecast.per_day.usual, lang, { cents: true }) }) : t("today.forecastRow", { safe: money(d.forecast.per_day.safe, lang, { cents: true }), usual: money(d.forecast.per_day.usual, lang, { cents: true }) })}
                 onClick={() => setOverlay({ kind: "card", card: forecastCard })}
               />
             </li>
@@ -308,7 +312,8 @@ export function Today() {
               <GoRow
                 title={t("today.safeSave")}
                 value={money(d.save.extra_monthly, lang)}
-                detail={t("today.safeSaveCapacity", { v: money(d.save.monthly_capacity, lang) })}
+                // the figure is said once: when the room in a typical month is the same sum, the detail only names it
+                detail={money(d.save.monthly_capacity, lang) === money(d.save.extra_monthly, lang) ? t("today.safeSaveTypical") : t("today.safeSaveCapacity", { v: money(d.save.monthly_capacity, lang) })}
                 onClick={() => setTab("plan")}
               />
             </li>
@@ -357,7 +362,7 @@ export function Today() {
           pinned && (
             <p className="mt-5 flex items-start gap-2 px-1 text-[13px] leading-[18px] text-ink-3">
               <Pin size={14} strokeWidth={2} className="mt-0.5 shrink-0" aria-hidden />
-              <span>{t("today.myViewEmptyTitle")}</span>
+              <span>{t("today.pinHint")}</span>
             </p>
           )
         )}

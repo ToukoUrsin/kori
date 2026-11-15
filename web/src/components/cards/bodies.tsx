@@ -1,5 +1,5 @@
 import { ArrowDownRight, ArrowRight, ArrowUpRight, CircleCheck, Info, TriangleAlert } from "lucide-react";
-import { useState } from "react";
+import { createContext, useContext, useState } from "react";
 import { day, money, monthShort, num, pct } from "../../lib/format";
 import { useApp } from "../../lib/store";
 import type {
@@ -24,7 +24,7 @@ import { MonthsMeter, Radar, RangeStrip, TrendBars, TwoLine } from "../charts/Ch
 import { ForecastChart, ForecastLegend } from "../charts/ForecastChart";
 import { ReplayCells, ReplayMissBlock } from "../replay/ReplayStrip";
 import { SpokenBar } from "../charts/SpokenBar";
-import { BASKET_BG, BASKET_VAR, BigMoney, Button, CatIcon, Collapse, Dot, LinkedTag, cx } from "../ui/bits";
+import { BASKET_BG, BASKET_VAR, BigMoney, Button, CatIcon, Collapse, Dot, FoldRow, LinkedTag, cx } from "../ui/bits";
 import { ForecastSums } from "./Brief";
 import { Cell, Cells, Ledger, NoticeRow, StatusChip, TxList, type LedgerRow } from "./parts";
 
@@ -656,8 +656,10 @@ function PeerLine({ r, color }: { r: PeerRow; color?: string }) {
 
 export function PeersBody({ d }: { d: PeersData }) {
   const { t } = useApp();
+  const onLearn = useContext(OnLearn);
   const [all, setAll] = useState(false);
-  const cats = all ? d.categories : d.categories.slice(0, 4);
+  // on Learn the rest open in place under the fold row; elsewhere the list grows as before
+  const cats = all && !onLearn ? d.categories : d.categories.slice(0, 4);
   const hasFin = d.categories.some((c) => c.finland);
   return (
     <div>
@@ -689,8 +691,19 @@ export function PeersBody({ d }: { d: PeersData }) {
           <PeerLine key={r.key} r={r} />
         ))}
       </ul>
-      {d.categories.length > 4 && (
-        <button type="button" onClick={() => setAll((v) => !v)} className="-ml-1 relative h-9 rounded-md px-1 text-[13px] font-medium text-ink-2 after:absolute after:-inset-y-1 after:-inset-x-2 hover:text-ink">
+      {onLearn && d.categories.length > 4 && (
+        <Collapse open={all}>
+          <ul className="divide-y divide-line border-t border-line">
+            {d.categories.slice(4).map((r) => (
+              <PeerLine key={r.key} r={r} />
+            ))}
+          </ul>
+        </Collapse>
+      )}
+      {d.categories.length > 4 && onLearn ? (
+        <FoldRow open={all} onToggle={() => setAll((v) => !v)} n={d.categories.length - 4} className="rounded-none" />
+      ) : d.categories.length > 4 && (
+        <button type="button" aria-expanded={all} onClick={() => setAll((v) => !v)} className="-ml-1 relative h-9 rounded-md px-1 text-[13px] font-medium text-ink-2 after:absolute after:-inset-y-1 after:-inset-x-2 hover:text-ink">
           {all ? t("common.showLess") : t("common.showMore", { n: d.categories.length - 4 })}
         </button>
       )}
@@ -701,8 +714,12 @@ export function PeersBody({ d }: { d: PeersData }) {
 
 /* ----------------------------------------------------------------- profile */
 
+/** On Learn the profile says what its scores are measured against and the peers fold uses the fold row; the chat's copies stay as they are. */
+export const OnLearn = createContext(false);
+
 export function ProfileBody({ d }: { d: ProfileData }) {
   const { lang, t } = useApp();
+  const scale = useContext(OnLearn) && d.shape[0];
   return (
     <div>
       <p className="text-[22px] font-semibold leading-7 tracking-[-0.02em] text-ink">{d.archetype.name}</p>
@@ -710,6 +727,7 @@ export function ProfileBody({ d }: { d: ProfileData }) {
       <div className="mt-2">
         <Radar axes={d.shape} />
       </div>
+      {scale && <p className="mb-2 text-pretty text-[12px] leading-4 text-ink-3">{t("profile.scale", { label: scale.label, score: scale.score })}</p>}
       {(d.strongest || d.weakest) && (
         <div className="mt-1 flex flex-wrap gap-1.5 text-[12px] leading-4">
           {d.strongest && <span className="rounded-full bg-brand-soft px-2.5 py-1 font-medium text-brand-strong">{t("profile.strongest", { label: d.strongest.label })}</span>}

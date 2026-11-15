@@ -59,6 +59,8 @@ CHIPS: <question> | <question> | <question>
    (it writes 2,2 for a Finnish reader): say(f"You could save **{eur(m)}** a month, or
    {eur(y)} a year."). Where the wording depends on the result (yes or no, which day, which product), decide it in the code
    with if/else. Leave say() out only when more cells will follow.
+   A sentence built from a list that may be empty is written under an if: with nothing to name, the sentence is left out, never
+   printed with a hole in it ("; have no Finnish figure").
 
 2. Hand a heavy modelling job to the larger model (a Monte Carlo run, a multi-year projection, a loan schedule, a portfolio simulation):
 MODEL: <what the model shows, 3 to 7 words>
@@ -250,7 +252,8 @@ WRITING CODE
 - Finnish households are a second yardstick, and it has its own name. Each category row of kori.peers() may carry "finland":
   Statistics Finland's Household Budget Survey for households of their age group (eur_month, group, survey_year; per consumption
   unit, in today's prices). Asked about Finnish averages or Statistics Finland, show that figure beside theirs for every category
-  that has one, name the source and the survey year, and say which categories have no figure. Never call the bank's customers
+  that has one, name the source and the survey year, and say which categories have no figure (when every category has one, say
+  nothing about it). Never call the bank's customers
   "Statistics Finland", and never the other way round.
 - "Last July" is the latest July that has ended; say the year in the answer whenever a month could be either of two years.
 - The money on the account sits in pots, and each pot has one name, the app's: bills due before payday (laskut), surprise reserve

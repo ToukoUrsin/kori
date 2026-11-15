@@ -382,8 +382,9 @@ export function LangToggle({ className }: { className?: string }) {
           aria-pressed={on === l}
           onClick={() => setLang(l)}
           className={cx(
-            "relative h-8 min-w-11 rounded-full px-2.5 text-[12px] font-semibold uppercase tracking-[0.04em] transition-colors duration-150 after:absolute after:-inset-y-1.5 after:inset-x-0",
-            on === l ? "bg-surface text-ink shadow-[0_1px_2px_oklch(0.22_0.02_160/0.14)]" : "text-ink-3 hover:text-ink",
+            // the button is 44 px tall for a thumb; the pill it draws stays 32 px, so the switch looks exactly as before
+            "relative isolate h-11 min-w-11 px-2.5 text-[12px] font-semibold uppercase tracking-[0.04em] transition-colors duration-150 before:absolute before:inset-x-0 before:inset-y-1.5 before:-z-10 before:rounded-full before:transition-colors before:duration-150 focus-visible:outline-none focus-visible:before:outline-2 focus-visible:before:outline-offset-2 focus-visible:before:outline-brand",
+            on === l ? "text-ink before:bg-surface before:shadow-[0_1px_2px_oklch(0.22_0.02_160/0.14)]" : "text-ink-3 hover:text-ink",
             langNext === l && "animate-pulse",
           )}
         >

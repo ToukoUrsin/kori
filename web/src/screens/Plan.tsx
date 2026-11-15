@@ -552,11 +552,11 @@ function Stepper({ label, hint, value, step, onChange }: { label: string; hint: 
   const btn =
     "inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-line-strong bg-surface text-ink transition-[border-color,transform,opacity] duration-150 hover:border-ink-3 active:scale-95 disabled:opacity-40 disabled:active:scale-100";
   return (
-    <div className="flex items-center gap-2 py-3">
-      <div className="min-w-0 flex-1">
-        <p className="text-[14px] font-medium leading-5 text-ink">{label}</p>
-        <p className="text-[12px] leading-4 text-ink-3">{hint}</p>
-      </div>
+    // on a narrow phone the words take the full width and the buttons go under them, so nothing stacks word by word
+    <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-2 py-3">
+      <p className="col-start-1 row-start-1 self-end text-[14px] font-medium leading-5 text-ink max-[359px]:col-span-2">{label}</p>
+      <p className="col-start-1 row-start-2 self-start text-[12px] leading-4 text-ink-3 max-[359px]:col-span-2">{hint}</p>
+      <div className="col-start-2 row-span-2 row-start-1 flex items-center gap-2 max-[359px]:col-span-2 max-[359px]:col-start-1 max-[359px]:row-span-1 max-[359px]:row-start-3 max-[359px]:mt-2 max-[359px]:justify-end">
       <button type="button" className={btn} aria-label={t("plan.decrease", { what: label })} disabled={value <= 0} onClick={() => onChange(Math.max(0, value - step))}>
         <Minus size={18} strokeWidth={2} aria-hidden />
       </button>
@@ -566,6 +566,7 @@ function Stepper({ label, hint, value, step, onChange }: { label: string; hint: 
       <button type="button" className={btn} aria-label={t("plan.increase", { what: label })} onClick={() => onChange(value + step)}>
         <Plus size={18} strokeWidth={2} aria-hidden />
       </button>
+      </div>
     </div>
   );
 }
@@ -642,6 +643,7 @@ function Setters({ q }: { q: Query<PlanResponse> }) {
     timer.current = setTimeout(() => void flush(), 350);
   };
 
+  const status = d.safe.status_label ? <span className="rounded-full bg-warn-soft px-2.5 py-1 text-[12px] font-semibold text-warn-ink">{d.safe.status_label}</span> : <StatusChip status={d.safe.status} />;
   return (
     <section className="mt-8">
       <SectionHead title={t("plan.setters")} />
@@ -683,6 +685,8 @@ function Setters({ q }: { q: Query<PlanResponse> }) {
                 <p className="num text-[13px] leading-[18px] text-ink-3">
                   <Money value={d.safe.per_day} cents /> {t("common.aDay")}
                 </p>
+                {/* on a narrow phone the status sits under the words, so the number keeps its room */}
+                <span className="mt-1 hidden max-[359px]:flex">{status}</span>
                 {before != null && Math.round(before) !== Math.round(d.safe.amount) && (
                   <p className="num whitespace-nowrap text-[13px] leading-[18px] text-ink-2" aria-live="polite">
                     {t("plan.safeBefore", { v: money(before, lang) })}
@@ -693,7 +697,7 @@ function Setters({ q }: { q: Query<PlanResponse> }) {
           </div>
           <span className={cx("flex items-center gap-3 transition-opacity duration-150", busy && "opacity-25")}>
             {/* the old status would be as stale as the old number: it steps aside while the new one is worked out */}
-            {busy ? null : d.safe.status_label ? <span className="rounded-full bg-warn-soft px-2.5 py-1 text-[12px] font-semibold text-warn-ink">{d.safe.status_label}</span> : <StatusChip status={d.safe.status} />}
+            {busy ? null : <span className="flex max-[359px]:hidden">{status}</span>}
             <Money value={d.safe.amount} className="text-[22px] font-semibold leading-7 tracking-[-0.02em] text-ink" />
           </span>
         </div>

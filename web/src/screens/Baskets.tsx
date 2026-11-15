@@ -310,7 +310,7 @@ export function Baskets() {
                   <p className="num mt-0.5 text-pretty pl-[18px] text-[13px] leading-[18px] text-ink-2">
                     {b ? basketShort(b, c.is_current, t, lang) : t("common.usual", { v: money(d.usual[key], lang) })}
                   </p>
-                  <p className="mt-1.5 pl-[18px] text-[12px] leading-[17px] text-ink-3">{b?.desc || d.labels[key].desc}</p>
+                  <p className="mt-1 pl-[18px] text-[12px] leading-[17px] text-ink-3">{t(`baskets.line.${key}`)}</p>
                 </div>
                 {((items: ReactNode[]) => {
                   const fold = items.length >= 5;

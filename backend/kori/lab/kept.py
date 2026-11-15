@@ -113,7 +113,10 @@ def _fill(rec: dict, q: str, own: dict | None = None) -> dict | None:
 
 
 # "Before my salary comes" is "before payday": said that way it would trip over the words that keep salary questions out.
-_SAME = [(re.compile(r"\b(before|until|till|til) (?:my |the )?(?:next )?(?:salary|wages?|pay ?check|paycheque)(?: comes in| comes| arrives| lands| is paid| gets paid)?(?= |$)"), r"\1 payday")]
+_SAME = [(re.compile(r"\b(before|until|till|til) (?:my |the )?(?:next )?(?:salary|wages?|pay ?check|paycheque)(?: comes in| comes| arrives| lands| is paid| gets paid)?(?= |$)"), r"\1 payday"),
+         # what the safe number leaves out is the sum that takes the balance down to it: the balance answer
+         (re.compile(r"^(?:what(?: is| s|s)?|which money is|how much is) (?:left out of|held back from|not included in|excluded from|kept back from|taken out of)"
+                     r" (?:my |the |this )?safe(?: to spend)?(?: number| figure| amount| sum)?$"), "why is safe to spend lower than my balance")]
 
 
 def _same(q: str) -> str:

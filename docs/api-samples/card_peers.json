@@ -260,7 +260,7 @@
             "diff": 860.36,
             "diff_pct": 39
         },
-        "note": "Peers are other customers in this dataset; nobody is identifiable and groups are never smaller than 30 people."
+        "note": "Peers are other customers. Nobody can be identified, and a group is never smaller than 30 people."
     },
     "source": {
         "tool": "compare_with_peers",
