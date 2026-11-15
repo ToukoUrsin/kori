@@ -105,7 +105,7 @@ function Skeleton() {
 }
 
 export function Today() {
-  const { home, customer, lang, t, pins, setOverlay, setTab, openCoach, openChat, openLesson, minuteOn, setMinuteOn, minuteFocus } = useApp();
+  const { home, customer, lang, t, pins, setOverlay, setTab, openCoach, openChat, openLesson, minuteOn, setMinuteOn, minuteFocus, unknownCustomer } = useApp();
   const d = home.data;
   const [allNotices, setAllNotices] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
@@ -171,8 +171,10 @@ export function Today() {
     );
   }
 
+  // the customer's own word for the day money comes in: Helena's is pension day, never payday
+  const payTo = lang === "fi" ? `${d.pay_word || "palkkapäivä"}än` : d.pay_word || "payday";
   const safeCard: Card = { id: "today-safe", type: "safe", title: t("plan.safeEffect"), data: { ...d.safe, pay_word: d.pay_word }, source: { tool: "safe_to_spend", args: {} } };
-  const forecastCard: Card = { id: "today-forecast", type: "forecast", title: t("today.forecast"), data: { ...d.forecast, pay_word: d.pay_word }, source: { tool: "balance_forecast", args: {} } };
+  const forecastCard: Card = { id: "today-forecast", type: "forecast", title: t("today.forecast", { word: payTo }), data: { ...d.forecast, pay_word: d.pay_word }, source: { tool: "balance_forecast", args: {} } };
   const next = d.lessons.next;
   const pinned = pins.data;
 
@@ -180,6 +182,13 @@ export function Today() {
     <>
       <Header d={d} />
       <div className="px-5 pb-8">
+        {/* a link to a customer that does not exist: say so calmly instead of quietly showing someone else */}
+        {unknownCustomer && (
+          <p role="status" className="mb-1 mt-1 flex items-start gap-2 rounded-[10px] bg-sunk px-3 py-2 text-[13px] leading-[18px] text-ink-2">
+            <Info size={15} strokeWidth={2} className="mt-px shrink-0 text-ink-3" aria-hidden />
+            <span>{t("today.unknownCustomer", { id: unknownCustomer, name: d.persona.name })}</span>
+          </p>
+        )}
         <Hero d={d} />
         <ReplayStrip story={replay || null} loading={replayLoading} onOpen={() => setReplayOpen(true)} />
         <ReplaySheet story={replay || null} open={replayOpen} onClose={() => setReplayOpen(false)} />
@@ -276,7 +285,7 @@ export function Today() {
             </li>
             <li data-focus-key="forecast">
               <GoRow
-                title={t("today.forecast")}
+                title={t("today.forecast", { word: payTo })}
                 detail={t("today.forecastRow", { safe: money(d.forecast.per_day.safe, lang, { cents: true }), usual: money(d.forecast.per_day.usual, lang, { cents: true }) })}
                 onClick={() => setOverlay({ kind: "card", card: forecastCard })}
               />

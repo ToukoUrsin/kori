@@ -117,8 +117,8 @@ export function SortBody({ sort, title, intro }: { sort: Sort; title: string; in
     <>
       <h2 className="text-[22px] font-semibold leading-7 tracking-[-0.02em] text-ink">{title}</h2>
       {intro && <p className="mt-1 text-[14px] leading-[21px] text-ink-2">{intro}</p>}
-      {/* the payment sits in the middle of the room that is left, between the task and the baskets */}
-      <div className="my-auto pt-6">
+      {/* the payment follows the task directly: task, payment and reason read as one group, never across an empty band */}
+      <div className="pt-6">
         <Dots sort={sort} />
       <AnimatePresence mode="wait" initial={false}>
         <motion.div
@@ -138,8 +138,14 @@ export function SortBody({ sort, title, intro }: { sort: Sort; title: string; in
               {item.merchant ? ` · ${item.category_label}` : ""}
             </p>
           </div>
-          {/* room for a three-line reason, so the payment does not move when the answer comes */}
-          <div aria-live="polite" className="min-h-[128px] pt-4">
+        </motion.div>
+      </AnimatePresence>
+      {/* the baskets sit right under the payment, and the reason under the basket you tapped: one column to read down */}
+      <div className="mt-4">
+        <SortBaskets sort={sort} />
+      </div>
+          {/* the reason appears below the baskets, so nothing above it moves */}
+          <div aria-live="polite" className="pt-3">
             {sort.picked && (
               <motion.div initial={reduce ? false : { opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.22 }}>
                 <p className="text-[15px] leading-[22px] text-ink-2">
@@ -156,8 +162,6 @@ export function SortBody({ sort, title, intro }: { sort: Sort; title: string; in
               </motion.div>
             )}
           </div>
-        </motion.div>
-      </AnimatePresence>
       </div>
       {sort.failed && <ErrorInline message={t("learn.sortFail")} onRetry={sort.retry} className="mt-2" />}
     </>

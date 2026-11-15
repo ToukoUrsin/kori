@@ -52,9 +52,9 @@ function MonthSwitch({ d, onMonth }: { d: BasketsResponse; onMonth: (m: string) 
       <IconButton label={t("baskets.prev")} disabled={!prev} onClick={() => prev && onMonth(prev)}>
         <ChevronLeft size={20} strokeWidth={2} aria-hidden />
       </IconButton>
-      <p className="min-w-0 flex-1 text-center text-[15px] font-semibold leading-5 text-ink" aria-live="polite">
-        {monthName(d.current.month, lang)}
-        {d.current.is_current && <span className="font-normal text-ink-3"> · {t("baskets.soFar")}</span>}
+      <p className="min-w-0 flex-1 text-center" aria-live="polite">
+        <span className="block text-[15px] font-semibold leading-5 text-ink">{monthName(d.current.month, lang)}</span>
+        <span className="block text-[12px] leading-4 text-ink-3">{t(d.current.is_current ? "baskets.calendarNow" : "baskets.calendar")}</span>
       </p>
       <IconButton label={t("baskets.next")} disabled={!next} onClick={() => next && onMonth(next)}>
         <ChevronRight size={20} strokeWidth={2} aria-hidden />

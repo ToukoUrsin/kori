@@ -9,7 +9,7 @@ import { api } from "../lib/api";
 import { useApp } from "../lib/store";
 import type { Lesson, LessonSummary, TeachBack } from "../lib/types";
 import { useQuery } from "../lib/useQuery";
-import { SortBaskets, SortBody, SortResult, useSort, type SortPlace } from "./lesson/sort";
+import { SortBody, SortResult, useSort, type SortPlace } from "./lesson/sort";
 
 type Step = { kind: "slide"; i: number } | { kind: "sort"; i: number } | { kind: "check" } | { kind: "teach" } | { kind: "done" };
 
@@ -185,7 +185,7 @@ function Player({ id, onClose, onList }: { id: string; onClose: () => void; onLi
       );
     } else {
       body = <SortBody sort={sort} title={s.title} intro={s.body} />;
-      footer = <SortBaskets sort={sort} />;
+      footer = null; // the baskets sit in the body, right under the payment
     }
   } else if (step.kind === "slide") {
     const s = d.slides[step.i];
@@ -413,7 +413,7 @@ function Player({ id, onClose, onList }: { id: string; onClose: () => void; onLi
           </motion.div>
         </AnimatePresence>
       </div>
-      <div className="shrink-0 border-t border-line bg-ground px-5 pt-3 pb-[max(14px,var(--safe-b))]">{footer}</div>
+      {footer && <div className="shrink-0 border-t border-line bg-ground px-5 pt-3 pb-[max(14px,var(--safe-b))]">{footer}</div>}
     </div>
   );
 }

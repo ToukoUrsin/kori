@@ -58,7 +58,12 @@ export function ReplayCells({
             ) : (
               <div aria-hidden>{button}</div>
             )}
-            {large && (index % 4 === 0 || selected === cell.month) && <p className="num mt-1 flex justify-center whitespace-nowrap text-[11px] leading-[14px] text-ink-3">{monthShort(cell.month, lang)}</p>}
+            {/* every cell keeps the label's room, so all bars share one baseline and no label sits beside a bar */}
+            {large && (
+              <p className="num mt-1 flex h-[14px] justify-center whitespace-nowrap text-[11px] leading-[14px] text-ink-3" aria-hidden={index % 4 === 0 || selected === cell.month ? undefined : true}>
+                {index % 4 === 0 || selected === cell.month ? monthShort(cell.month, lang) : null}
+              </p>
+            )}
           </li>
         );
       })}

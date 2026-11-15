@@ -77,7 +77,8 @@ export function TxList({ items, limit }: { items: Tx[]; limit?: number }) {
             <p className="truncate text-[12px] leading-4 text-ink-3">
               <span className="num">{day(x.date, lang)}</span>
               {x.time ? <span className="num"> · {x.time}</span> : null}
-              {x.merchant && x.kind_label ? ` · ${x.kind_label}` : ""}
+              {/* the kind is said once: never "Housing · Housing" */}
+              {x.merchant && x.kind_label && x.kind_label.toLowerCase() !== x.merchant.toLowerCase() ? ` · ${x.kind_label}` : ""}
             </p>
           </div>
           <span className={cx("num shrink-0 text-[14px] font-medium", x.amount > 0 ? "text-brand" : "text-ink")}>

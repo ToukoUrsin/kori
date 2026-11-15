@@ -1,4 +1,4 @@
-import { ArrowRight, MessageCircle, Minus, Plus, Target, Undo2 } from "lucide-react";
+import { ArrowRight, Loader2, MessageCircle, Minus, Plus, Target, Undo2 } from "lucide-react";
 import { useEffect, useId, useMemo, useRef, useState, type CSSProperties } from "react";
 import { WhatIfBody } from "../components/cards/bodies";
 import { Ledger, StatusChip, type LedgerRow } from "../components/cards/parts";
@@ -176,7 +176,8 @@ function Lab({ d }: { d: PlanResponse }) {
 
       <div>
         {/* the result stays in sight while the sliders move */}
-        <div className="sticky top-0 z-10 -mx-5 bg-ground px-5 pt-1.5 after:pointer-events-none after:absolute after:inset-x-0 after:top-full after:h-3 after:bg-gradient-to-b after:from-ground after:to-transparent">
+        {/* a solid band with room under the card, so the rows scrolling beneath are gone before they reach it */}
+        <div className="sticky top-0 z-10 -mx-5 bg-ground px-5 pb-2 pt-1.5 after:pointer-events-none after:absolute after:inset-x-0 after:top-full after:h-4 after:bg-gradient-to-b after:from-ground after:to-transparent">
           <div className="flex min-h-[84px] flex-col justify-center rounded-card border border-line bg-surface px-4 py-3" aria-live="polite">
             {changed.length === 0 ? (
               // nothing moved yet: the number the sliders will change, and what to do
@@ -211,7 +212,7 @@ function Lab({ d }: { d: PlanResponse }) {
           </div>
         </div>
 
-        <div className="mt-3 rounded-card border border-line bg-surface px-4 pb-2 pt-1.5">
+        <div className="mt-1 rounded-card border border-line bg-surface px-4 pb-2 pt-1.5">
           <div className="divide-y divide-line">
             {cats.map((c) => (
               <SliderRow key={c.key} c={c} v={vals[c.key] || 0} line={lines.get(c.key)} onChange={(v) => setVals((s) => ({ ...s, [c.key]: v }))} />
@@ -609,6 +610,7 @@ function Setters({ q }: { q: Query<PlanResponse> }) {
   const push = (body: Partial<PlanPut>) => {
     pending.current = { ...pending.current, ...body };
     dirty.current = true;
+    setBusy(true); // from the first tap the number below is plainly being worked out
     clearTimeout(timer.current);
     timer.current = setTimeout(() => void flush(), 350);
   };
@@ -640,15 +642,26 @@ function Setters({ q }: { q: Query<PlanResponse> }) {
           />
         </div>
         {d.reason && <p className="border-t border-line px-1 py-2.5 text-[12px] leading-[17px] text-ink-3">{d.reason}</p>}
-        <div className={cx("flex items-center gap-3 border-t border-line py-3 transition-opacity duration-150", busy && "opacity-60")}>
+        <div className="flex items-center gap-3 border-t border-line py-3" aria-busy={busy || undefined}>
           <div className="min-w-0 flex-1">
             <p className="text-[13px] leading-[18px] text-ink-2">{t("plan.safeEffect")}</p>
-            <p className="num text-[13px] leading-[18px] text-ink-3">
-              <Money value={d.safe.per_day} cents /> {t("common.aDay")}
-            </p>
+            {busy ? (
+              // the old figure never stands as if it were the answer: the line says it is being worked out
+              <p className="flex items-center gap-1.5 whitespace-nowrap text-[13px] leading-[18px] text-ink-2" role="status">
+                <Loader2 size={13} strokeWidth={2.25} className="shrink-0 animate-spin text-ink-3 motion-reduce:animate-none" aria-hidden />
+                {t("plan.working")}
+              </p>
+            ) : (
+              <p className="num text-[13px] leading-[18px] text-ink-3">
+                <Money value={d.safe.per_day} cents /> {t("common.aDay")}
+              </p>
+            )}
           </div>
-          {d.safe.status_label ? <span className="rounded-full bg-warn-soft px-2.5 py-1 text-[12px] font-semibold text-warn-ink">{d.safe.status_label}</span> : <StatusChip status={d.safe.status} />}
-          <Money value={d.safe.amount} className="text-[22px] font-semibold leading-7 tracking-[-0.02em] text-ink" />
+          <span className={cx("flex items-center gap-3 transition-opacity duration-150", busy && "opacity-25")}>
+            {/* the old status would be as stale as the old number: it steps aside while the new one is worked out */}
+            {busy ? null : d.safe.status_label ? <span className="rounded-full bg-warn-soft px-2.5 py-1 text-[12px] font-semibold text-warn-ink">{d.safe.status_label}</span> : <StatusChip status={d.safe.status} />}
+            <Money value={d.safe.amount} className="text-[22px] font-semibold leading-7 tracking-[-0.02em] text-ink" />
+          </span>
         </div>
       </div>
     </section>

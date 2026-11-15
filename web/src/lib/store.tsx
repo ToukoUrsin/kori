@@ -68,6 +68,8 @@ interface App {
   toast: Toast | null;
   showToast: (text: string, action?: Toast["action"]) => void;
   hideToast: () => void;
+  /** a customer id from the link that does not exist: Today says so once, in one line */
+  unknownCustomer: string | null;
 }
 
 const Ctx = createContext<App | null>(null);
@@ -201,8 +203,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setTabState(t);
     history.replaceState(null, "", location.pathname + location.search + (t === "today" ? "" : "#" + t));
   }, []);
+  const [unknownCustomer, setUnknownCustomer] = useState<string | null>(null);
   const setCustomer = useCallback((id: string) => {
     invalidate();
+    setUnknownCustomer(null);
     setCustomerState(id);
     setOverlay(null);
     setLessonId(null);
@@ -264,7 +268,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // an unknown customer in the URL or storage falls back to the demo hero instead of a dead screen
   useEffect(() => {
     const e = home.error as (Error & { status?: number }) | undefined;
-    if (e && e.status === 404 && customer !== DEFAULT_CUSTOMER) setCustomer(DEFAULT_CUSTOMER);
+    if (e && e.status === 404 && customer !== DEFAULT_CUSTOMER) {
+      setCustomer(DEFAULT_CUSTOMER);
+      setUnknownCustomer(customer);
+    }
   }, [home.error, customer, setCustomer]);
 
   const t = useMemo(() => makeT(lang), [lang]);
@@ -348,6 +355,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const openLesson = useCallback((id: string | null) => setLessonId(id), []);
 
   const value: App = {
+    unknownCustomer,
     lang,
     langNext,
     setLang,

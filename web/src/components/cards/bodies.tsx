@@ -32,9 +32,11 @@ import { Cell, Cells, Ledger, NoticeRow, StatusChip, TxList, type LedgerRow } fr
 
 export function SafeMaths({ d }: { d: SafeData }) {
   const { lang, t } = useApp();
+  // "before payday" in the customer's own word (pension day for a pension), in the case Finnish needs after "ennen"
+  const before = lang === "fi" ? `${d.pay_word || "palkkapäivä"}ä` : d.pay_word || "payday";
   const cash: LedgerRow[] = [
     { label: t("safe.balance"), value: d.cash.balance },
-    { label: t("safe.fixedDue"), value: d.cash.fixed_due, op: "−" },
+    { label: t("safe.fixedDue", { word: before }), value: d.cash.fixed_due, op: "−" },
     { label: t("safe.surpriseReserve"), value: d.cash.surprise_reserve, op: "−" },
     ...(d.cash.saving_left > 0 ? [{ label: t("safe.savingLeft"), value: d.cash.saving_left, op: "−" as const }] : []),
     { label: t("safe.cushion"), value: d.cash.cushion, op: "−" },
@@ -70,7 +72,7 @@ export function SafeMaths({ d }: { d: SafeData }) {
       </div>
       <p className="text-[13px] leading-[18px] text-ink-2">{t(d.limit === "budget" ? "safe.limitBudget" : "safe.limitCash")}</p>
       <div>
-        <h4 className="mb-1 text-[13px] font-semibold text-ink">{t("safe.upcoming")}</h4>
+        <h4 className="mb-1 text-[13px] font-semibold text-ink">{t("safe.upcoming", { word: before })}</h4>
         {d.upcoming.length ? (
           <ul className="divide-y divide-line text-[13px] leading-[18px]">
             {d.upcoming.map((u, i) => (

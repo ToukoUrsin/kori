@@ -236,7 +236,10 @@ export function Radar({ axes }: { axes: ShapeAxis[] }) {
   const [ref, w] = useWidth<HTMLDivElement>();
   const n = axes.length;
   const H = 212;
-  const R = 70;
+  const ang0 = (i: number) => -Math.PI / 2 + (i / n) * Math.PI * 2;
+  // the side labels need room: on a narrow phone the web shrinks before a label ("Säästötapa") meets the edge
+  const side = Math.max(0, ...axes.map((a, i) => (Math.abs(Math.cos(ang0(i))) < 0.3 ? 0 : a.label.length * 6.8 + Math.abs(Math.cos(ang0(i))) * 14)));
+  const R = Math.round(Math.max(46, Math.min(70, (w / 2 - side - 4) / 0.96)));
   const cx0 = w / 2;
   const cy0 = H / 2 + 4;
   const ang = (i: number) => -Math.PI / 2 + (i / n) * Math.PI * 2;
