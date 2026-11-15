@@ -242,7 +242,7 @@ if comf > 0 and tight > comf:            # no room before payday: no kept answer
     say(text)
 '''
 L_HTML = '''
-<p class="k-lede">«lede_a» <b>{{comfortable_up_to|eur0}}</b> «lede_b» {{tight_up_to|eur0}} «lede_c»</p>
+<p class="k-lede" hidden>«lede_a» <b>{{comfortable_up_to|eur0}}</b> «lede_b» {{tight_up_to|eur0}} «lede_c»</p>
 <div class="k-stats"><div class="k-fig"><span id="price">{{price_steps.0.price|eur0}}</span><small>«s_price»</small></div><div class="k-fig" id="pdw"><span id="pd">{{price_steps.0.per_day_after|eur}}</span><small>«s_after»</small></div><div class="k-fig"><span>{{usual_per_day|eur}}</span><small>«s_usual»</small></div></div>
 <div class="k-stack"><input type="range" id="s" min="0" max="1" step="1" value="0" aria-label="«s_price»"><div class="k-ticks"><span>{{price_steps.0.price|eur0}}</span><span>{{possible_up_to|eur0}}</span></div><div class="k-between k-flex"><span class="k-pill pos" id="v">«v_yes»</span><span class="k-note">{{days_to_payday|int}} «to_payday»</span></div></div>
 <div class="k-stack"><p class="k-h">«h_shops»</p><k-choice id="pick"><k-each table="laptop_options" sort="price"><template><div class="k-row" value="{product}"><div class="k-flex" style="gap:12px;min-width:0"><img class="k-pic s" src="{product.image}" alt=""><div style="flex:1;min-width:0"><span style="display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;overflow-wrap:anywhere">{name}</span><small>{store} · {per_day_after|eur} «a_day_after»</small></div></div><b>{price|eur0}</b></div></template></k-each></k-choice>
@@ -336,7 +336,7 @@ else:
 say(text + " «say_legal»")
 '''
 S_HTML = '''
-<p class="k-lede"><span id="lm">{{monthly_saving|eur0}}</span> «lede_a» {{years|int}} «lede_b» <span id="lp">{{total_put_in|eur0}}</span>«lede_c» <b id="lmd">{{median_end|eur0}}</b>.</p>
+<p class="k-lede" hidden><span id="lm">{{monthly_saving|eur0}}</span> «lede_a» {{years|int}} «lede_b» <span id="lp">{{total_put_in|eur0}}</span>«lede_c» <b id="lmd">{{median_end|eur0}}</b>.</p>
 <div class="k-stats"><div class="k-fig s"><span id="lo">{{p10_end|eur0}}</span><small>«s_weak»</small></div><div class="k-fig pos"><span id="md">{{median_end|eur0}}</span><small>«s_mid»</small></div><div class="k-fig s"><span id="hi">{{p90_end|eur0}}</span><small>«s_strong»</small></div></div>
 <div class="k-stack"><div class="k-between k-flex"><span class="k-note">«a_month»</span><b id="m">{{monthly_saving|eur0}}</b></div>
 <input type="range" id="a" min="0" max="1" step="1" value="0" aria-label="«a_month»">

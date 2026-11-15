@@ -68,7 +68,7 @@ Measured on the live site: twenty common questions open in 1 to 2 seconds, howev
 "my washing machine broke, 600 euros"). The chat suggests four of them, picked for each customer. Their code and screen were
 approved once (kept views, `docs/LAB.md`); asking one runs the code again on your data, so the numbers are computed
 now and checked, and the screen is the same on every take. A question in your own words is built fresh: the written
-answer is there in about 5 seconds and the finished screen in about 12 (median of 58 fresh questions on the live site: 11.8 s). A ten-year model built fresh takes about 30. The answer is fast because the code that
+answer is there in about 5 seconds and the finished screen in 12 to 15 (median of 58 fresh questions on the live site: 11.8 s; an outside reviewer's runs took 13.7 to 15.4). A ten-year model built fresh takes about 30. The answer is fast because the code that
 computes the figures also writes the sentence, so no second round with a model is needed.
 
 ## Why the numbers can be trusted
@@ -178,7 +178,7 @@ before?" and see the months it held, the months it did not, and the reason for e
 - **What is not real yet?** Receipt lines are sample data (S-mobiili has the real ones in Omat ostot), the other-bank
   link is simulated, and the customers are S-Pankki's synthetic set. The calculations, the shop prices, the fund and
   its fee, and the Statistics Finland figures are real.
-- **How is it tested?** 1,247 automated cases, and a replay of the safe-to-spend number on 106,553 past days of
+- **How is it tested?** 1,256 automated cases, and a replay of the safe-to-spend number on 106,553 past days of
   4,850 customers (above, under "Why the numbers can be trusted").
 
 ## Architecture
@@ -211,7 +211,7 @@ PYTHONPATH=. uv run uvicorn kori.app:app --port 8811
 cd ../web && pnpm install && pnpm dev      # http://localhost:8812
 ```
 
-Tests (1,247 cases from 204 test functions: engine arithmetic, the approved answers and their wordings, number check, API, the sandbox, the shop and swap rules, the demo customers in both languages):
+Tests (1,256 cases from 206 test functions: engine arithmetic, the approved answers and their wordings, number check, API, the sandbox, the shop and swap rules, the demo customers in both languages):
 
 ```bash
 cd backend && PYTHONPATH=. uv run pytest -q

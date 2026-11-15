@@ -37,7 +37,7 @@ Demo customer in every shot: Elli, in English.
 
 **Screens the film shows, which must keep looking as they do**: Today above the fold, the voice coach's opening, the chat's start and ask field, the approved answers for groceries, eating out, ten-year saving and the laptop, the line "Every number checked against the calculation", the payday replay sheet, the bank app after consent, and the work view. Changes elsewhere on the site need no re-cut.
 
-**On screen since the film was cut** (small, no re-cut): the sentence under the Today number now ends with a link, "See the sum", that opens the sum behind the number (same three lines, nothing moved); the eating-out answer's sentence names both windows when six and twelve months disagree, and has one more note line under its by-month chart; the ten-year answer's sentence says how the year really went.
+**On screen since the film was cut** (small, no re-cut): the sentence under the Today number now ends with a link, "See the sum", that opens the sum behind the number (same three lines, nothing moved); the eating-out answer's sentence names both windows when six and twelve months disagree, and has one more note line under its by-month chart; the ten-year answer's sentence says how the year really went; the laptop answer shows each product name on two lines, so two models of one series can be told apart; and the laptop, ten-year, goal and last-month answers no longer repeat the answer's sentence as a large heading above the screen (the screen starts at its figures).
 
 **What the film leaves out** (said by three test judges, kept for a next cut): the three baskets, a lesson with its say-it-back, Finnish, and the bank's switch that turns new AI answers off. A next cut would trade the oat drink or part of the laptop shot for ten seconds of those.
 
@@ -56,7 +56,7 @@ Demo customer in every shot: Elli, in English.
 1. Voice works and nothing needs topping up; take as many voice takes as you like.
 2. Open https://kori-coach.fly.dev/api/lab/health. It should name three models and say `"claude": true`.
 3. The four suggested questions open the same screen on every take, in 1 to 2 seconds, with the numbers computed again each time. No need to film them twice for layout.
-4. A typed question (the oat drink) and the work view with `fresh=1` are built fresh: answer in about 5 s, view done by about 12 s (a line says "Building the screen for this answer" in between), and the layout is a little different each time. Film those twice and keep the nicer one.
+4. A typed question (the oat drink) and the work view with `fresh=1` are built fresh: answer in about 5 s, view done by 12 to 15 s (a line says "Building the screen for this answer" in between), and the layout is a little different each time. Film those twice and keep the nicer one.
 5. Nothing else to set up. The data is in the app and the app's "today" is always 21 September 2026.
 
 ## Don't show

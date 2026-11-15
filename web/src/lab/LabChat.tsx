@@ -219,6 +219,22 @@ function UnderHood({ runs, done, copy }: { runs: Run[]; done?: any; copy: LabStr
 /** Inside the app: the customer and language come from the app, and a question can arrive from anywhere in it. */
 export type LabEmbed = { customer: string; lang: LabLang; request: { id: number; ask?: string; focus?: boolean } | null; onClose: () => void };
 
+/** Inside the app the conversation survives a reload of this tab, and only that: a new tab or visitor starts on the same empty screen. */
+const chatKey = (customer: string, lang: string) => `kori.chat.${customer}.${lang}`;
+function loadChat(customer: string, lang: string): { session: string; turns: Turn[] } | null {
+  try {
+    const v = JSON.parse(sessionStorage.getItem(chatKey(customer, lang)) || "null") as { session?: string; turns?: Turn[] } | null;
+    return v && v.session && Array.isArray(v.turns) && v.turns.length ? { session: v.session, turns: v.turns } : null;
+  } catch { return null; }
+}
+function saveChat(customer: string, lang: string, session: string, turns: Turn[]) {
+  try {
+    const keep = turns.filter((turn) => !turn.pending && !turn.error && turn.done);   // finished answers only, never one cut off half-written
+    if (keep.length) sessionStorage.setItem(chatKey(customer, lang), JSON.stringify({ session, turns: keep }));
+    else sessionStorage.removeItem(chatKey(customer, lang));
+  } catch { /* private mode or full storage: the chat simply starts empty after a reload */ }
+}
+
 let handledRequest = 0;                    // outlives a remount (a new language), so one tap never asks twice
 
 export default function LabChat({ onVoice, embed }: { onVoice?: () => void; embed?: LabEmbed } = {}) {
@@ -227,8 +243,9 @@ export default function LabChat({ onVoice, embed }: { onVoice?: () => void; embe
   const [ownCustomer] = useState(persona.customer);
   const lang = embed ? embed.lang : ownLang;
   const customer = embed ? embed.customer : ownCustomer;
-  const [session, setSession] = useState(newId);
-  const [turns, setTurns] = useState<Turn[]>([]);
+  const [saved] = useState(() => (embed ? loadChat(embed.customer, embed.lang) : null));
+  const [session, setSession] = useState(() => saved?.session || newId());
+  const [turns, setTurns] = useState<Turn[]>(() => saved?.turns || []);
   const starters = useStarters(customer, lang) || strings[lang].starter;
   const [menuOpen, setMenuOpen] = useState(false);
   const [sheet, setSheet] = useState<SheetTarget | null>(null);
@@ -252,6 +269,7 @@ export default function LabChat({ onVoice, embed }: { onVoice?: () => void; embe
     return () => clearInterval(id);
   }, [anyPending]);
   const currentTurn = turns[turns.length - 1];
+  useEffect(() => { if (embed && !anyPending) saveChat(customer, lang, session, turns); }, [anyPending, customer, embed, lang, session, turns]);
 
   useEffect(() => {
     if (embed) return;                     // inside the app, the app owns the address, storage and page language

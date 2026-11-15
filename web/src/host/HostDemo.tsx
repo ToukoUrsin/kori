@@ -372,7 +372,8 @@ function ConsentSheet({ lang, onAllow, onClose }: { lang: Lang; onAllow: () => v
 function ScopeRow({ title, note, state, on, onToggle }: { title: string; note: string; state: string; on: boolean; onToggle?: () => void }) {
   return (
     <div className="host-scope-row">
-      <div>
+      {/* the words beside a switch work it too */}
+      <div onClick={onToggle} style={onToggle ? { cursor: "pointer" } : undefined}>
         <strong>{title}</strong>
         <small>{note}</small>
       </div>

@@ -306,9 +306,9 @@ else:
     say(f"«say_none»")
 '''
 SPENT_HTML = '''
-<p class="k-lede">«lede_a» <b>{{year_total|eur0}}</b>«lede_b»</p>
+<p class="k-lede" hidden>«lede_a» <b>{{year_total|eur0}}</b>«lede_b»</p>
 <div class="k-stats"><div class="k-fig"><span>{{last_month|eur}}</span><small>{{month_name|raw}}</small></div><div class="k-fig"><span>{{payments|int}}</span><small>«s_pay»</small></div><div class="k-fig"><span>{{usual|eur0}}</span><small>«s_usual»</small></div></div>
-<div class="k-stack"><p class="k-h">«h_month»</p><k-bars table="by_month" x="short" y="spend" fmt="eur0" pick="last" readout="**{label}** · {spend|eur}, {count|int} «payments_word»"></k-bars></div>
+<div class="k-stack"><p class="k-h">«h_month»: {{year_total|eur0}}</p><k-bars table="by_month" x="short" y="spend" fmt="eur0" pick="last" readout="**{label}** · {spend|eur}, {count|int} «payments_word»"></k-bars></div>
 <div class="k-stack" id="pl" hidden><p class="k-h">«h_pay»</p><div class="k-rows"><k-each table="payments_list"><template><div class="k-row"><div><span class="k-ellip">{what}</span><small>{date|date}</small></div><b>{amount|eur}</b></div></template></k-each></div></div>
 «chips»
 <script>K.$("#pl").hidden=!(K.fact("payments")>0)</script>
@@ -497,7 +497,7 @@ if ok:
     say(f"«say»")
 '''
 GOAL_HTML = '''
-<p class="k-lede">«pre»{{amount|eur0}} {{goal_for|raw}} «lede_a» <b>{{reached_in|raw}}</b>«lede_b»</p>
+<p class="k-lede" hidden>«pre»{{amount|eur0}} {{goal_for|raw}} «lede_a» <b>{{reached_in|raw}}</b>«lede_b»</p>
 <div class="k-stats"><div class="k-fig"><span>{{room|eur0}}</span><small>«s_room»</small></div><div class="k-fig pos"><span>{{months|int}}</span><small>«s_months»</small></div></div>
 <div class="k-stack"><p class="k-h">«h_chart»</p><k-chart x="month" h="180" yfmt="eur0" zero xlabels="«x_now»|{{reached|raw}}"><k-line table="path" y="saved" label="«c_saved»" end fill></k-line></k-chart></div>
 <p class="k-note">«note»</p>

@@ -204,3 +204,38 @@ def test_a_right_answer_that_names_what_it_is_not_still_passes(monkeypatch, answ
     _offline(monkeypatch)
     le = lessons.get(Money("CUST00092"), "baskets")
     assert asyncio.run(agent.grade_teachback("en", le, answer))["passed"], answer
+
+
+# "You can't plan for surprises" is the mistake the next lesson exists to fix: it is put right, never praised.
+CANNOT_PLAN = [
+    ("en", "Surprise costs are random so you can't plan for them, just spend less on coffee."),
+    ("en", "Rent is fixed, coffee is everyday and I steer it, and there is no point saving for repairs."),
+    ("en", "Rent is the same every month, food I can cut, and it's impossible to prepare for surprises."),
+    ("fi", "Vuokra on kiinteä, kahvia voin ohjata, ja yllätyksiin ei voi varautua."),
+    ("fi", "Vuokra on sama joka kuu, ruokaa voin karsia, ja korjauksiin on turha säästää."),
+]
+CAN_PLAN = [
+    ("en", "Rent is the same every month, a repair comes whenever so I can't plan when it comes, and coffee I can steer."),
+    ("en", "Rent is fixed, surprises can't be timed but I can plan for them with a reserve, and food I can cut."),
+    ("en", "I cannot predict the dentist, so I set money aside for it. Rent is fixed and coffee is up to me."),
+    ("fi", "Vuokra on kiinteä, yllätyksiä ei voi ajoittaa mutta niihin voi varautua, ja kahvia voin ohjata."),
+]
+
+
+@pytest.mark.parametrize("lang,answer", CANNOT_PLAN)
+def test_cannot_plan_for_surprises_is_put_right(monkeypatch, lang, answer):
+    """A judge wrote "surprise costs are random so you can't plan for them" and was told "You got that"."""
+    for lid in ("baskets", "surprise"):
+        le = lessons.get(Money("CUST00092"), lid)
+        for generous in (None, True):
+            _offline(monkeypatch) if generous is None else _model_says(monkeypatch, True)
+            out = asyncio.run(agent.grade_teachback(lang, le, answer))
+            assert not out["passed"], (lid, out)
+            assert ("plan for it" in out["missing"]) or ("siihen voi varautua" in out["missing"]), (lid, out)
+
+
+@pytest.mark.parametrize("lang,answer", CAN_PLAN)
+def test_cannot_time_a_surprise_is_still_right(monkeypatch, lang, answer):
+    assert not teachback.check("baskets", answer, lang)["mixed_up"]
+    _offline(monkeypatch)
+    assert asyncio.run(agent.grade_teachback(lang, lessons.get(Money("CUST00092"), "baskets"), answer))["passed"], answer

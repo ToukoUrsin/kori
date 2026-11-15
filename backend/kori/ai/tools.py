@@ -222,7 +222,7 @@ VOICE_FILLER = {
 # one whole sentence that is always spoken, then a short "okay, here it is" that leads into the answer and sounds
 # natural wherever it pauses.
 EARLY = {"en": ["Let me go through your numbers for a moment. Okay, so, here it is. ",
-                "Good question. Let me check that for you. Right, so, here we go. ",
+                "Let me check that against the payments on your account. Okay, here it is. ",
                 "One second, I am looking at your account. Okay, I have it now. ",
                 "Okay, let me pull up your numbers for that. Right, here they are. ",
                 "Sure, let me work that out from your account. Okay, here it is. "],

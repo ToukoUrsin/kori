@@ -1,7 +1,7 @@
 import { Check, ChevronRight } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { CardView } from "../components/cards/CardView";
-import { Button, ErrorInline, SectionHead, Skel, cx } from "../components/ui/bits";
+import { Button, Collapse, ErrorInline, FoldRow, SectionHead, Skel, cx } from "../components/ui/bits";
 import { api } from "../lib/api";
 import { useApp } from "../lib/store";
 import type { Card, LessonSummary } from "../lib/types";
@@ -37,6 +37,11 @@ export function Learn() {
   const done = list ? list.filter((l) => l.done).length : 0;
   const next = list?.find((l) => !l.done);
   const nextPlace = next ? lessonPlace(customer, next.id) : undefined;
+  // the next lessons stay in sight, the rest are one tap away; a fold that would hide a single row is not worth its own row
+  const [allLessons, setAllLessons] = useState(false);
+  const nextAt = list && next ? list.indexOf(next) : -1;
+  const shownCount = list ? Math.max(3, nextAt + 2) : 0;
+  const folds = !!list && list.length - shownCount >= 2;
 
   return (
     <>
@@ -80,8 +85,20 @@ export function Learn() {
               <p className="mt-4 rounded-card bg-brand-soft px-4 py-3 text-[14px] leading-[21px] text-brand-strong">{t("learn.allDone")}</p>
             )}
 
-            <ul className="mt-3 divide-y divide-line rounded-card border border-line bg-surface">
-              {list.map((l, i) => {
+            <div className="mt-3 rounded-card border border-line bg-surface">
+            {((rows: ReactNode[]) =>
+              folds ? (
+                <>
+                  <ul className="divide-y divide-line">{rows.slice(0, shownCount)}</ul>
+                  <Collapse open={allLessons}>
+                    <ul className="divide-y divide-line border-t border-line">{rows.slice(shownCount)}</ul>
+                  </Collapse>
+                  <FoldRow open={allLessons} onToggle={() => setAllLessons((v) => !v)} n={list.length - shownCount} />
+                </>
+              ) : (
+                <ul className="divide-y divide-line">{rows}</ul>
+              ))(
+              list.map((l, i) => {
                 const place = l.done ? undefined : lessonPlace(customer, l.id);
                 return (
                 <li key={l.id}>
@@ -91,7 +108,7 @@ export function Learn() {
                     className={cx(
                       "group flex min-h-[52px] w-full items-center gap-3 px-4 py-2.5 text-left transition-colors duration-150 hover:bg-sunk/60 active:bg-sunk",
                       i === 0 && "rounded-t-card",
-                      i === list.length - 1 && "rounded-b-card",
+                      i === list.length - 1 && !folds && "rounded-b-card",
                     )}
                   >
                     <span
@@ -110,8 +127,9 @@ export function Learn() {
                   </button>
                 </li>
                 );
-              })}
-            </ul>
+              }),
+            )}
+            </div>
           </>
         )}
 

@@ -123,7 +123,9 @@ Return JSON: {{"passed": true|false, "got": "one short sentence naming what they
 "missing": "one short sentence naming the one idea to add, in plain words, or empty if nothing", "encouragement": "one short warm sentence",
 "wrong": "empty, unless the answer states something that contradicts the lesson: then one short sentence that puts it right"}}
 "wrong" is only for a plain mistake of fact about the idea: a thing put in the wrong basket ("groceries are surprise musts"),
-the wrong basket named as the one you steer ("I steer the rent"), or the idea turned upside down. An answer that is short, vague,
+the wrong basket named as the one you steer ("I steer the rent"), a surprise cost called something you cannot plan or save for
+(its timing cannot be known, but money can be set aside for it: "can't plan when it comes" is right, "can't plan for it" is wrong),
+or the idea turned upside down. Never praise such a sentence in "got". An answer that is short, vague,
 clumsy or incomplete is not wrong: leave "wrong" empty for it. An answer with something in "wrong" does not pass.
 Never ask the learner to use the lesson's words or terms.
 Write in {language}. Do not mention any number that is not in the lesson text above.

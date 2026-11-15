@@ -1,9 +1,9 @@
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { BasketBar, basketShort } from "../components/cards/bodies";
 import { Cell, Cells, TxList } from "../components/cards/parts";
 import { HistoryStrip } from "../components/charts/Charts";
-import { Button, CatIcon, cx, Dot, ErrorInline, IconButton, LinkedNote, LinkedTag, Money, SectionHead, Segmented, Skel, Slow, useLast } from "../components/ui/bits";
+import { Button, CatIcon, Collapse, cx, Dot, ErrorInline, FoldRow, IconButton, LinkedNote, LinkedTag, Money, SectionHead, Segmented, Skel, Slow, useLast } from "../components/ui/bits";
 import { Sheet } from "../components/ui/Sheet";
 import { api } from "../lib/api";
 import { humanize, money, monthName } from "../lib/format";
@@ -119,7 +119,7 @@ function CategorySheet({ d, row: current, onClose }: { d: BasketsResponse; row: 
           <div className="scroll-y min-h-0 px-5 pb-[max(18px,var(--safe-b))] pt-4">
             <p className="num text-[34px] font-semibold leading-10 tracking-[-0.03em] text-ink">{money(row.amount, lang, { cents: true })}</p>
             <p className="num mt-0.5 text-[13px] leading-[18px] text-ink-2">
-              {row.count === 1 ? t("baskets.purchase1") : t("baskets.purchases", { n: row.count })}{Math.round(row.usual) > 0 && ` · ${t("baskets.usualMonth", { v: money(row.usual, lang) })}`}
+              {row.basket === "fixed" ? (row.count === 1 ? t("baskets.payment1") : t("baskets.payments", { n: row.count })) : row.count === 1 ? t("baskets.purchase1") : t("baskets.purchases", { n: row.count })}{Math.round(row.usual) > 0 && ` · ${t("baskets.usualMonth", { v: money(row.usual, lang) })}`}
             </p>
 
             <section className="mt-5">
@@ -236,6 +236,8 @@ export function Baskets() {
   const { customer, lang, t, version } = useApp();
   const [month, setMonth] = useState<string | null>(null);
   const [open, setOpen] = useState<Row | null>(null);
+  // a long basket shows its three biggest lines; the rest are one tap away, in place
+  const [unfolded, setUnfolded] = useState<Partial<Record<string, boolean>>>({});
   const q = useQuery<BasketsResponse>(`baskets|${customer}|${lang}|${month || ""}|${version}`, `${customer}|${lang}`, () => api.baskets(customer, lang, month || undefined));
   const d = q.data;
 
@@ -303,28 +305,46 @@ export function Baskets() {
                   </p>
                   <p className="mt-1.5 pl-[18px] text-[12px] leading-[17px] text-ink-3">{b?.desc || d.labels[key].desc}</p>
                 </div>
-                <ul className="mt-2.5 divide-y divide-line border-t border-line">
-                  {rows.map((r) => (
+                {((items: ReactNode[]) => {
+                  const fold = items.length >= 5;
+                  const more = !!unfolded[key];
+                  return fold ? (
+                    <>
+                      <ul className="mt-2.5 divide-y divide-line border-t border-line">{items.slice(0, 3)}</ul>
+                      <Collapse open={more}>
+                        <ul className="divide-y divide-line border-t border-line">{items.slice(3)}</ul>
+                      </Collapse>
+                      <FoldRow open={more} onToggle={() => setUnfolded((u) => ({ ...u, [key]: !u[key] }))} n={items.length - 3} />
+                    </>
+                  ) : (
+                    <ul className="mt-2.5 divide-y divide-line border-t border-line">
+                      {items}
+                      {rows.length === 0 && <li className="px-4 py-3.5 text-[13px] leading-[18px] text-ink-3">{t("baskets.none")}</li>}
+                    </ul>
+                  );
+                })(
+                  rows.map((r, i) => (
                     <li key={r.category}>
                       <button
                         type="button"
                         onClick={() => setOpen(r)}
-                        className="group flex min-h-[52px] w-full items-center gap-3 px-4 py-2 text-left transition-colors duration-150 last:rounded-b-card hover:bg-sunk/60 active:bg-sunk"
+                        className={cx("group flex min-h-[52px] w-full items-center gap-3 px-4 py-2 text-left transition-colors duration-150 hover:bg-sunk/60 active:bg-sunk", i === rows.length - 1 && rows.length < 5 && "rounded-b-card")}
                       >
                         <CatIcon icon={r.icon} size={18} className="shrink-0 text-ink-3" />
                         <span className="min-w-0 flex-1">
                           <span className="block truncate text-[14px] font-medium leading-5 text-ink">{r.label}</span>
-                          <span className="num block truncate text-[12px] leading-4 text-ink-3">
-                            {r.count === 1 ? t("baskets.purchase1") : t("baskets.purchases", { n: r.count })}{Math.round(r.usual) > 0 && ` · ${t("baskets.usualMonth", { v: money(r.usual, lang) })}`}
+                          <span className="num block text-pretty text-[12px] leading-4 text-ink-3">
+                            {key === "fixed" ? (r.count === 1 ? t("baskets.payment1") : t("baskets.payments", { n: r.count })) : r.count === 1 ? t("baskets.purchase1") : t("baskets.purchases", { n: r.count })}
+                            {/* on a narrow phone the usual month moves to its own line whole, never split after "usually" */}
+                            {Math.round(r.usual) > 0 && <> · <span className="whitespace-nowrap">{t("baskets.usualMonth", { v: money(r.usual, lang) })}</span></>}
                           </span>
                         </span>
                         <span className={cx("num shrink-0 text-[14px] font-semibold leading-5", r.amount > 0 ? "text-ink" : "text-ink-3")}>{money(r.amount, lang)}</span>
                         <ChevronRight size={16} strokeWidth={2} className="-mr-1 shrink-0 text-ink-3 transition-transform duration-150 group-hover:translate-x-0.5" aria-hidden />
                       </button>
                     </li>
-                  ))}
-                  {rows.length === 0 && <li className="px-4 py-3.5 text-[13px] leading-[18px] text-ink-3">{t("baskets.none")}</li>}
-                </ul>
+                  )),
+                )}
               </section>
             );
           })}

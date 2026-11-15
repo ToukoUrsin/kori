@@ -351,6 +351,24 @@ export function Collapse({ open, children }: { open: boolean; children: ReactNod
   );
 }
 
+/** The "Show n more" row at the foot of a card, as on Today's notices: the folded rows open above it, in place. */
+export function FoldRow({ open, onToggle, n, className }: { open: boolean; onToggle: () => void; n: number; className?: string }) {
+  const { t } = useApp();
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-expanded={open}
+      className={cx(
+        "flex h-11 w-full items-center justify-center rounded-b-card border-t border-line text-[13px] font-medium text-ink-2 transition-colors duration-150 hover:text-ink",
+        className,
+      )}
+    >
+      {open ? t("common.showLess") : t("common.showMore", { n })}
+    </button>
+  );
+}
+
 export function LangToggle({ className }: { className?: string }) {
   const { lang, langNext, setLang, t } = useApp();
   // the tapped language lights at once; the screen follows when its words are in

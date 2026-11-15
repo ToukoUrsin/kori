@@ -193,6 +193,20 @@ MIXED_UP: dict[str, list[tuple[str, str, str]]] = {
 }
 
 
+# Wrong in every lesson: a surprise cost cannot be timed, but it can be planned for. The words are the mistake itself,
+# so there is no "not" to look for around them. "I can't plan when they come" is right and is not matched.
+_THEM = r"(?:them|it|that|those|these|(?:the |a |any )?(?:surprises?|surprise (?:costs?|bills?|musts?|expenses?)|repairs?|unexpected (?:costs?|bills?|things?|expenses?)))"
+NEVER_RIGHT: list[tuple[str, str, str]] = [
+    (r"(?:cannot|can never|could never|impossible to|no way to|not possible to|no point(?: in)?|no use|pointless to|useless to)"
+     r"(?: really| ever| actually| possibly)? (?:plan|prepar|budget|sav|be ready|get ready)(?:e|ing|ning)?(?: ahead| up| money)? for " + _THEM + r"(?![a-z])",
+     "You can't time a surprise, but you can plan for it: over a year surprises add up to a fairly steady sum, so a little set aside each month covers them. Say that part once more.",
+     "Yllätyksen ajankohtaa ei voi tietää, mutta siihen voi varautua: vuoden mittaan yllätyksistä kertyy melko tasainen summa, joten pieni kuukausittainen vara kattaa ne. Sano se kohta vielä kerran."),
+    (r"(?:ei (?:niihin |niitä varten |siihen |yllätyksiin )?(?:voi|pysty|kannata)(?: mitenkään| oikein| ikinä)? (?:varautua|säästää)|turha (?:varautua|säästää)|mahdoton(?:ta)? varautua)",
+     "You can't time a surprise, but you can plan for it: over a year surprises add up to a fairly steady sum, so a little set aside each month covers them. Say that part once more.",
+     "Yllätyksen ajankohtaa ei voi tietää, mutta siihen voi varautua: vuoden mittaan yllätyksistä kertyy melko tasainen summa, joten pieni kuukausittainen vara kattaa ne. Sano se kohta vielä kerran."),
+]
+
+
 def _norm(text: str) -> str:
     t = (text or "").lower().replace("’", "'").replace("‘", "'")
     t = t.replace("käyttövar", "käyttö_")      # "turvallinen käyttövara" is the lesson's name, not a reserve
@@ -241,4 +255,9 @@ def check(lesson_id: str, answer: str, lang: str) -> dict | None:
                 and not re.search(r"\bnot\b|\bcannot\b|n't|\bnever\b|\ben\b|\bei\b|\bet\b", hit.group(0))):
             mixed = cfi if fi else cen
             break
+    if not mixed:
+        for pat, cen, cfi in NEVER_RIGHT:
+            if re.search(r"(?<![a-zåäö])" + pat, text):
+                mixed = cfi if fi else cen
+                break
     return {"grade": grade, "found": found, "missing": hint, "misconception": misconception, "words": words, "mixed_up": mixed}

@@ -28,7 +28,7 @@ This one needs a bank in the same group as the shop. The receipt lines are sampl
 - "I need a new laptop. What can I afford?" €287 without changing anything, €715 if she cuts back. Then laptops in Finnish shops right now, with real prices from Prisma.fi and Verkkokauppa.com.
 - "What if I save €150 a month for ten years?" She puts in €18,000 and the middle outcome is about €22,000, with a weak and a strong decade beside it. One of S-Pankki's own funds, with its real fee. An illustration, not investment advice.
 
-She can type it or say it. Twenty common questions open in about a second, asked in her own words: their code and screen were approved once, and the numbers are computed again on her data each time. Anything else is written fresh: a simple question is answered in about 5 seconds with its screen in about 12, a harder one can take 30.
+She can type it or say it. Twenty common questions open in about a second, asked in her own words: their code and screen were approved once, and the numbers are computed again on her data each time. Anything else is written fresh: a simple question is answered in about 5 seconds with its screen in about 15, a harder one can take 30.
 
 ## It coaches and teaches
 
@@ -45,7 +45,7 @@ She can type it or say it. Twenty common questions open in about a second, asked
 
 ## How it's built
 
-Every figure is calculated by code and checked before you see or hear it. The chat and the app's own screens run the same calculations, so they agree. A zero is checked a second time before it's shown. Claude only draws: each screen is built from what Gemini's code produced. The code sees one customer's payments and nothing else: no network, a time limit, and each question logged with its code and result. Kori also runs on Gemini alone. 1,247 automated test cases.
+Every figure is calculated by code and checked before you see or hear it. The chat and the app's own screens run the same calculations, so they agree. A zero is checked a second time before it's shown. Claude only draws: each screen is built from what Gemini's code produced. The code sees one customer's payments and nothing else: no network, a time limit, and each question logged with its code and result. Kori also runs on Gemini alone. 1,256 automated test cases.
 
 ## Gemini API: it writes the code behind every answer
 

@@ -49,9 +49,16 @@ function Typical({ d }: { d: PlanResponse }) {
       </div>
       {/* a middle month hides the big ones: when the year went worse than twelve usual months, say so */}
       {d.year && !d.linked_view && u.left_over > 0 && d.year.net < u.left_over * 6 && (
-        <p className="mt-2.5 border-t border-line pt-2.5 text-[13px] leading-[18px] text-ink-2">
-          {t("plan.yearNote", { in: money(d.year.in, lang), out: money(d.year.out, lang) })}
-        </p>
+        <div className="mt-2.5 border-t border-line pt-2.5">
+          {/* what really happened comes as a figure of its own, before the projection further down */}
+          <p className="flex items-baseline justify-between gap-3 text-[14px] leading-5 text-ink">
+            <span className="font-medium">{t("plan.yearRow")}</span>
+            <span className="num shrink-0 font-semibold">{money(d.year.net, lang)}</span>
+          </p>
+          <p className="mt-1 text-[13px] leading-[18px] text-ink-2">
+            {t("plan.yearNote", { in: money(d.year.in, lang), out: money(d.year.out, lang) })}
+          </p>
+        </div>
       )}
     </section>
   );
@@ -123,7 +130,7 @@ function SliderRow({
   );
 }
 
-function Lab({ d }: { d: PlanResponse }) {
+function Lab({ d, onMoved }: { d: PlanResponse; onMoved: (moved: boolean) => void }) {
   const { customer, lang, t, openCoach, version } = useApp();
   const cats = useMemo(() => d.categories.filter((c) => c.basket === "everyday" && c.usual > 0), [d.categories]);
   const [vals, setVals] = useState<Record<string, number>>({});
@@ -134,6 +141,8 @@ function Lab({ d }: { d: PlanResponse }) {
   const sig = changed.map((c) => `${c.key}:${vals[c.key]}`).join(",");
   const goalSig = d.goal ? `${d.goal.name}|${d.goal.amount}` : "";
   const first = useRef(true);
+  const moved = changed.length > 0;
+  useEffect(() => onMoved(moved), [moved, onMoved]);
 
   useEffect(() => {
     const ac = new AbortController();
@@ -248,6 +257,9 @@ function Lab({ d }: { d: PlanResponse }) {
         ) : (
           <Skel className="my-2 h-[116px]" />
         )}
+        {res && res.series.length > 1 && d.year && !d.linked_view && d.usual.left_over > 0 && d.year.net < d.usual.left_over * 6 && (
+          <p className="mt-1.5 text-[12px] leading-4 text-ink-2">{t("plan.chartIf", { net: money(d.year.net, lang) })}</p>
+        )}
         {res?.goal && (
           <p className="mt-2 flex items-start gap-2 border-t border-line pt-2.5 text-[13px] leading-[18px] text-ink-2">
             <Target size={15} strokeWidth={2} className="mt-px shrink-0 text-ink-3" aria-hidden />
@@ -271,9 +283,10 @@ function Lab({ d }: { d: PlanResponse }) {
           <MessageCircle size={17} strokeWidth={2} className="shrink-0" aria-hidden />
           <span className="truncate">{t("plan.askCoach")}</span>
         </Button>
-        <Button variant="ghost" disabled={!changed.length} onClick={() => setVals({})} className="shrink-0 px-3">
+        <Button variant="ghost" disabled={!changed.length} onClick={() => setVals({})} className="min-w-11 shrink-0 px-3">
           <Undo2 size={16} strokeWidth={2} aria-hidden />
-          {t("common.reset")}
+          {/* on the narrowest phones the ask button keeps its whole label; the arrow still says reset, and so does a screen reader */}
+          <span className="max-[359px]:sr-only">{t("common.reset")}</span>
         </Button>
       </div>
     </section>
@@ -300,7 +313,7 @@ function testOneOff(customer: string, lang: Lang, version: number, label: string
   });
 }
 
-function OneOff() {
+function OneOff({ moved }: { moved: boolean }) {
   const { customer, lang, t, version } = useApp();
   // the three ready-made surprises are worked out while the customer reads the page, so a tap answers at once
   useEffect(() => {
@@ -356,6 +369,8 @@ function OneOff() {
           {t("plan.preset.custom")}
         </Chip>
       </div>
+      {/* the sliders above replay a year; this test does not take them along, and says so the moment they have moved */}
+      {moved && <p className="mt-2.5 px-1 text-[13px] leading-[18px] text-ink-2">{t("plan.oneoffApart")}</p>}
 
       {custom && (
         <form
@@ -561,6 +576,8 @@ function Setters({ q }: { q: Query<PlanResponse> }) {
   const [cushion, setCushion] = useState(d.cushion);
   const [saving, setSaving] = useState(d.savings_plan);
   const [busy, setBusy] = useState(false);
+  // safe to spend as it stood before the first tap here, so the line below can say what the taps changed
+  const [before, setBefore] = useState<number | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const pending = useRef<Partial<PlanPut>>({});
   const dirty = useRef(false);
@@ -613,6 +630,7 @@ function Setters({ q }: { q: Query<PlanResponse> }) {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const push = (body: Partial<PlanPut>) => {
+    if (before == null && !dirty.current) setBefore(d.safe.amount);
     pending.current = { ...pending.current, ...body };
     dirty.current = true;
     setBusy(true); // from the first tap the number below is plainly being worked out
@@ -657,9 +675,16 @@ function Setters({ q }: { q: Query<PlanResponse> }) {
                 {t("plan.working")}
               </p>
             ) : (
-              <p className="num text-[13px] leading-[18px] text-ink-3">
-                <Money value={d.safe.per_day} cents /> {t("common.aDay")}
-              </p>
+              <>
+                <p className="num text-[13px] leading-[18px] text-ink-3">
+                  <Money value={d.safe.per_day} cents /> {t("common.aDay")}
+                </p>
+                {before != null && Math.round(before) !== Math.round(d.safe.amount) && (
+                  <p className="num whitespace-nowrap text-[13px] leading-[18px] text-ink-2" aria-live="polite">
+                    {t("plan.safeBefore", { v: money(before, lang) })}
+                  </p>
+                )}
+              </>
             )}
           </div>
           <span className={cx("flex items-center gap-3 transition-opacity duration-150", busy && "opacity-25")}>
@@ -688,6 +713,7 @@ function Skeleton() {
 
 export function Plan() {
   const { customer, lang, t, version } = useApp();
+  const [moved, setMoved] = useState(false);
   const q = useQuery<PlanResponse>(`plan|${customer}|${lang}|${version}`, `${customer}|${lang}`, () => api.plan(customer, lang));
   const d = q.data;
   return (
@@ -709,8 +735,8 @@ export function Plan() {
           <Typical d={d} />
           {/* what the simulated link added, once on this screen, under the month it changes */}
           <LinkedNote note={d.linked_view?.note} className="mt-2 px-1" />
-          <Lab key={customer} d={d} />
-          <OneOff key={`o-${customer}`} />
+          <Lab key={customer} d={d} onMoved={setMoved} />
+          <OneOff key={`o-${customer}`} moved={moved} />
           <GoalBlock q={q} />
           <Setters key={`s-${customer}`} q={q} />
         </div>
