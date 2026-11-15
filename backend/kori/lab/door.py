@@ -269,6 +269,7 @@ class Door:
             res = {**out.cards[0]["data"], **{k: v for k, v in res.items() if k not in out.cards[0]["data"]}}
         if fn == "safe_to_spend" and not m.partial_view:
             res["from_balance"] = balance_to_safe(m)             # the sum under the number, row by row
+            res["kept_as_savings"] = r2(sum(r["amount"] for r in res["from_balance"] if r["label"] in ("Not needed this pay cycle", "Ei tarvita tällä palkkajaksolla")))   # one figure for "what the account holds beside safe to spend"
         if fn == "profile" and isinstance(res.get("facts"), dict) and "buffer_months" in res["facts"]:
             # one buffer figure everywhere: the one "safe to save" shows, not the rounded peer feature
             covered = (T.execute(m, self.state, "safe_to_save", {}).result.get("buffer") or {}).get("months_covered")
